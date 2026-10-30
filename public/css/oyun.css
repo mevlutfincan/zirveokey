@@ -1013,7 +1013,11 @@ nav.lobby-tabs>.lobby-tab:first-child{
 
 /* Each lobby message gets a soft translucent light row so the existing black text stays readable. */
 .chat-messages .chat-message{
- background:var(--chat-row-color,rgba(232,239,232,.78))!important;
+ background:#e8efe8!important;
+ width:fit-content!important;
+ max-width:100%!important;
+ align-self:flex-start!important;
+ box-sizing:border-box!important;
  border:1px solid rgba(255,255,255,.22)!important;
  border-radius:8px!important;
  padding:7px 10px!important;
@@ -1039,7 +1043,7 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .chat-color-heading{color:#f2d28a!important;font-size:11px!important}
 .chat-color-field{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;color:#e5eee2!important;font-size:11px!important}
 .chat-color-field input[type="color"]{width:42px!important;height:30px!important;padding:2px!important;border:1px solid #73866e!important;border-radius:6px!important;background:#0b170f!important;cursor:pointer!important}
-.chat-color-preview{display:flex!important;flex-direction:column!important;gap:5px!important;padding:9px!important;border:1px solid #ffffff28!important;border-radius:8px!important;background:var(--chat-row-color,rgba(232,239,232,.92))!important;font-size:12px!important}
+.chat-color-preview{display:flex!important;flex-direction:column!important;gap:5px!important;padding:9px!important;border:1px solid #ffffff28!important;border-radius:8px!important;background:#e8efe8!important;font-size:12px!important}
 .chat-color-preview b{font-size:12px!important}
 .chat-color-preview span{overflow-wrap:anywhere!important}
 .chat-color-save{min-height:35px!important;border:1px solid #c49b4b!important;border-radius:8px!important;background:linear-gradient(145deg,#49391c,#2b2414)!important;color:#fff2cf!important;font-size:11px!important;font-weight:800!important;cursor:pointer!important}
