@@ -160,7 +160,7 @@ document.addEventListener('click',e=>{
   chatPicker.hidden=true;chatPicker.setAttribute('aria-hidden','true');chatPicker.style.display='none';smileButton.setAttribute('aria-expanded','false');
  }
 });
-let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=false;
+let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=false,chatStyleAccountId=null;
  const defaultChatStyle={nameColor:'#111111',textColor:'#111111'};
  function validChatHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
  function chatColorLuminance(value){
@@ -181,13 +181,17 @@ let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=fal
   $('#chatBodyColor').value=validChatHex(style?.textColor)?style.textColor:defaultChatStyle.textColor;
   updateChatColorPreview();
  }
- async function loadChatStyle(signed){
+ async function loadChatStyle(signed,accountId){
   chatStyleAuthenticated=signed;
-  if(!signed){setChatColorInputs(defaultChatStyle);return;}
+  if(!signed){chatStyleAccountId=null;setChatColorInputs(defaultChatStyle);return;}
+  const nextAccountId=String(accountId||'');
+  // refreshGameAccount polls periodically; do not overwrite unsaved picker changes on every poll.
+  if(chatStyleAccountId===nextAccountId)return;
   try{
    const response=await fetch('/api/account/chat-style',{credentials:'same-origin',cache:'no-store'});
    if(!response.ok)throw new Error('Renk tercihleri alınamadı.');
    const data=await response.json();setChatColorInputs(data.chatStyle||defaultChatStyle);
+   chatStyleAccountId=nextAccountId;
   }catch(error){$('#chatColorStatus').textContent='Renk tercihleri sunucudan alınamadı.';updateChatColorPreview();}
  }
  const renderedChatMessageIds=new Set();
@@ -438,7 +442,7 @@ async function refreshGameAccount(){
   $('#chatInput').disabled=!signed;$('#chatInput').placeholder=signed?'Mesajını yaz...':'Sohbete yazmak için giriş yap';
   $('#chatForm button[type="submit"]').disabled=!signed;
   applyChatTextPreferences();
-  await loadChatStyle(signed);
+  await loadChatStyle(signed,signed?data.user.id:null);
  }catch(error){$('#gameAccountState').textContent='Hesap bağlantısı yok';}
 }
 $('#gameLoginButton').addEventListener('click',()=>openGameAuth('login'));
