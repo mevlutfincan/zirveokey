@@ -17,7 +17,7 @@ function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function renderLobby(){
  const root=$('#lobbyTableGrid');root.innerHTML='';
  tables.forEach(t=>{const card=document.createElement('article');card.className='lobby-table-card'+(t.style==='Renkli'?' colored-table':'');card.innerHTML='<b>Masa '+String(t.id).padStart(3,'0')+' · '+escapeHtml(t.name)+'</b><p>'+escapeHtml(t.type)+' · '+escapeHtml(t.privacy)+' · '+escapeHtml(t.style||'Standart')+'</p><div class="table-card-seats"><span class="filled">Misafir</span><span>Boş</span><span>Boş</span><span>Boş</span></div>';card.addEventListener('click',()=>openTable(t.id));root.append(card)});
- $('#onlineCount').textContent='—';
+ const onlineCount=$('#onlineCount');if(onlineCount)onlineCount.textContent='—';
 }
 function renderRack(){
  const root=$('#tileRack');root.innerHTML='';
@@ -33,7 +33,7 @@ function createTable(){
  $('#createDialog').close();renderTabs();renderLobby();openTable(id);notify('Masa arayüzü oluşturuldu. Oyun sunucusu henüz bağlı değil.');
 }
 $('#openCreateTable').addEventListener('click',()=>$('#createDialog').showModal());
-$('#lobbyCreateTable').addEventListener('click',()=>$('#createDialog').showModal());
+const lobbyCreateTable=$('#lobbyCreateTable');if(lobbyCreateTable)lobbyCreateTable.addEventListener('click',()=>$('#createDialog').showModal());
 $('.lobby-tab').addEventListener('click',()=>{clearIdleTimer();activeTable=null;$('#tableView').hidden=true;$('#lobbyView').hidden=false;renderTabs();});
 $('#createTableForm').addEventListener('submit',e=>{e.preventDefault();createTable()});
 $('#leaveTable').addEventListener('click',()=>{if(!activeTable)return;const id=activeTable;if(!confirm('Masadan çıkmak istediğinizden emin misiniz?'))return;clearIdleTimer();tables=tables.filter(t=>t.id!==id);activeTable=null;$('#tableView').hidden=true;$('#lobbyView').hidden=false;renderTabs();renderLobby();lobbyNotice(String(id).padStart(3,'0')+' nolu masadan kendi isteğinle çıkış yaptın.');notify('Masadan ayrıldın.')});
