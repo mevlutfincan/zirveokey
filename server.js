@@ -222,10 +222,9 @@ app.put('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Renk tercihleri için giriş yapmalısınız.' });
   const nameColor = String(req.body.nameColor || '').toLowerCase();
   const textColor = String(req.body.textColor || '').toLowerCase();
-  const rowColor = String(req.body.rowColor || '').toLowerCase();
   const validHex = value => /^#[0-9a-f]{6}$/.test(value);
-  if (!validHex(nameColor) || !validHex(textColor) || !validHex(rowColor)) return res.status(400).json({ error: 'Geçerli bir HEX renk seçin.' });
-  const result = await pool.query('UPDATE users SET chat_name_color=$1,chat_text_color=$2,chat_row_color=$3 WHERE id=$4 RETURNING chat_name_color,chat_text_color,chat_row_color', [nameColor, textColor, rowColor, req.session.user.id]);
+  if (!validHex(nameColor) || !validHex(textColor)) return res.status(400).json({ error: 'Geçerli bir HEX renk seçin.' });
+  const result = await pool.query('UPDATE users SET chat_name_color=$1,chat_text_color=$2 WHERE id=$3 RETURNING chat_name_color,chat_text_color,chat_row_color', [nameColor, textColor, req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
   res.json({ ok: true, chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color, rowColor: result.rows[0].chat_row_color } });
 }));
