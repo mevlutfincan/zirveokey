@@ -160,13 +160,60 @@ document.addEventListener('click',e=>{
   chatPicker.hidden=true;chatPicker.setAttribute('aria-hidden','true');chatPicker.style.display='none';smileButton.setAttribute('aria-expanded','false');
  }
 });
-$('#chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('#chatInput');if(!input.value.trim())return;notify('Sohbet sunucusu bağlı olmadığı için mesaj gönderilmedi.');input.value='';});
+let chatLastId=0,chatBusy=false;
+function appendLobbyMessage(message){
+ if(!message||!message.id||message.id<=chatLastId)return;
+ chatLastId=message.id;
+ const item=document.createElement('div');item.className='chat-message';
+ const author=document.createElement('b');author.textContent=message.username+' ';
+ const body=document.createElement('span');body.textContent=message.message;
+ const time=document.createElement('small');time.textContent=new Date(message.created_at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+ item.append(author,body,time);$('#chatMessages').append(item);
+ const box=$('#chatMessages');box.scrollTop=box.scrollHeight;
+}
+async function loadLobbyMessages(initial=false){
+ if(chatBusy)return;chatBusy=true;
+ try{
+  const url=initial?'/api/lobby/messages':'/api/lobby/messages?after='+chatLastId;
+  const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});
+  if(!r.ok)throw new Error('Sohbet alınamadı');
+  const data=await r.json();(data.messages||[]).forEach(appendLobbyMessage);
+ }catch(e){console.warn('Lobi sohbeti bağlantısı kurulamadı.');}
+ finally{chatBusy=false;}
+}
+$('#chatForm').addEventListener('submit',async e=>{
+ e.preventDefault();const input=$('#chatInput'),message=input.value.trim();if(!message)return;
+ try{
+  const r=await fetch('/api/lobby/messages',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({message})});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok){if(r.status===401){openGameAuth('login');notify('Sohbete yazmak için giriş yapmalısın.');return;}throw new Error(data.error||'Mesaj gönderilemedi.');}
+  input.value='';appendLobbyMessage(data.message);
+ }catch(error){notify(error.message);}
+});
 
-function updateOnlineCount(){
- const list=$('#onlineList');
- const count=list?[...list.children].filter(el=>!el.classList.contains('side-empty')).length:0;
+
+function updateOnlineCount(count){
  const headerCount=$('#headerOnlineCount');if(headerCount)headerCount.textContent=String(count);
  const sideBadge=$('.online-badge');if(sideBadge){const icon=sideBadge.querySelector('i');sideBadge.textContent=String(count);if(icon)sideBadge.prepend(icon);}
+}
+async function loadOnlineMembers(){
+ try{
+  const r=await fetch('/api/presence/online',{credentials:'same-origin',cache:'no-store'});
+  if(!r.ok)throw new Error('Çevrimiçi listesi alınamadı');
+  const data=await r.json(),root=$('#onlineList');root.innerHTML='';
+  (data.members||[]).forEach(member=>{
+   const row=document.createElement('div');row.className='online-member';
+   const dot=document.createElement('i');dot.className='online-member-dot';
+   const name=document.createElement('b');name.textContent=member.username;
+   row.append(dot,name);root.append(row);
+  });
+  if(!root.children.length){const empty=document.createElement('div');empty.className='side-empty';empty.innerHTML='<span>♙</span><b>Şu anda çevrimiçi üye yok</b>';root.append(empty);}
+  updateOnlineCount(Number(data.count)||0);
+ }catch(error){console.warn('Çevrimiçi üye listesi yüklenemedi.');}
+}
+async function sendPresenceHeartbeat(){
+ try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:readMemberSettings().settingShowOnline!==false})});}
+ catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
 }
 const notificationsButton=$('#notificationsButton');
 const notificationsPopover=$('#notificationsPopover');
@@ -224,5 +271,56 @@ document.addEventListener('fullscreenchange',()=>{
  fullscreenButton.setAttribute('aria-label',active?'Tam ekrandan çık':'Tam ekran');
 });
 
+
+let gameAuthMode='login';
+function openGameAuth(mode='login'){
+ gameAuthMode=mode;
+ $('#gameAuthTitle').textContent=mode==='register'?'Üye Ol':'Giriş Yap';
+ $('#gameAuthSubmit').textContent=mode==='register'?'Üye Ol':'Giriş Yap';
+ $('#gameAuthIdentifier').placeholder=mode==='register'?'Kullanıcı adı':'E-posta veya kullanıcı adı';
+ $('#gameAuthIdentifier').value='';
+ $('#gameAuthEmailRow').hidden=mode!=='register';
+ $('#gameAuthEmail').required=mode==='register';$('#gameAuthEmail').value='';
+ $('#gameAuthPassword').value='';$('#gameAuthPassword').setAttribute('autocomplete',mode==='register'?'new-password':'current-password');
+ $('#gameAuthSwitch').hidden=false;$('#gameAuthSwitch').textContent=mode==='register'?'Zaten hesabın var mı? Giriş yap':'Hesabın yok mu? Üye ol';
+ $('#gameAuthMessage').textContent='';$('#gameLoginDialog').showModal();
+}
+async function refreshGameAccount(){
+ try{
+  const r=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
+  if(!r.ok)throw new Error('Oturum servisi kullanılamıyor');
+  const data=await r.json(),signed=!!data.authenticated;
+  $('#gameUsername').textContent=signed?data.user.username:'Misafir Oyuncu';
+  $('#gameAccountState').textContent=signed?'Üye hesabı':'Giriş yapılmadı';
+  $('#gameUserAvatar').textContent=signed?data.user.username.slice(0,1).toLocaleUpperCase('tr-TR'):'M';
+  $('#gameAuthActions').hidden=signed;$('#gameLogoutButton').hidden=!signed;
+  $('#chatInput').disabled=!signed;$('#chatInput').placeholder=signed?'Mesajını yaz...':'Sohbete yazmak için giriş yap';
+  $('#chatForm button[type="submit"]').disabled=!signed;
+ }catch(error){$('#gameAccountState').textContent='Hesap bağlantısı yok';}
+}
+$('#gameLoginButton').addEventListener('click',()=>openGameAuth('login'));
+$('#gameRegisterButton').addEventListener('click',()=>openGameAuth('register'));
+$('#gameAuthClose').addEventListener('click',()=>$('#gameLoginDialog').close());
+$('#gameAuthSwitch').addEventListener('click',()=>openGameAuth(gameAuthMode==='login'?'register':'login'));
+$('#gameAuthForm').addEventListener('submit',async e=>{
+ e.preventDefault();const submit=$('#gameAuthSubmit');submit.disabled=true;$('#gameAuthMessage').textContent='İşleniyor…';
+ const payload=gameAuthMode==='register'
+  ?{username:$('#gameAuthIdentifier').value.trim(),email:$('#gameAuthEmail').value.trim(),password:$('#gameAuthPassword').value}
+  :{username:$('#gameAuthIdentifier').value.trim(),password:$('#gameAuthPassword').value};
+ try{
+  const r=await fetch('/api/auth/'+gameAuthMode,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Üyelik işlemi tamamlanamadı.');
+  $('#gameLoginDialog').close();await refreshGameAccount();await sendPresenceHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
+ }catch(error){$('#gameAuthMessage').textContent=error.message;}
+ finally{submit.disabled=false;}
+});
+$('#gameLogoutButton').addEventListener('click',async()=>{
+ try{const r=await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'});if(!r.ok)throw new Error('Çıkış yapılamadı.');await refreshGameAccount();loadOnlineMembers();notify('Oturum kapatıldı.');}
+ catch(error){notify(error.message);}
+});
+
+refreshGameAccount();loadLobbyMessages(true);loadOnlineMembers();sendPresenceHeartbeat();
+window.setInterval(()=>{loadLobbyMessages(false);loadOnlineMembers();sendPresenceHeartbeat();},25000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){loadLobbyMessages(false);loadOnlineMembers();sendPresenceHeartbeat();}});
 renderTabs();renderLobby();renderRack();
 })();
