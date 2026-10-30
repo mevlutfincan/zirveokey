@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 ALTER TABLE users ADD COLUMN IF NOT EXISTS chat_name_color VARCHAR(7) NOT NULL DEFAULT '#111111';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS chat_text_color VARCHAR(7) NOT NULL DEFAULT '#111111';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS chat_row_color VARCHAR(7) NOT NULL DEFAULT '#e8efe8';
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -212,27 +213,28 @@ app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
 
 app.get('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Renk tercihleri için giriş yapmalısınız.' });
-  const result = await pool.query('SELECT chat_name_color,chat_text_color FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
+  const result = await pool.query('SELECT chat_name_color,chat_text_color,chat_row_color FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!result.rows[0]) return res.status(401).json({ error: 'Hesap bulunamadı.' });
-  res.json({ chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color } });
+  res.json({ chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color, rowColor: result.rows[0].chat_row_color } });
 }));
 
 app.put('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Renk tercihleri için giriş yapmalısınız.' });
   const nameColor = String(req.body.nameColor || '').toLowerCase();
   const textColor = String(req.body.textColor || '').toLowerCase();
+  const rowColor = String(req.body.rowColor || '').toLowerCase();
   const validHex = value => /^#[0-9a-f]{6}$/.test(value);
-  if (!validHex(nameColor) || !validHex(textColor)) return res.status(400).json({ error: 'Geçerli bir HEX renk seçin.' });
-  const result = await pool.query('UPDATE users SET chat_name_color=$1,chat_text_color=$2 WHERE id=$3 RETURNING chat_name_color,chat_text_color', [nameColor, textColor, req.session.user.id]);
+  if (!validHex(nameColor) || !validHex(textColor) || !validHex(rowColor)) return res.status(400).json({ error: 'Geçerli bir HEX renk seçin.' });
+  const result = await pool.query('UPDATE users SET chat_name_color=$1,chat_text_color=$2,chat_row_color=$3 WHERE id=$4 RETURNING chat_name_color,chat_text_color,chat_row_color', [nameColor, textColor, rowColor, req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
-  res.json({ ok: true, chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color } });
+  res.json({ ok: true, chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color, rowColor: result.rows[0].chat_row_color } });
 }));
 
 app.get('/api/lobby/messages', dbRequired, asyncRoute(async (req, res) => {
   const afterId = Math.max(0, Number.parseInt(req.query.after || '0', 10) || 0);
   const result = afterId
-    ? await pool.query('SELECT m.id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id>$1 ORDER BY m.id ASC LIMIT 100', [afterId])
-    : await pool.query('SELECT m.id,m.username,m.message,m.created_at,m.chat_name_color,m.chat_text_color FROM (SELECT lm.id,lm.username,lm.message,lm.created_at,u.chat_name_color,u.chat_text_color FROM lobby_messages lm JOIN users u ON u.id=lm.user_id ORDER BY lm.id DESC LIMIT 50) m ORDER BY m.id ASC');
+    ? await pool.query('SELECT m.id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id>$1 ORDER BY m.id ASC LIMIT 100', [afterId])
+    : await pool.query('SELECT m.id,m.username,m.message,m.created_at,m.chat_name_color,m.chat_text_color,m.chat_row_color FROM (SELECT lm.id,lm.username,lm.message,lm.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages lm JOIN users u ON u.id=lm.user_id ORDER BY lm.id DESC LIMIT 50) m ORDER BY m.id ASC');
   res.json({ messages: result.rows });
 }));
 
