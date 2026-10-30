@@ -172,14 +172,19 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
   });
 }));
 
-app.post('/api/auth/logout', dbRequired, (req, res) => {
+app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session) return res.json({ ok: true });
-  pool?.query('DELETE FROM user_presence WHERE user_id=$1', [req.session.user?.id]).catch(() => {});
-  req.session.destroy(() => {
+  const userId = req.session.user?.id;
+  if (userId) {
+    try { await pool.query('DELETE FROM user_presence WHERE user_id=$1', [userId]); }
+    catch (error) { console.error('Presence cleanup failed during logout:', error.message); }
+  }
+  req.session.destroy(error => {
+    if (error) return res.status(500).json({ error: 'Oturum kapatılamadı.' });
     res.clearCookie('zirve.sid', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
     res.json({ ok: true });
   });
-});
+}));
 app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
   const showOnline = req.body.showOnline !== false;
