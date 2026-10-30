@@ -650,3 +650,32 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .chat-view-tools .chat-control{transition:none!important}
 .chat-view-tools .chat-control::before{display:none!important;animation:none!important}
 .chat-view-tools .chat-control:hover{transition:none!important}
+
+
+/* Final override: chat controls stay visually identical on hover; no flash, glow or motion */
+.chat-view-tools .chat-control,
+.chat-view-tools .chat-control:hover,
+.chat-view-tools .chat-control:focus,
+.chat-view-tools .chat-control:focus-visible,
+.chat-view-tools .chat-control:active{
+ animation:none!important;
+ transition:none!important;
+ transform:none!important;
+ filter:none!important;
+ outline:none!important;
+}
+.chat-view-tools .chat-control::before,
+.chat-view-tools .chat-control:hover::before,
+.chat-view-tools .chat-control:focus::before,
+.chat-view-tools .chat-control:active::before{
+ content:none!important;display:none!important;animation:none!important;background:none!important;
+}
+.chat-view-tools .chat-control:hover,
+.chat-view-tools .chat-control:focus,
+.chat-view-tools .chat-control:focus-visible,
+.chat-view-tools .chat-control:active{
+ background:
+  linear-gradient(145deg,#203329 0%,#14241a 52%,#0d1912 100%) padding-box,
+  linear-gradient(135deg,var(--trim-hi),var(--trim-mid) 42%,var(--trim-low) 78%,var(--trim-hi)) border-box!important;
+ box-shadow:inset 0 1px 0 #d9e7ce20,inset 0 -4px 8px #030805a8,0 3px 0 #071009,0 5px 12px #0005!important;
+}
