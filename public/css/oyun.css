@@ -41,3 +41,10 @@
  .chat-footnote{padding:0 13px 12px}
 }
 @media(max-width:430px){.rack-row{gap:6px}.discard-tray{width:58px;flex-basis:58px}.discarded-tile{width:30px;height:43px}}
+
+/* Stable lobby table card sizing and compact settings form */
+.lobby-table-grid{grid-template-columns:repeat(auto-fill,minmax(220px,260px));align-items:start}
+.lobby-table-card{width:100%;height:142px;min-height:142px;overflow:hidden}
+.lobby-table-card p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.create-dialog .full-field{grid-column:1/-1}
+@media(max-width:430px){.lobby-table-grid{grid-template-columns:1fr}.lobby-table-card{height:142px}}
