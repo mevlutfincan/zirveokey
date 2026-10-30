@@ -77,8 +77,8 @@ async function main() {
   const sent = await request('/api/lobby/messages', {
     method: 'POST', cookie: cookieA, body: { message: 'TWO-USER-' + suffix }
   });
-  assert.equal(sent.status, 201, 'A kullanıcısının mesajı kaydedilemedi: ' + await sent.text());
-  const sentData = await sent.json();
+  const sentData = await sent.json().catch(() => ({}));
+  assert.equal(sent.status, 201, 'A kullanıcısının mesajı kaydedilemedi: ' + JSON.stringify(sentData));
   const messageId = sentData.message.id;
 
   const received = await request('/api/lobby/messages?after=' + (messageId - 1), { cookie: cookieB });
