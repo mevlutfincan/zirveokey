@@ -192,9 +192,12 @@ $('#chatForm').addEventListener('submit',async e=>{
 });
 
 
-function updateOnlineCount(count=0){
- const headerCount=$('#headerOnlineCount');if(headerCount)headerCount.textContent=String(count);
- const sideBadge=$('.online-badge');if(sideBadge){const icon=sideBadge.querySelector('i');sideBadge.textContent=String(count);if(icon)sideBadge.prepend(icon);}
+function updateOnlineCount(count){
+ const headerCount=$('#headerOnlineCount');
+ const current=headerCount?Number(headerCount.textContent)||0:0;
+ const value=count===undefined?current:(Number(count)||0);
+ if(headerCount)headerCount.textContent=String(value);
+ const sideBadge=$('.online-badge');if(sideBadge){const icon=sideBadge.querySelector('i');sideBadge.textContent=String(value);if(icon)sideBadge.prepend(icon);}
 }
 async function loadOnlineMembers(){
  try{
