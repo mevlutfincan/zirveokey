@@ -138,9 +138,10 @@ function renderEmojiPicker(type){
     const url=new URL(raw);
     if(url.protocol!=='https:'||! /\.(gif|webp)(\?.*)?$/i.test(url.pathname+url.search))throw new Error('invalid');
     pendingChatGif=url.href;
+    insertChatText(' '+pendingChatGif+' ');
     preview.innerHTML='';
     const img=document.createElement('img');img.src=pendingChatGif;img.alt='Mesaja eklenecek GIF';preview.append(img);
-    const status=document.createElement('small');status.textContent='GIF eklendi. Mesaj sunucusu bağlandığında gönderime dahil edilebilir.';preview.append(status);
+    const status=document.createElement('small');status.textContent='GIF bağlantısı mesaj alanına eklendi. Göndermek için Mesaj gönder butonunu kullan.';preview.append(status);
    }catch(_){notify('Geçerli bir HTTPS GIF bağlantısı gir.')}
   });
   wrap.append(note,field,add,preview);pickerContent.append(wrap);return;
