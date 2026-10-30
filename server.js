@@ -106,6 +106,17 @@ if (pool && sessionSecret) {
   }));
 }
 
+app.get('/api/radio/status', (_req, res) => {
+  const djName = String(process.env.RADIO_DJ_NAME || '').trim().slice(0, 48);
+  let streamUrl = '';
+  try {
+    const candidate = new URL(String(process.env.RADIO_STREAM_URL || '').trim());
+    if (candidate.protocol === 'https:' || candidate.protocol === 'http:') streamUrl = candidate.toString();
+  } catch {}
+  const isLive = String(process.env.RADIO_IS_LIVE || '').toLowerCase() === 'true' && Boolean(streamUrl && djName);
+  res.json({ configured: Boolean(streamUrl), isLive, djName: isLive ? djName : '', streamUrl: isLive ? streamUrl : '' });
+});
+
 app.get('/health', asyncRoute(async (_req, res) => {
   let database = 'not_configured';
   if (pool) {
