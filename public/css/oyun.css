@@ -644,3 +644,26 @@ nav.lobby-tabs>.lobby-tab:first-child{
 @media(prefers-reduced-motion:reduce){
  .chat-view-tools .chat-control::before{animation:none!important}
 }
+
+
+/* Fix sheen visibility: keep the colored light layer above the button face, below its label */
+.chat-view-tools .chat-control{isolation:isolate!important;overflow:hidden!important}
+.chat-view-tools .chat-control::before{
+ z-index:1!important;inset:1px!important;border-radius:10px!important;
+ pointer-events:none!important;
+ background:linear-gradient(105deg,transparent 0%,var(--shine) 44%,var(--shine) 50%,transparent 78%)!important;
+ opacity:.9!important;mix-blend-mode:screen!important;
+}
+.chat-view-tools .chat-control::after{z-index:0!important;inset:3px!important;pointer-events:none!important}
+.chat-view-tools .chat-control>span{position:relative!important;z-index:2!important}
+.chat-view-tools .chat-control:hover{
+ box-shadow:inset 0 1px 0 #d9e7ce20,inset 0 -4px 8px #030805a8,
+ 0 0 0 1px var(--trim-mid),0 0 12px var(--shine),0 6px 14px #0007!important;
+}
+.chat-view-tools .chat-control.active{
+ box-shadow:inset 0 1px 0 #d9e7ce20,inset 0 -4px 8px #030805a8,
+ 0 0 0 1px var(--trim-hi),0 0 14px var(--shine),0 5px 12px #0007!important;
+}
+@media(prefers-reduced-motion:no-preference){
+ .chat-view-tools .chat-control::before{animation:zirveButtonSheen 5.5s ease-in-out infinite!important}
+}
