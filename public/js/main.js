@@ -19,6 +19,35 @@ document.addEventListener('click',e=>{
 const backdrop=$('#backdrop'),email=$('#email'),authForm=$('#authForm');
 const username=$('#username'),password=$('#password'),loginOptions=$('#loginOptions');
 let lastTrigger=null,authMode='login';
+const authButtons=[...document.querySelectorAll('[data-modal="login"],[data-modal="register"]')];
+async function refreshAuthState(){
+  try{
+    const response=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
+    if(!response.ok)throw new Error('Oturum durumu alınamadı.');
+    const data=await response.json();
+    const signedIn=data.authenticated===true;
+    authButtons.forEach(button=>button.hidden=signedIn);
+    ['logoutButton','mobileLogoutButton'].forEach(id=>{const button=document.getElementById(id);if(button)button.hidden=!signedIn;});
+    ['accountGreeting','mobileAccountGreeting'].forEach(id=>{const el=document.getElementById(id);if(el){el.hidden=!signedIn;el.textContent=signedIn?'Merhaba, '+data.user.username:'';}});
+  }catch(error){console.warn('Oturum durumu kontrol edilemedi:',error.message);}
+}
+async function logout(){
+  const buttons=[document.getElementById('logoutButton'),document.getElementById('mobileLogoutButton')].filter(Boolean);
+  buttons.forEach(button=>button.disabled=true);
+  try{
+    const response=await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'Çıkış yapılamadı.');
+    await refreshAuthState();
+    $('#playStatus').textContent='Hesabından güvenli şekilde çıkış yaptın.';
+    closeNav();
+  }catch(error){alert(error.message);}
+  finally{buttons.forEach(button=>button.disabled=false);}
+}
+document.getElementById('logoutButton')?.addEventListener('click',logout);
+document.getElementById('mobileLogoutButton')?.addEventListener('click',logout);
+refreshAuthState();
+
 document.querySelectorAll('[data-modal]').forEach(button=>button.addEventListener('click',()=>{
   lastTrigger=button;
   authMode=button.dataset.modal==='register'?'register':'login';
@@ -104,7 +133,7 @@ authForm.addEventListener('submit',async e=>{
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'İşlem tamamlanamadı. Lütfen tekrar deneyin.');
     if(authMode==='login'||authMode==='register'){
-      $('#modalNote').textContent='Hoş geldin, '+data.user.username+'. Hesabına başarıyla giriş yaptın.';
+      $('#modalNote').textContent='Hoş geldin, '+data.user.username+'. Hesabına başarıyla giriş yaptın.';\n      await refreshAuthState();
       setTimeout(()=>{backdrop.hidden=true;},900);
     }else if(authMode==='forgot'){
       $('#modalNote').textContent=data.message||'Adres kayıtlıysa sıfırlama bağlantısı gönderilecektir.';
