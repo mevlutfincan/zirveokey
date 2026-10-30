@@ -27,11 +27,12 @@ jobs:
           npm start > /tmp/zirveokey.log 2>&1 &
           echo $! > /tmp/zirveokey.pid
           for attempt in $(seq 1 20); do
-            if curl --fail --silent http://127.0.0.1:3000/health; then break; fi
+            if curl --fail --silent http://127.0.0.1:3000/health | grep -q '"status":"ok"'; then break; fi
             sleep 1
           done
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'ZirveOkey'
           curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q '.hero'
+          curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q 'radio-status{display:block'
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'radioPlay'
           test -s public/assets/hero-background.png
           kill "$(cat /tmp/zirveokey.pid)"
