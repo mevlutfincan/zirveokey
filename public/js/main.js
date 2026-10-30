@@ -114,7 +114,7 @@ document.querySelectorAll('[data-modal]').forEach(button=>button.addEventListene
   loginOptions.hidden=authMode!=='login';
   password.setAttribute('autocomplete',authMode==='register'?'new-password':'current-password');
   authForm.reset();
-  $('#modalNote').textContent='Hesap işlemleri sunucu bağlantısı eklendiğinde etkinleştirilecek.';
+  $('#modalNote').textContent='Hesabın sunucu üzerinden güvenli şekilde doğrulanır.';
   backdrop.hidden=false;
   backdrop.querySelector('input:not([hidden])')?.focus();
 }));
@@ -127,7 +127,7 @@ $('#forgotPassword').addEventListener('click',()=>{
   password.hidden=true;password.required=false;
   loginOptions.hidden=true;
   $('#authSubmit').textContent='Sıfırlama Bağlantısı Gönder';
-  $('#modalNote').textContent='Şifre sıfırlama işlemi sunucu bağlantısı eklendiğinde etkinleştirilecek.';
+  $('#modalNote').textContent='Şifre sıfırlama bağlantısı kayıtlı e-posta adresine gönderilir.';
   email.focus();
 });
 function closeModal(){
@@ -245,7 +245,17 @@ $('#mute').addEventListener('click',()=>{
 $('#previous').addEventListener('click',()=>status.textContent='Canlı yayında parça atlama desteklenmiyor.');
 $('#next').addEventListener('click',()=>status.textContent='Canlı yayında parça atlama desteklenmiyor.');
 
-$('#playButton').addEventListener('click',()=>{
-  $('#playStatus').textContent='Oyun bağlantısı henüz etkinleştirilmedi.';
+$('#playButton').addEventListener('click',async()=>{
+  const button=$('#playButton');button.disabled=true;
+  try{
+    const response=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'Hesap bağlantısı şu anda kullanılamıyor.');
+    if(data.authenticated===true){window.location.href='/oyun.html';return;}
+    const loginButton=document.querySelector('[data-modal="login"]');
+    loginButton?.click();
+    $('#modalNote').textContent='Oyuna katılmak için önce hesabına giriş yap.';
+  }catch(error){$('#playStatus').textContent=error.message;}
+  finally{button.disabled=false;}
 });
 audio.volume=.7;
