@@ -1,7 +1,14 @@
 const $=s=>document.querySelector(s);
 const toggle=$('#mobileToggle'),nav=$('#mainNav');
 const themeButton=$('.theme');
-if(themeButton){themeButton.addEventListener('click',()=>{const light=document.documentElement.classList.toggle('soft-light');themeButton.textContent=light?'☀':'☾';document.documentElement.style.setProperty('--glass',light?'rgba(12,22,14,.78)':'rgba(3,12,8,.72)');});}
+if(themeButton){
+  const root=document.documentElement;
+  themeButton.addEventListener('click',()=>{
+    const light=root.classList.toggle('soft-light');
+    themeButton.textContent=light?'☀':'☾';
+    themeButton.setAttribute('aria-label',light?'Koyu temaya geç':'Açık temaya geç');
+  });
+}
 toggle.addEventListener('click',()=>{const open=nav.classList.toggle('open');toggle.setAttribute('aria-expanded',String(open));});
 nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');toggle.setAttribute('aria-expanded','false');}));
 const backdrop=$('#backdrop'),email=$('#email');
