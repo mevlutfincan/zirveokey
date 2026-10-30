@@ -172,7 +172,36 @@ document.addEventListener('click',e=>{
   notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');
  }
 });
-$('#settingsButton').addEventListener('click',()=>notify('Hesap ve oyun ayarları bölümü hazırlanıyor.'));
+
+const settingsDialog=$('#memberSettingsDialog');
+const settingsKeys=['settingAnimations','settingDarkMode','settingNotifications','settingShowOnline'];
+function applyMemberSettings(values){
+ document.body.classList.toggle('member-reduce-motion',!values.settingAnimations);
+ document.body.classList.toggle('member-light-theme',!values.settingDarkMode);
+ $('#notificationsButton').hidden=!values.settingNotifications;
+ $('.user-online-count').hidden=!values.settingShowOnline;
+}
+function readMemberSettings(){
+ const defaults={settingAnimations:true,settingDarkMode:true,settingNotifications:true,settingShowOnline:true};
+ try{return {...defaults,...JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}')}}catch{return defaults}
+}
+function loadMemberSettings(){
+ const values=readMemberSettings();
+ settingsKeys.forEach(id=>{$('#'+id).checked=!!values[id]});
+ applyMemberSettings(values);
+}
+$('#settingsButton').addEventListener('click',()=>{loadMemberSettings();settingsDialog.showModal()});
+$('#memberSettingsForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const values={};settingsKeys.forEach(id=>values[id]=$('#'+id).checked);
+ try{localStorage.setItem('zirveMemberSettings',JSON.stringify(values))}catch{}
+ applyMemberSettings(values);
+ settingsDialog.close();
+ notify('Üye ayarların kaydedildi.');
+});
+settingsDialog.addEventListener('click',e=>{if(e.target===settingsDialog)settingsDialog.close()});
+loadMemberSettings();
+
 const fullscreenButton=$('#fullscreenButton');
 fullscreenButton.addEventListener('click',async()=>{
  try{
