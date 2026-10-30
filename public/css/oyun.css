@@ -902,16 +902,16 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .game-auth-actions[hidden],#gameLogoutButton[hidden]{display:none!important}
 
 
-/* Lobby chat message readability and timestamp order */
+/* Minimal lobby chat rows: no card background, border or enclosing panel effect. */
 .chat-messages .chat-message{
  display:flex!important;
  align-items:baseline!important;
  flex-wrap:wrap!important;
  gap:7px!important;
- padding:9px 11px!important;
- border:1px solid #e0e5e0!important;
- border-radius:8px!important;
- background:#f0f3f0!important;
+ padding:3px 0!important;
+ border:0!important;
+ border-radius:0!important;
+ background:transparent!important;
  color:#111!important;
  font-size:15px!important;
  line-height:1.55!important;
@@ -939,4 +939,13 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .chat-messages .chat-system{
  color:#202820!important;
  font-size:14px!important;
+}
+
+
+/* Emojis in sent lobby messages are intentionally larger than message text. */
+.chat-messages .chat-message-emoji{
+ display:inline-block;
+ font-size:25px;
+ line-height:1.15;
+ vertical-align:-3px;
 }
