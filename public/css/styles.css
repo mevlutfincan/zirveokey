@@ -1018,3 +1018,43 @@ body:not(.soft-light) .community-empty{
 @media(prefers-reduced-motion:reduce){
  .site-header .mobile-toggle i{transition:none}
 }
+
+
+/* Keep login and registration actions visible in the mobile header */
+@media(max-width:760px){
+ .site-header .header-actions{
+  display:flex!important;
+  order:2;
+  flex:0 0 auto;
+  align-items:center;
+  gap:6px;
+  margin-left:auto;
+ }
+ .site-header .header-actions button{
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  height:36px;
+  min-height:36px;
+  padding:0 10px;
+  border-radius:9px;
+  font-size:12px;
+  line-height:1;
+  white-space:nowrap;
+ }
+ .site-header .header-actions .outline{min-width:65px}
+ .site-header .header-actions .green{min-width:60px}
+ .site-header .mobile-toggle{order:3;margin-left:0}
+ .site-header .mobile-auth{display:none!important}
+}
+@media(max-width:390px){
+ .site-header .header-actions{gap:4px}
+ .site-header .header-actions button{
+  height:34px;
+  min-height:34px;
+  padding:0 7px;
+  font-size:11px;
+ }
+ .site-header .header-actions .outline{min-width:57px}
+ .site-header .header-actions .green{min-width:53px}
+}
