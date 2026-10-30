@@ -4,3 +4,21 @@
 .page-secondary:hover{background:rgba(112,237,53,.1);border-color:rgba(144,218,124,.65)}
 .ranking-panel>p{max-width:720px}
 @media(max-width:760px){.page-actions{display:grid;grid-template-columns:1fr}.page-actions a{width:100%}}
+
+.section-kicker{display:inline-block;color:#9aef6e;font-size:11px;font-weight:850;letter-spacing:2px;margin-bottom:10px}
+.page-section-intro h2,.help-intro h2,.contact-intro h2{margin:0 0 8px}
+.page-section-intro>p,.help-intro>p,.contact-intro>p{margin:0;color:#b9c9bb}
+.tournament-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:22px 0 30px}
+.tournament-steps article{padding:19px;border:1px solid rgba(144,218,124,.2);border-radius:14px;background:rgba(255,255,255,.035)}
+.tournament-steps article>span,.topic-number{display:block;color:#9aef6e;font-size:12px;font-weight:850;letter-spacing:1px;margin-bottom:13px}
+.tournament-steps b{color:#f0f8ed}.tournament-steps p{font-size:13px;margin:8px 0 0}
+.subsection-title{font-size:19px;margin:28px 0 0}
+.help-shortcuts{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0 30px}
+.help-shortcuts a,.contact-topics article>a{color:#b9efaa;text-decoration:none;font-size:13px;font-weight:700}
+.help-shortcuts a{padding:9px 13px;border:1px solid rgba(144,218,124,.23);border-radius:30px;background:rgba(255,255,255,.035)}
+.help-note,.contact-status{margin-top:24px;padding:18px;border:1px solid rgba(144,218,124,.22);border-radius:14px;background:rgba(112,237,53,.045)}
+.help-note>b,.contact-status>b{color:#eaf8e5}.help-note p,.contact-status p{margin:7px 0;color:#b9c9bb;font-size:14px}
+.help-note a{color:#a5f36e;text-decoration:none;font-weight:750}
+.contact-topics article>a{display:inline-block;margin-top:14px}
+.contact-topics article .topic-number{margin-bottom:10px}
+@media(max-width:760px){.tournament-steps{grid-template-columns:1fr}.help-shortcuts{display:grid;grid-template-columns:1fr 1fr}.help-shortcuts a{text-align:center}}
