@@ -49,7 +49,7 @@ const mainColumn=$('.main-column');
 const lobbyTabs=$('.lobby-tabs');
 const chatDefaultHeight=390;
 let chatPanelMode='normal';
-const chatPositionProps=['position','left','right','top','bottom','width','height','min-height','max-height','transform','z-index','margin-top','transition','animation'];
+const chatPositionProps=['position','left','right','top','bottom','width','height','min-height','max-height','max-width','box-sizing','transform','z-index','margin-top','transition','animation'];
 function resetChatPanelInlineStyles(){
  chatPositionProps.forEach(p=>chatPanel.style.removeProperty(p));
  chatPanel.classList.remove('chat-panel-grown','chat-panel-centered');
