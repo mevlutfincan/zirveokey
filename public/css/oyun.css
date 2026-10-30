@@ -204,39 +204,12 @@ body.game-page{background:radial-gradient(ellipse at 14% 0%,rgba(89,142,86,.16),
 
 
 
-/* FINAL DESKTOP VIEWPORT GRID — positions follow the reference screenshot */
-@media (min-width:761px){
- html,body{width:100%;height:100%;margin:0}
- body.game-page{height:100vh;min-height:0;overflow:hidden}
- .game-header{height:66px!important;min-height:66px!important;box-sizing:border-box}
- .lobby-tabs{height:32px!important;min-height:32px!important;box-sizing:border-box;padding:0 8px!important;gap:6px!important}
- .game-layout{position:relative!important;display:grid!important;grid-template-columns:minmax(0,3fr) minmax(300px,1fr)!important;grid-template-rows:minmax(0,1fr)!important;gap:0!important;width:100%!important;max-width:none!important;height:calc(100vh - 98px)!important;min-height:0!important;margin:0!important;padding:0!important;box-sizing:border-box!important;align-items:stretch!important}
- .main-column{grid-column:1!important;grid-row:1!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) 308px!important;gap:0!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important}
- .lobby-view{grid-column:1!important;grid-row:1!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;text-align:left!important}
- .section-heading{display:flex!important;flex:0 0 34px!important;align-items:center!important;justify-content:flex-start!important;width:100%!important;height:34px!important;margin:0!important;padding:0 8px!important;box-sizing:border-box!important;text-align:left!important}
- .section-heading h1{margin:0!important;text-align:left!important}
- .lobby-stat{margin-left:auto!important}
- .lobby-empty{display:block!important;flex:1 1 auto!important;order:2!important;width:100%!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:#18241d!important;box-shadow:none!important}
- .lobby-table-grid{display:grid!important;flex:0 0 auto!important;order:1!important;grid-template-columns:repeat(auto-fill,260px)!important;justify-content:start!important;justify-items:start!important;align-content:start!important;align-items:start!important;gap:8px!important;width:100%!important;min-height:0!important;max-height:160px!important;margin:0!important;padding:0 2px!important;overflow:auto!important;box-sizing:border-box!important}
- .lobby-table-card{justify-self:start!important;margin:0!important}
- .right-column{grid-column:2!important;grid-row:1!important;display:block!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important}
- .online-panel{display:flex!important;flex-direction:column!important;align-items:stretch!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;border-radius:0!important}
- .online-panel .side-heading{flex:0 0 34px!important;display:flex!important;justify-content:space-between!important;align-items:center!important;text-align:left!important}
- .online-list{flex:1 1 auto!important;width:100%!important;min-height:0!important;overflow:auto!important}
- .chat-panel{grid-column:1!important;grid-row:2!important;display:flex!important;flex-direction:column!important;align-self:stretch!important;justify-self:stretch!important;width:100%!important;height:308px!important;min-height:0!important;margin:0!important;border-radius:0!important}
- .chat-panel .side-heading{flex:0 0 38px!important}
- .chat-messages{flex:1 1 auto!important;min-height:0!important;max-height:none!important;overflow:auto!important}
- .chat-form{flex:0 0 auto!important}
+
+/* Balanced vertical proportion: give more height to the lobby workspace */
+@media(min-width:761px){
+ .main-column{grid-template-rows:minmax(0,1fr) 250px!important}
+ .chat-panel{height:250px!important;min-height:250px!important}
 }
 @media(max-width:760px){
- body.game-page{height:auto!important;min-height:100vh!important;overflow:auto!important}
- .game-layout{display:flex!important;flex-direction:column!important;width:100%!important;height:auto!important;min-height:calc(100vh - 110px)!important;margin:0!important;padding:0!important;gap:0!important}
- .main-column{display:flex!important;flex-direction:column!important;width:100%!important;height:auto!important;min-height:0!important;gap:0!important}
- .lobby-view{display:flex!important;flex-direction:column!important;min-height:42vh!important;height:auto!important;padding:0 8px!important;overflow:visible!important}
- .section-heading{display:flex!important;align-items:center!important;justify-content:flex-start!important;text-align:left!important;padding:0 4px!important}
- .lobby-empty{display:block!important;min-height:180px!important;flex:1 1 auto!important}
- .lobby-table-grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))!important;justify-content:start!important;justify-items:start!important;max-height:none!important}
- .right-column{display:block!important;width:100%!important;height:auto!important;min-height:220px!important}
- .online-panel{height:auto!important;min-height:220px!important}
- .chat-panel{display:flex!important;width:100%!important;height:280px!important;min-height:280px!important}
+ .chat-panel{height:260px!important;min-height:260px!important}
 }
