@@ -161,17 +161,28 @@ document.addEventListener('click',e=>{
  }
 });
 let chatLastId=0,chatBusy=false;
-function appendLobbyMessage(message){
- if(!message||!message.id||message.id<=chatLastId)return;
- chatLastId=message.id;
- const item=document.createElement('div');item.className='chat-message';
- const author=document.createElement('b');author.textContent=message.username+' ';
- const body=document.createElement('span');body.textContent=message.message;
- const time=document.createElement('small');time.textContent=new Date(message.created_at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
- item.append(author,body,time);$('#chatMessages').append(item);
- const box=$('#chatMessages');box.scrollTop=box.scrollHeight;
-}
-async function loadLobbyMessages(initial=false){
+ const renderedChatMessageIds=new Set();
+ function appendLobbyMessage(message){
+  if(!message||message.id===undefined||message.id===null)return;
+  const id=String(message.id);
+  if(renderedChatMessageIds.has(id))return;
+  renderedChatMessageIds.add(id);
+  const numericId=Number(id);
+  if(Number.isFinite(numericId))chatLastId=Math.max(chatLastId,numericId);
+  const item=document.createElement('div');item.className='chat-message';item.dataset.messageId=id;
+  const time=document.createElement('small');
+  const createdAt=new Date(message.created_at);
+  time.textContent=Number.isNaN(createdAt.getTime())?'--:--':createdAt.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  time.className='chat-message-time';
+  const author=document.createElement('b');author.textContent=String(message.username||'Üye');
+  const body=document.createElement('span');body.className='chat-message-body';body.textContent=String(message.message||'');
+  item.append(time,author,body);
+  const box=$('#chatMessages');
+  const next=[...box.querySelectorAll('.chat-message')].find(node=>Number(node.dataset.messageId)>numericId);
+  if(next)box.insertBefore(item,next);else box.append(item);
+  box.scrollTop=box.scrollHeight;
+ }
+ async function loadLobbyMessages(initial=false){
  if(chatBusy)return;chatBusy=true;
  try{
   const url=initial?'/api/lobby/messages':'/api/lobby/messages?after='+chatLastId;
