@@ -821,3 +821,6 @@ nav.lobby-tabs>.lobby-tab:first-child{
 
 /* Keep the emoji popup above the chat panel and independent of its clipping. */
 #chatPicker{position:fixed;z-index:2147483000;max-height:calc(100vh - 24px);overflow-y:auto}
+
+/* Header left edge: remove the unused leading space, preserve right-side spacing. */
+.game-header{padding-left:0!important}
