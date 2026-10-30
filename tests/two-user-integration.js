@@ -158,7 +158,7 @@ async function main() {
   console.log('PASS: oturumsuz sohbet yazma engeli');
   console.log('PASS: hesap bazlı renk tercihleri kaydedildi ve doğrulandı');
   console.log('PASS: iki kullanıcı arasında seçilen isim ve mesaj renkleri iletildi');
-  console.log('PASS: okunamayacak renkler reddedildi');
+  console.log('PASS: açık renkler dahil tüm geçerli HEX satır renkleri kabul edildi');
   console.log('PASS: A mesajı B tarafından alındı');
   console.log('PASS: iki kullanıcının çevrimiçi görünmesi');
   console.log('PASS: çevrimiçi görünürlüğü tercihi');
