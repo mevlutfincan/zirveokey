@@ -1027,3 +1027,23 @@ nav.lobby-tabs>.lobby-tab:first-child{
  border:1px solid rgba(255,255,255,.2)!important;
  border-radius:8px!important;
 }
+
+
+/* Separate Yazı Boyutu and Renk Ayarları tabs inside the existing chat settings menu. */
+.chat-settings-tabs{display:grid!important;grid-template-columns:1fr 1fr!important;gap:5px!important;padding-bottom:7px!important;border-bottom:1px solid #ffffff24!important}
+.chat-settings-tab{min-height:34px!important;padding:0 8px!important;border:1px solid #526d4b!important;border-radius:7px!important;background:#102016!important;color:#cbd8c8!important;font-size:11px!important;font-weight:750!important;cursor:pointer!important}
+.chat-settings-tab.active{border-color:#c49b4b!important;background:linear-gradient(145deg,#49391c,#2b2414)!important;color:#fff2cf!important}
+.chat-settings-pane[hidden]{display:none!important}
+.chat-settings-pane{display:flex;flex-direction:column;gap:7px}
+.chat-colors-pane{min-width:220px!important}
+.chat-color-heading{color:#f2d28a!important;font-size:11px!important}
+.chat-color-field{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;color:#e5eee2!important;font-size:11px!important}
+.chat-color-field input[type="color"]{width:42px!important;height:30px!important;padding:2px!important;border:1px solid #73866e!important;border-radius:6px!important;background:#0b170f!important;cursor:pointer!important}
+.chat-color-preview{display:flex!important;flex-direction:column!important;gap:5px!important;padding:9px!important;border:1px solid #ffffff28!important;border-radius:8px!important;background:rgba(232,239,232,.92)!important;font-size:12px!important}
+.chat-color-preview b{font-size:12px!important}
+.chat-color-preview span{overflow-wrap:anywhere!important}
+.chat-color-save{min-height:35px!important;border:1px solid #c49b4b!important;border-radius:8px!important;background:linear-gradient(145deg,#49391c,#2b2414)!important;color:#fff2cf!important;font-size:11px!important;font-weight:800!important;cursor:pointer!important}
+.chat-color-save:disabled{opacity:.45!important;cursor:not-allowed!important}
+.chat-color-status{color:#bdcbbb!important;font-size:10px!important;line-height:1.4!important}
+.chat-messages .chat-message>b{color:var(--chat-author-color,#111111)!important}
+.chat-messages .chat-message-body{color:var(--chat-body-color,#111111)!important}
