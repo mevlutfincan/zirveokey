@@ -26,3 +26,58 @@
 @media(max-width:380px){
  .header-actions .radio{width:112px;flex-basis:112px}
 }
+
+/* Reference-aligned desktop header and compact inline ZirveFm control */
+.site-header{height:106px;padding:0 clamp(24px,4vw,66px);gap:clamp(20px,3vw,52px)}
+.brand{min-width:290px;font-size:46px;letter-spacing:-2px}
+.crown{left:28px;top:-19px;font-size:27px}
+nav{gap:clamp(24px,3vw,52px)}
+nav a{min-width:78px;font-size:16px;gap:7px}
+.nav-icon{font-size:30px;line-height:1}
+nav a.active:after{bottom:7px;height:4px}
+.header-actions{gap:14px}
+.header-actions .theme{width:64px;height:64px;border-radius:50%;font-size:27px}
+.header-actions .outline,.header-actions .green{height:64px;padding:0 27px;border-radius:12px;font-size:17px;white-space:nowrap}
+.header-actions .radio{width:300px;flex:0 0 300px}
+.header-actions .radio-collapsed{min-height:64px;padding:8px 14px;gap:10px;border-radius:14px}
+.header-actions .radio-collapsed .headphones{font-size:27px}
+.header-actions .radio-collapsed span:nth-child(2) b{font-size:18px}
+.header-actions .radio-collapsed span:nth-child(2) small{font-size:12px}
+.header-actions .radio-collapsed .mini-play{width:38px;height:38px;font-size:13px}
+.header-actions .radio-panel{width:360px}
+.hero{min-height:calc(100svh - 106px)}
+.hero-content{width:min(760px,54vw);margin-left:clamp(40px,5vw,84px);padding:48px 0 70px}
+.eyebrow{font-size:16px;letter-spacing:4px;margin-bottom:22px}
+h1{font-size:clamp(56px,5.3vw,82px);line-height:.99;letter-spacing:-2.4px}
+.intro{font-size:23px;line-height:1.45;margin:22px 0 38px}
+.play{height:82px;min-width:470px;font-size:21px;gap:25px;border-radius:14px}
+.play span{height:82px;width:88px;font-size:28px}
+@media(max-width:1200px){
+ .brand{min-width:210px;font-size:38px}
+ nav{gap:12px}
+ nav a{min-width:58px;font-size:13px}
+ .nav-icon{font-size:23px}
+ .header-actions .radio{width:190px;flex-basis:190px}
+ .header-actions .radio-panel{width:330px}
+ .header-actions .outline,.header-actions .green{padding:0 15px;font-size:14px}
+ .header-actions .theme{width:50px;height:50px}
+}
+@media(max-width:760px){
+ .site-header{height:72px;padding:0 16px;gap:8px}
+ .brand{min-width:0;font-size:28px}
+ .header-actions{gap:6px}
+ .header-actions .radio{width:122px;flex-basis:122px}
+ .header-actions .radio-collapsed{min-height:42px;padding:4px 7px;gap:5px}
+ .header-actions .radio-collapsed .headphones{font-size:18px}
+ .header-actions .radio-collapsed span:nth-child(2) b{font-size:12px}
+ .header-actions .radio-collapsed span:nth-child(2) small{font-size:9px}
+ .header-actions .radio-collapsed .mini-play{width:24px;height:24px;font-size:9px}
+ .header-actions .radio-panel{width:min(310px,calc(100vw - 24px));right:-8px}
+ .hero{min-height:calc(100svh - 72px)}
+ .hero-content{width:auto;margin:0;padding:0 20px 110px}
+ .eyebrow{font-size:10px;letter-spacing:2px;margin-bottom:13px}
+ h1{font-size:clamp(40px,10vw,58px);letter-spacing:-1.5px}
+ .intro{font-size:15px;margin:15px 0 20px}
+ .play{width:min(100%,390px);min-width:0;height:60px;font-size:16px;gap:16px}
+ .play span{height:60px;width:60px}
+}
