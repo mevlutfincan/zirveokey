@@ -964,6 +964,11 @@ nav.lobby-tabs>.lobby-tab:first-child{
 }
 .chat-view-tools .chat-control.chat-clear{border-color:#e4c2b8!important;color:#9c3f2b!important;background:#fff8f6!important}
 .chat-view-tools .chat-control:disabled{opacity:.4!important;cursor:not-allowed!important;transform:none!important}
+.chat-view-tools .chat-control span:last-child{white-space:nowrap!important}
+.chat-view-tools .chat-control.chat-grow{margin-left:7px!important;border-left:2px solid #d5ded6!important}
+.chat-view-tools .chat-control.chat-center,.chat-view-tools .chat-control.chat-shrink{border-color:#cbd8cc!important}
+.chat-view-tools .chat-control.chat-text-reset{background:#edf4ee!important;border-color:#b8cbb9!important}
+.chat-view-tools .chat-control.chat-grow,.chat-view-tools .chat-control.chat-center,.chat-view-tools .chat-control.chat-shrink{background:#f0f3f0!important;color:#46534a!important}
 .chat-messages .chat-message,
 .chat-messages .chat-message>b,
 .chat-messages .chat-message-body,
