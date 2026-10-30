@@ -78,23 +78,26 @@ async function main() {
   const defaultStyle = (await defaultStyleResponse.json()).chatStyle;
   assert.equal(defaultStyle.nameColor, '#111111', 'Varsayılan isim rengi beklenenden farklı.');
   assert.equal(defaultStyle.textColor, '#111111', 'Varsayılan mesaj rengi beklenenden farklı.');
+  assert.equal(defaultStyle.rowColor, '#e8efe8', 'Varsayılan satır rengi beklenenden farklı.');
   const savedStyleResponse = await request('/api/account/chat-style', {
-    method: 'PUT', cookie: cookieA, body: { nameColor: '#7f1d1d', textColor: '#1e3a8a' }
+    method: 'PUT', cookie: cookieA, body: { nameColor: '#7f1d1d', textColor: '#1e3a8a', rowColor: '#dbeafe' }
   });
   const savedStyleData = await savedStyleResponse.json().catch(() => ({}));
   assert.equal(savedStyleResponse.status, 200, 'A renk tercihlerini kaydedemedi: ' + JSON.stringify(savedStyleData));
   const savedStyle = savedStyleData.chatStyle;
   assert.equal(savedStyle.nameColor, '#7f1d1d');
   assert.equal(savedStyle.textColor, '#1e3a8a');
+  assert.equal(savedStyle.rowColor, '#dbeafe');
   const lightStyleResponse = await request('/api/account/chat-style', {
-    method: 'PUT', cookie: cookieA, body: { nameColor: '#ffffff', textColor: '#ffff00' }
+    method: 'PUT', cookie: cookieA, body: { nameColor: '#ffffff', textColor: '#ffff00', rowColor: '#fce7f3' }
   });
   assert.equal(lightStyleResponse.status, 200, 'Beyaz ve sarı gibi açık renkler de kaydedilebilmeli.');
   const lightStyle = (await lightStyleResponse.json()).chatStyle;
   assert.equal(lightStyle.nameColor, '#ffffff');
   assert.equal(lightStyle.textColor, '#ffff00');
+  assert.equal(lightStyle.rowColor, '#fce7f3');
   const restoredStyleResponse = await request('/api/account/chat-style', {
-    method: 'PUT', cookie: cookieA, body: { nameColor: '#7f1d1d', textColor: '#1e3a8a' }
+    method: 'PUT', cookie: cookieA, body: { nameColor: '#7f1d1d', textColor: '#1e3a8a', rowColor: '#dbeafe' }
   });
   assert.equal(restoredStyleResponse.status, 200, 'Açık renklerden sonra renkler yeniden değiştirilemedi.');
 
@@ -109,6 +112,7 @@ async function main() {
   const messageId = sentData.message.id;
   assert.equal(sentData.message.chat_name_color, '#7f1d1d', 'Gönderilen mesajda isim rengi bulunmuyor.');
   assert.equal(sentData.message.chat_text_color, '#1e3a8a', 'Gönderilen mesajda yazı rengi bulunmuyor.');
+  assert.equal(sentData.message.chat_row_color, '#dbeafe', 'Gönderilen mesajda satır rengi bulunmuyor.');
 
   const received = await request('/api/lobby/messages?after=' + (messageId - 1), { cookie: cookieB });
   assert.equal(received.status, 200, 'B kullanıcısı sohbeti okuyamadı.');
@@ -117,6 +121,7 @@ async function main() {
   assert.ok(receivedMessage, 'A mesajı B kullanıcısına ulaşmadı.');
   assert.equal(receivedMessage.chat_name_color, '#7f1d1d', 'B kullanıcısı A seçtiği isim rengini göremedi.');
   assert.equal(receivedMessage.chat_text_color, '#1e3a8a', 'B kullanıcısı A seçtiği mesaj rengini göremedi.');
+  assert.equal(receivedMessage.chat_row_color, '#dbeafe', 'B kullanıcısı A seçtiği satır rengini göremedi.');
 
   const heartbeatA = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: { showOnline: true } });
   const heartbeatB = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
