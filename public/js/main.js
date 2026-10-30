@@ -39,6 +39,29 @@ async function logout(){
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'Çıkış yapılamadı.');
     await refreshAuthState();
+
+async function loadNewMembers(){
+  const target=document.getElementById('newMembersList');
+  if(!target)return;
+  try{
+    const response=await fetch('/api/public/new-members',{credentials:'same-origin',cache:'no-store'});
+    if(!response.ok)throw new Error('Üye listesi alınamadı.');
+    const data=await response.json();
+    if(!data.members?.length){
+      target.innerHTML='<strong>Henüz üye bulunmuyor</strong><small>İlk üyeler burada görünecek.</small>';
+      return;
+    }
+    target.innerHTML='<ul class="member-list-items">'+data.members.map(member=>'<li><span class="member-avatar">'+escapeHtml(member.username.slice(0,1).toLocaleUpperCase('tr-TR'))+'</span><span class="member-name">'+escapeHtml(member.username)+'</span></li>').join('')+'</ul>';
+  }catch(error){
+    target.innerHTML='<strong>Üye listesi şu anda yüklenemiyor</strong><small>Daha sonra tekrar deneyin.</small>';
+  }
+}
+function escapeHtml(value){
+  return String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+loadNewMembers();
+
+
     $('#playStatus').textContent='Hesabından güvenli şekilde çıkış yaptın.';
     closeNav();
   }catch(error){alert(error.message);}
