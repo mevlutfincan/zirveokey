@@ -62,14 +62,62 @@ document.addEventListener('keydown',e=>{
     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
   }
 });
-authForm.addEventListener('submit',e=>{
+const resetToken=new URLSearchParams(window.location.search).get('reset');
+if(resetToken){
+  authMode='reset';
+  $('#modalTitle').textContent='Yeni Şifre Belirle';
+  $('#modalDesc').textContent='Yeni şifreni belirleyerek hesabına tekrar erişebilirsin.';
+  email.hidden=true;email.required=false;
+  username.hidden=true;username.required=false;
+  password.hidden=false;password.required=true;password.value='';
+  password.setAttribute('autocomplete','new-password');
+  password.placeholder='Yeni şifre (en az 10 karakter)';
+  loginOptions.hidden=true;
+  $('#authSubmit').textContent='Şifreyi Güncelle';
+  $('#modalNote').textContent='Sıfırlama bağlantısı 30 dakika geçerlidir.';
+  backdrop.hidden=false;
+  password.focus();
+}
+authForm.addEventListener('submit',async e=>{
   e.preventDefault();
-  const messages={
-    login:'Hesap sistemi henüz sunucuya bağlı değil. Şu anda giriş yapılmadı.',
-    register:'Hesap sistemi henüz sunucuya bağlı değil. Şu anda kayıt oluşturulmadı.',
-    forgot:'Şifre sıfırlama sistemi henüz sunucuya bağlı değil. Şu anda e-posta gönderilmedi.'
-  };
-  $('#modalNote').textContent=messages[authMode];
+  const submit=$('#authSubmit');
+  const original=submit.textContent;
+  submit.disabled=true;
+  submit.textContent='İşleniyor…';
+  $('#modalNote').textContent='';
+  let endpoint='',payload={};
+  if(authMode==='login'){
+    endpoint='/api/auth/login';
+    payload={username:username.value.trim(),password:password.value,rememberMe:$('#rememberMe').checked};
+  }else if(authMode==='register'){
+    endpoint='/api/auth/register';
+    payload={username:username.value.trim(),email:email.value.trim(),password:password.value,rememberMe:$('#rememberMe').checked};
+  }else if(authMode==='forgot'){
+    endpoint='/api/auth/forgot-password';
+    payload={email:email.value.trim()};
+  }else{
+    endpoint='/api/auth/reset-password';
+    payload={token:resetToken,password:password.value};
+  }
+  try{
+    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'İşlem tamamlanamadı. Lütfen tekrar deneyin.');
+    if(authMode==='login'||authMode==='register'){
+      $('#modalNote').textContent='Hoş geldin, '+data.user.username+'. Hesabına başarıyla giriş yaptın.';
+      setTimeout(()=>{backdrop.hidden=true;},900);
+    }else if(authMode==='forgot'){
+      $('#modalNote').textContent=data.message||'Adres kayıtlıysa sıfırlama bağlantısı gönderilecektir.';
+    }else{
+      $('#modalNote').textContent=data.message||'Şifren güncellendi. Yeni şifrenle giriş yapabilirsin.';
+      const cleanUrl=new URL(window.location.href);cleanUrl.searchParams.delete('reset');window.history.replaceState({},'',cleanUrl.pathname+cleanUrl.search+cleanUrl.hash);
+    }
+  }catch(error){
+    $('#modalNote').textContent=error.message;
+  }finally{
+    submit.disabled=false;
+    submit.textContent=original;
+  }
 });
 
 const panel=$('#radioPanel'),expand=$('#radioExpand'),radio=$('#radio'),audio=$('#radioAudio'),play=$('#radioPlay'),status=$('#radioStatus'),volume=$('#volume');
