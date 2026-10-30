@@ -30,7 +30,46 @@
 <div class="volume"><button id="mute" aria-label="Sessize al">◖</button><input id="volume" type="range" min="0" max="100" value="70"><output id="volumeValue">70</output></div>
 <div class="controls"><button id="previous" aria-label="Önceki">|◀</button><button id="radioPlay" class="play-toggle" aria-label="Başlat">▶</button><button id="next" aria-label="Sonraki">▶|</button><span class="bars">▂ ▅ ▇ ▄ ▆</span></div>
 <p class="radio-status" id="radioStatus" role="status" aria-live="polite">Canlı yayın adresi eklendiğinde yayın başlayacak.</p></div><audio id="radioAudio" preload="none"></audio></aside></div>
-</div></section></main>
+</div></section>
+<section class="community-section" id="siralama" aria-labelledby="communityTitle">
+  <div class="community-inner">
+    <div class="section-heading">
+      <span class="section-kicker"><i></i> ZİRVEOKEY TOPLULUĞU <i></i></span>
+      <h2 id="communityTitle">Topluluğun <em>nabzı</em></h2>
+      <p>Yeni yüzleri keşfet, aktif oyuncuları tanı ve puan sıralamasını takip et.</p>
+    </div>
+    <div class="community-grid">
+      <article class="community-card" style="--card-delay:0ms">
+        <div class="community-card-head">
+          <span class="community-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-4A4.5 4.5 0 0 0 3 18.5V20m6.5-10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm8-5.5a3 3 0 0 1 0 5.8m1 4.2a4.5 4.5 0 0 1 2.5 4v1.5"/></svg></span>
+          <span class="community-count">01</span>
+        </div>
+        <h3>Yeni Üyeler</h3>
+        <p>Aramıza yeni katılan oyuncularla tanış.</p>
+        <div class="community-empty"><span class="empty-orbit"><i></i><i></i><i></i></span><strong>Yeni oyuncular burada</strong><small>Üye listesi bağlantısı hazır olduğunda güncel üyeler gösterilecek.</small></div>
+      </article>
+      <article class="community-card" style="--card-delay:110ms">
+        <div class="community-card-head">
+          <span class="community-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19V5m0 14h18M7 15l4-4 3 2 6-7m-1 0h1v1"/></svg></span>
+          <span class="community-count">02</span>
+        </div>
+        <h3>En Çok Aktif Üyeler</h3>
+        <p>Toplulukta en çok vakit geçiren oyuncular.</p>
+        <div class="community-empty"><span class="activity-pulse"><i></i><i></i><i></i><i></i><i></i></span><strong>Aktiflik listesi hazırlanıyor</strong><small>Gerçek çevrimiçi ve aktivite verileri bağlandığında sıralama gösterilecek.</small></div>
+      </article>
+      <article class="community-card" style="--card-delay:220ms">
+        <div class="community-card-head">
+          <span class="community-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9z"/></svg></span>
+          <span class="community-count">03</span>
+        </div>
+        <h3>Puan Sıralaması</h3>
+        <p>Başarı puanlarına göre zirvedeki oyuncular.</p>
+        <div class="community-empty"><span class="score-medal">✦</span><strong>Puan tablosu yakında</strong><small>Gerçek oyun puanları sisteme bağlandığında liderlik tablosu burada yer alacak.</small></div>
+      </article>
+    </div>
+  </div>
+</section>
+</main>
 
 <div class="backdrop" id="backdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="close" id="modalClose">×</button><div class="modal-brand">♛ <b>ZirveOkey</b></div><h2 id="modalTitle">Giriş Yap</h2><p id="modalDesc">Hesabına giriş yap ve oyuna katıl.</p><form id="authForm"><input id="email" type="email" placeholder="E-posta adresi" aria-label="E-posta adresi" autocomplete="email" hidden><input type="text" placeholder="Kullanıcı adı" aria-label="Kullanıcı adı" autocomplete="username" required><input type="password" placeholder="Şifre" aria-label="Şifre" autocomplete="current-password" required><button class="green" id="authSubmit">Giriş Yap</button></form><small id="modalNote" role="status" aria-live="polite">Hesap işlemleri sunucu bağlantısı eklendiğinde etkinleştirilecek.</small></section></div>
 </body></html>
