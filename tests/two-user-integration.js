@@ -127,6 +127,17 @@ async function main() {
   const heartbeatB = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
   assert.equal(heartbeatA.status, 204, 'A çevrimiçi heartbeat başarısız.');
   assert.equal(heartbeatB.status, 204, 'B çevrimiçi heartbeat başarısız.');
+  const styleUpdate = await request('/api/account/chat-style', {
+    method: 'PUT', cookie: cookieA, body: { nameColor: '#008000', textColor: '#663399' }
+  });
+  assert.equal(styleUpdate.status, 200, 'A renk değişikliğini kaydedemedi.');
+  const liveStylesResponse = await request('/api/lobby/chat-styles', { cookie: cookieB });
+  assert.equal(liveStylesResponse.status, 200, 'B canlı sohbet renklerini alamadı.');
+  const liveStyles = (await liveStylesResponse.json()).members;
+  const liveStyleA = liveStyles.find(member => member.username === users[0].username);
+  assert.ok(liveStyleA, 'B çevrimiçi A kullanıcısının renk bilgisini alamadı.');
+  assert.equal(liveStyleA.chat_name_color, '#008000', 'B A kullanıcısının yeni isim rengini anlık renk akışında göremedi.');
+  assert.equal(liveStyleA.chat_text_color, '#663399', 'B A kullanıcısının yeni mesaj rengini anlık renk akışında göremedi.');
 
   let onlineResponse = await request('/api/presence/online');
   let online = await onlineResponse.json();
