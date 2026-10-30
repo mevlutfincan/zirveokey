@@ -952,12 +952,12 @@ nav.lobby-tabs>.lobby-tab:first-child{
 }
 
 
-/* Per-user lobby chat controls: clear own view, adjust text, and center messages. */
+/* Per-user lobby chat controls: clear own view and adjust text size. */
 .chat-view-tools{flex-wrap:wrap!important;gap:5px!important}
 .chat-view-tools .chat-control.chat-clear,
 .chat-view-tools .chat-control.chat-text-grow,
 .chat-view-tools .chat-control.chat-text-shrink,
-.chat-view-tools .chat-control.chat-text-center{
+.chat-view-tools .chat-control.chat-text-reset{
  min-width:0!important;height:34px!important;padding:0 9px!important;
  border:1px solid #cbd8cc!important;border-radius:8px!important;
  background:#f7faf7!important;color:#344638!important;
@@ -971,11 +971,6 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .chat-messages .chat-system{
  font-size:var(--chat-message-size,15px)!important;
 }
-.chat-messages.chat-text-centered .chat-message{
- justify-content:center!important;text-align:center!important;
-}
-.chat-messages.chat-text-centered .chat-message-time{margin-right:4px!important}
-.chat-messages.chat-text-centered .chat-system{text-align:center!important}
 @media(max-width:760px){
  .chat-panel .chat-heading{align-items:flex-start!important;flex-wrap:wrap!important}
  .chat-view-tools{width:100%!important;justify-content:flex-start!important;gap:4px!important}
