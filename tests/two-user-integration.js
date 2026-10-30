@@ -81,8 +81,9 @@ async function main() {
   const savedStyleResponse = await request('/api/account/chat-style', {
     method: 'PUT', cookie: cookieA, body: { nameColor: '#7f1d1d', textColor: '#1e3a8a' }
   });
-  assert.equal(savedStyleResponse.status, 200, 'A renk tercihlerini kaydedemedi: ' + await savedStyleResponse.text());
-  const savedStyle = (await savedStyleResponse.json()).chatStyle;
+  const savedStyleData = await savedStyleResponse.json().catch(() => ({}));
+  assert.equal(savedStyleResponse.status, 200, 'A renk tercihlerini kaydedemedi: ' + JSON.stringify(savedStyleData));
+  const savedStyle = savedStyleData.chatStyle;
   assert.equal(savedStyle.nameColor, '#7f1d1d');
   assert.equal(savedStyle.textColor, '#1e3a8a');
   const invalidStyle = await request('/api/account/chat-style', {
