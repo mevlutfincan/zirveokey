@@ -851,3 +851,22 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .header-user{gap:4px}
  .user-avatar{width:29px;height:29px}
 }
+
+/* Member settings dialog */
+.settings-dialog{width:min(460px,calc(100vw - 28px));max-width:none;padding:0;border:1px solid #344737;border-radius:18px;background:#101d14;color:#e5eee2;box-shadow:0 24px 80px #000b}
+.settings-dialog::backdrop{background:#020804b8;backdrop-filter:blur(5px)}
+.settings-dialog form{padding:22px}
+.settings-dialog .dialog-heading{margin-bottom:18px}
+.settings-group{display:grid;gap:4px;margin:16px 0}
+.settings-group h3{margin:0 0 5px;color:#a6d38e;font-size:10px;letter-spacing:1.4px;text-transform:uppercase}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 2px;border-bottom:1px solid #ffffff12;cursor:pointer}
+.setting-row span{display:grid;gap:4px}
+.setting-row b{font-size:12px;font-weight:700}
+.setting-row small{color:#98a99a;font-size:10px}
+.setting-row input{width:17px;height:17px;accent-color:#8be85a;flex:0 0 auto}
+.member-reduce-motion *, .member-reduce-motion *::before, .member-reduce-motion *::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}
+.member-light-theme{--bg:#edf2eb;--text:#1b2a1e;--muted:#637365;--line:#cbd8c8;background:#edf2eb!important;color:#1b2a1e!important}
+.member-light-theme .game-header,.member-light-theme .lobby-tabs{background:#f7faf6!important;border-color:#d5dfd2!important}
+.member-light-theme .header-center,.member-light-theme .header-user,.member-light-theme .lobby-tab{color:#243526}
+.member-light-theme .icon-button{background:#fff!important;color:#243526!important;border-color:#cbd8c8!important}
+@media(max-width:520px){.settings-dialog form{padding:17px}.settings-dialog .dialog-heading h2{font-size:20px}}
