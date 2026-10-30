@@ -9,6 +9,24 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zirveokey_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d zirveokey_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/zirveokey_test
+      SESSION_SECRET: ci-only-session-secret-not-for-production
+      NODE_ENV: test
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -22,6 +40,8 @@ jobs:
         run: |
           node --check server.js
           node --check public/js/main.js
+          node --check public/js/oyun.js
+          node --check tests/two-user-integration.js
       - name: Smoke-test homepage and health endpoint
         run: |
           npm start > /tmp/zirveokey.log 2>&1 &
@@ -44,3 +64,5 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'panel.inert=!open'
           test -s public/assets/hero-background.png
           kill "$(cat /tmp/zirveokey.pid)"
+      - name: Two-user membership, chat and presence integration test
+        run: node tests/two-user-integration.js
