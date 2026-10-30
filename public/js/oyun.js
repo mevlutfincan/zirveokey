@@ -280,7 +280,7 @@ $('#chatTextGrow').addEventListener('click',()=>{
   const createdAt=new Date(message.created_at);
   time.textContent=Number.isNaN(createdAt.getTime())?'--:--':createdAt.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
   time.className='chat-message-time';
-  const author=document.createElement('b');author.className='chat-message-author';author.textContent=String(message.username||'Üye')+':';
+  const author=document.createElement('b');author.className='chat-message-author';author.textContent=String(message.username||'Üye')+' :';
   const nameColor=validChatHex(message.chat_name_color)?message.chat_name_color:defaultChatStyle.nameColor;
   const textColor=validChatHex(message.chat_text_color)?message.chat_text_color:defaultChatStyle.textColor;
   item.style.setProperty('--chat-author-color',nameColor);item.style.setProperty('--chat-body-color',textColor);item.style.setProperty('--chat-row-color',fixedChatRowColor);
