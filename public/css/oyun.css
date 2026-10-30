@@ -1013,7 +1013,7 @@ nav.lobby-tabs>.lobby-tab:first-child{
 
 /* Each lobby message gets a soft translucent light row so the existing black text stays readable. */
 .chat-messages .chat-message{
- background:rgba(232,239,232,.78)!important;
+ background:var(--chat-row-color,rgba(232,239,232,.78))!important;
  border:1px solid rgba(255,255,255,.22)!important;
  border-radius:8px!important;
  padding:7px 10px!important;
