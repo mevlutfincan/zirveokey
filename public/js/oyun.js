@@ -44,16 +44,28 @@ $('#startGame').addEventListener('click',()=>notify('Oyun motoru henüz bağlı 
 $('#tableView').addEventListener('pointerdown',resetIdleTimer);
 $('#tableView').addEventListener('keydown',resetIdleTimer);
 
-let chatFontSize=14;
-let chatCentered=false;
-const chatMessages=$('#chatMessages');
-function applyChatTextSettings(){
- chatMessages.style.setProperty('--chat-message-size',chatFontSize+'px');
- chatMessages.classList.toggle('chat-text-centered',chatCentered);
+const chatPanel=$('.chat-panel');
+const mainColumn=$('.main-column');
+const chatDefaultHeight=390;
+function setChatPanelMode(mode){
+ chatPanel.classList.remove('chat-panel-grown','chat-panel-centered');
+ mainColumn.style.setProperty('--chat-panel-height',chatDefaultHeight+'px');
+ chatPanel.style.setProperty('--chat-panel-height',chatDefaultHeight+'px');
+ if(mode==='grow'){
+  mainColumn.style.setProperty('--chat-panel-height','560px');
+  chatPanel.style.setProperty('--chat-panel-height','560px');
+  chatPanel.classList.add('chat-panel-grown');
+ }else if(mode==='center'){
+  chatPanel.classList.add('chat-panel-centered');
+ }
+ $('#chatPanelGrow').classList.toggle('active',mode==='grow');
+ $('#chatPanelCenter').classList.toggle('active',mode==='center');
+ $('#chatPanelShrink').classList.toggle('active',mode==='normal');
 }
-$('#chatTextSmaller').addEventListener('click',()=>{chatFontSize=Math.max(11,chatFontSize-1);applyChatTextSettings()});
-$('#chatTextLarger').addEventListener('click',()=>{chatFontSize=Math.min(22,chatFontSize+1);applyChatTextSettings()});
-$('#chatTextCenter').addEventListener('click',()=>{chatCentered=!chatCentered;applyChatTextSettings();$('#chatTextCenter').classList.toggle('active',chatCentered)});
+$('#chatPanelGrow').addEventListener('click',()=>setChatPanelMode('grow'));
+$('#chatPanelCenter').addEventListener('click',()=>setChatPanelMode('center'));
+$('#chatPanelShrink').addEventListener('click',()=>setChatPanelMode('normal'));
+setChatPanelMode('normal');$('#chatTextCenter').classList.toggle('active',chatCentered)});
 applyChatTextSettings();
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('#chatInput');if(!input.value.trim())return;notify('Sohbet sunucusu bağlı olmadığı için mesaj gönderilmedi.');input.value='';});
 renderTabs();renderLobby();renderRack();
