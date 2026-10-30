@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
-<link rel="stylesheet" href="/css/oyun.css?v=game-ui-20261030-3">
+<link rel="stylesheet" href="/css/oyun.css?v=game-ui-20261030-4">
 <script defer src="/js/oyun.js?v=game-ui-20261030-3"></script>
 </head>
 <body class="game-page">
@@ -53,6 +53,6 @@
   <section class="side-panel chat-panel"><div class="side-heading"><div><span class="eyebrow">SOHBET</span><h2>Lobi sohbeti</h2></div><span class="chat-lock">LOBI</span></div><div class="chat-messages" id="chatMessages" aria-live="polite"><div class="chat-system">ZirveOkey lobisine hoş geldin. Sohbet bağlantısı etkinleştirildiğinde mesajlar burada görünecek.</div></div><form class="chat-form" id="chatForm"><input id="chatInput" type="text" maxlength="300" placeholder="Mesajını yaz..." autocomplete="off" aria-label="Sohbet mesajı"><button type="submit" aria-label="Mesaj gönder">➤</button></form><small class="chat-footnote">Sohbet sunucusu bağlantısı bekleniyor</small></section>
 </main>
 
-<dialog class="create-dialog" id="createDialog"><form method="dialog" id="createTableForm"><div class="dialog-heading"><div><span class="eyebrow">YENİ OYUN</span><h2>Masa oluştur</h2></div><button class="icon-button" value="cancel" aria-label="Kapat">×</button></div><label>Masa adı<input id="newTableName" maxlength="22" value="Klasik Okey" required></label><div class="dialog-grid"><label>Oyun türü<select id="gameType"><option>Klasik Okey</option><option>101 Okey</option></select></label><label>Masa düzeni<select id="tablePrivacy"><option>Açık masa</option><option>Şifreli masa</option></select></label></div><div class="dialog-actions"><button class="subtle-button" value="cancel">Vazgeç</button><button class="primary-button" id="confirmCreateTable" value="default">Masayı oluştur</button></div><p class="dialog-note">Bu aşamada masa oluşturma yalnızca arayüz önizlemesidir; diğer oyunculara açılmaz.</p></form></dialog>
+<dialog class="create-dialog" id="createDialog"><form method="dialog" id="createTableForm"><div class="dialog-heading"><div><span class="eyebrow">YENİ OYUN</span><h2>Masa oluştur</h2></div><button class="icon-button" value="cancel" aria-label="Kapat">×</button></div><label>Masa adı<input id="newTableName" maxlength="22" value="Klasik Okey" required></label><div class="dialog-grid"><label>Oyun türü<select id="gameType"><option>Klasik Okey</option><option>101 Okey</option></select></label><label>Masa düzeni<select id="tablePrivacy"><option>Açık masa</option><option>Şifreli masa</option></select></label><label class="full-field">Masa görünümü<select id="tableStyle"><option value="Standart">Standart</option><option value="Renkli">Renkli</option></select></label></div><div class="dialog-actions"><button class="subtle-button" value="cancel">Vazgeç</button><button class="primary-button" id="confirmCreateTable" value="default">Masayı oluştur</button></div><p class="dialog-note">Bu aşamada masa oluşturma yalnızca arayüz önizlemesidir; diğer oyunculara açılmaz.</p></form></dialog>
 <div class="toast" id="gameToast" role="status" aria-live="polite"></div>
 </body></html>
