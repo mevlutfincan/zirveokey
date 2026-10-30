@@ -162,6 +162,41 @@ document.addEventListener('click',e=>{
 });
 let chatLastId=0,chatBusy=false;
  const renderedChatMessageIds=new Set();
+ const chatMessagesBox=$('#chatMessages');
+ function chatPreferenceKey(){
+  const username=($('#gameUsername')?.textContent||'misafir').trim().toLocaleLowerCase('tr-TR');
+  return 'zirveokey:lobby-chat-preferences:'+encodeURIComponent(username);
+ }
+ function readChatPreferences(){
+  try{return JSON.parse(localStorage.getItem(chatPreferenceKey())||'{}')||{};}catch(_){return {};}
+ }
+ function saveChatPreferences(prefs){
+  try{localStorage.setItem(chatPreferenceKey(),JSON.stringify(prefs));}catch(_){}
+ }
+ function applyChatTextPreferences(){
+  const prefs=readChatPreferences();
+  const size=Math.min(22,Math.max(12,Number(prefs.textSize)||15));
+  chatMessagesBox.style.setProperty('--chat-message-size',size+'px');
+  chatMessagesBox.classList.toggle('chat-text-centered',prefs.centered===true);
+  $('#chatTextCenter').classList.toggle('active',prefs.centered===true);
+  $('#chatTextGrow').disabled=size>=22;
+  $('#chatTextShrink').disabled=size<=12;
+ }
+ $('#chatTextGrow').addEventListener('click',()=>{
+  const prefs=readChatPreferences();prefs.textSize=Math.min(22,(Number(prefs.textSize)||15)+1);saveChatPreferences(prefs);applyChatTextPreferences();
+ });
+ $('#chatTextShrink').addEventListener('click',()=>{
+  const prefs=readChatPreferences();prefs.textSize=Math.max(12,(Number(prefs.textSize)||15)-1);saveChatPreferences(prefs);applyChatTextPreferences();
+ });
+ $('#chatTextCenter').addEventListener('click',()=>{
+  const prefs=readChatPreferences();prefs.centered=!prefs.centered;saveChatPreferences(prefs);applyChatTextPreferences();
+ });
+ $('#chatClearMessages').addEventListener('click',()=>{
+  const prefs=readChatPreferences();prefs.clearBeforeId=Math.max(Number(prefs.clearBeforeId)||0,chatLastId);saveChatPreferences(prefs);
+  chatMessagesBox.replaceChildren();renderedChatMessageIds.clear();
+  notify('Sohbet görünümün temizlendi.');
+ });
+ applyChatTextPreferences();
  function appendLobbyMessage(message){
   if(!message||message.id===undefined||message.id===null)return;
   const id=String(message.id);
@@ -169,6 +204,7 @@ let chatLastId=0,chatBusy=false;
   renderedChatMessageIds.add(id);
   const numericId=Number(id);
   if(Number.isFinite(numericId))chatLastId=Math.max(chatLastId,numericId);
+  if(Number.isFinite(numericId)&&numericId<=(Number(readChatPreferences().clearBeforeId)||0))return;
   const item=document.createElement('div');item.className='chat-message';item.dataset.messageId=id;
   const time=document.createElement('small');
   const createdAt=new Date(message.created_at);
