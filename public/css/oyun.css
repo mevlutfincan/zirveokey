@@ -344,3 +344,9 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .chat-panel{height:340px!important;min-height:340px!important}
 }
 
+/* Further expand lobby chat upward */
+@media(min-width:761px){
+ .main-column{grid-template-rows:minmax(0,1fr) 390px!important}
+ .chat-panel{height:390px!important;min-height:390px!important}
+}
+
