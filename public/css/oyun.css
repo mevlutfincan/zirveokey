@@ -350,3 +350,53 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .chat-panel{height:390px!important;min-height:390px!important}
 }
 
+
+
+/* Refine lobby chat appearance without changing its placement or dimensions */
+.chat-panel{
+ border:1px solid #cbd5cc!important;
+ border-top:3px solid #e47732!important;
+ border-radius:12px 12px 10px 10px!important;
+ box-shadow:0 5px 18px rgba(22,38,27,.10)!important;
+ overflow:hidden!important;
+}
+.chat-panel .side-heading{
+ min-height:54px!important;
+ padding:0 18px!important;
+ display:flex!important;
+ align-items:center!important;
+ background:#f5f7f5!important;
+ border-bottom:1px solid #dce3dc!important;
+}
+.chat-panel .side-heading h2{
+ margin:0!important;
+ color:#17251b!important;
+ font-size:17px!important;
+ font-weight:750!important;
+ letter-spacing:.1px!important;
+}
+.chat-messages{
+ padding:14px 16px!important;
+ background:#f8faf8!important;
+}
+.chat-form{
+ padding:12px 16px!important;
+ background:#fff!important;
+ border-top:1px solid #dce3dc!important;
+}
+.chat-form input{
+ border:1px solid #b9c7bb!important;
+ background:#fff!important;
+ box-shadow:inset 0 1px 2px rgba(20,35,23,.04)!important;
+}
+.chat-form input:focus{
+ outline:2px solid rgba(228,119,50,.22)!important;
+ border-color:#e47732!important;
+}
+.chat-form button{
+ background:#df742f!important;
+ border:1px solid #cf6425!important;
+ color:#fff!important;
+ border-radius:10px!important;
+ box-shadow:0 2px 6px rgba(207,100,37,.22)!important;
+}
