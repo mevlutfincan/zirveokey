@@ -258,6 +258,8 @@ $('#memberSettingsForm').addEventListener('submit',e=>{
  try{localStorage.setItem('zirveMemberSettings',JSON.stringify(values))}catch{}
  applyMemberSettings(values);
  settingsDialog.close();
+ sendPresenceHeartbeat();
+ loadOnlineMembers();
  notify('Üye ayarların kaydedildi.');
 });
 settingsDialog.addEventListener('click',e=>{if(e.target===settingsDialog)settingsDialog.close()});
