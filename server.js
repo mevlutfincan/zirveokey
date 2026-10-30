@@ -230,11 +230,22 @@ app.put('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
   res.json({ ok: true, chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color, rowColor: result.rows[0].chat_row_color } });
 }));
 
+app.get('/api/lobby/chat-styles', dbRequired, asyncRoute(async (_req, res) => {
+  const result = await pool.query(`
+    SELECT u.id,u.username,u.chat_name_color,u.chat_text_color
+    FROM users u
+    JOIN user_presence p ON p.user_id=u.id
+    WHERE u.is_active=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
+    ORDER BY u.id ASC
+  `);
+  res.json({ members: result.rows });
+}));
+
 app.get('/api/lobby/messages', dbRequired, asyncRoute(async (req, res) => {
   const afterId = Math.max(0, Number.parseInt(req.query.after || '0', 10) || 0);
   const result = afterId
-    ? await pool.query('SELECT m.id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id>$1 ORDER BY m.id ASC LIMIT 100', [afterId])
-    : await pool.query('SELECT m.id,m.username,m.message,m.created_at,m.chat_name_color,m.chat_text_color,m.chat_row_color FROM (SELECT lm.id,lm.username,lm.message,lm.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages lm JOIN users u ON u.id=lm.user_id ORDER BY lm.id DESC LIMIT 50) m ORDER BY m.id ASC');
+    ? await pool.query('SELECT m.id,m.user_id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id>$1 ORDER BY m.id ASC LIMIT 100', [afterId])
+    : await pool.query('SELECT m.id,m.user_id,m.username,m.message,m.created_at,m.chat_name_color,m.chat_text_color,m.chat_row_color FROM (SELECT lm.id,lm.user_id,lm.username,lm.message,lm.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages lm JOIN users u ON u.id=lm.user_id ORDER BY lm.id DESC LIMIT 50) m ORDER BY m.id ASC');
   res.json({ messages: result.rows });
 }));
 
@@ -247,7 +258,7 @@ app.post('/api/lobby/messages', dbRequired, authLimiter, asyncRoute(async (req, 
     'INSERT INTO lobby_messages(user_id,username,message) VALUES($1,$2,$3) RETURNING id',
     [user.id, user.username, message]
   );
-  const decorated = await pool.query('SELECT m.id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id=$1', [result.rows[0].id]);
+  const decorated = await pool.query('SELECT m.id,m.user_id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id=$1', [result.rows[0].id]);
   await pool.query('DELETE FROM lobby_messages WHERE id < (SELECT GREATEST(COALESCE(MAX(id),0)-500,0) FROM lobby_messages)');
   res.status(201).json({ message: decorated.rows[0] });
 }));
