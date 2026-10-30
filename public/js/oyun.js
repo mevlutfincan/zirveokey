@@ -180,7 +180,7 @@ let chatLastId=0,chatBusy=false;
   if(typeof Intl!=='undefined'&&Intl.Segmenter){
    const segmenter=new Intl.Segmenter('tr',{granularity:'grapheme'});
    for(const part of segmenter.segment(messageText)){
-    if(/[\\p{Extended_Pictographic}\\p{Regional_Indicator}]/u.test(part.segment)){
+    if(/[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(part.segment)){
      const emoji=document.createElement('span');emoji.className='chat-message-emoji';emoji.textContent=part.segment;body.append(emoji);
     }else body.append(document.createTextNode(part.segment));
    }
