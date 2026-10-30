@@ -51,3 +51,94 @@
 
 .lobby-table-card.colored-table{border-color:#d7b96c66;background:linear-gradient(145deg,#282318,#151d14)}
 .lobby-table-card.colored-table:before{content:'RENKLİ MASA';display:inline-block;margin-bottom:8px;padding:3px 7px;border-radius:5px;background:#d7b96c20;color:#e3c77d;font-size:8px;font-weight:900;letter-spacing:1px}
+
+
+/* ZirveOkey lobby visual system — focused on the lobby, not the table UI */
+:root{--bg:#080f0c;--panel:#111d17;--panel2:#16251c;--line:rgba(190,213,190,.12);--text:#f1f5ef;--muted:#9aaa9d;--green:#a6e58b;--green2:#70c96b;--gold:#cbb47a}
+body.game-page{background:radial-gradient(ellipse at 14% 0%,rgba(89,142,86,.16),transparent 36%),radial-gradient(ellipse at 90% 16%,rgba(196,166,103,.07),transparent 30%),#080f0c}
+.game-header{height:82px;padding:0 clamp(18px,4vw,64px);background:rgba(8,15,12,.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(190,213,190,.1)}
+.game-brand{font-size:28px;letter-spacing:-1.2px}.brand-crown{color:var(--gold);text-shadow:0 0 16px #cbb47a55}
+.game-brand b{color:#b6e99a}.game-brand small{color:#8f9e91;letter-spacing:2.2px}
+.header-center{padding:10px 16px;border:1px solid var(--line);border-radius:30px;background:#ffffff04;font-size:10px;letter-spacing:1.8px}
+.live-dot{background:#a5e58a;box-shadow:0 0 0 4px #a5e58a17,0 0 14px #a5e58a88}
+.user-avatar{background:linear-gradient(145deg,#304b37,#17281d);border:1px solid #b5d7a52b;color:#d8efcb}
+.lobby-tabs{height:62px;padding:0 clamp(14px,4vw,64px);gap:12px;background:rgba(12,21,15,.88);backdrop-filter:blur(16px);border-bottom-color:#c4d7c01a}
+.lobby-tab{padding:0 18px;border-radius:11px 11px 0 0;font-size:12px;transition:color .2s,background .2s}
+.lobby-tab.active{color:#d5f4c3;background:linear-gradient(180deg,#a6e58b13,transparent)}
+.lobby-tab.active:after{height:3px;border-radius:5px 5px 0 0;background:linear-gradient(90deg,#8bcf73,#d4e9a2);box-shadow:0 0 14px #9cdb7c66}
+.tab-add{align-self:center;height:38px;padding:0 16px;border:1px solid #a6e58b38;border-radius:10px;color:#d8efcb;background:linear-gradient(135deg,#9cda7b18,#cbb47a0b);transition:transform .2s,border-color .2s,box-shadow .2s}
+.tab-add:hover{transform:translateY(-2px);border-color:#b5e99a99;box-shadow:0 8px 24px #7bbd5d1f}
+.game-layout{width:min(1540px,calc(100% - clamp(28px,7vw,112px)));padding:38px 0 54px;column-gap:26px;row-gap:24px}
+.section-heading{align-items:center;margin-bottom:25px}
+.section-heading .eyebrow{color:#b4d59d;font-size:9px;letter-spacing:2.5px}
+.section-heading h1{font-size:clamp(27px,3vw,36px);letter-spacing:-1.3px;font-weight:760}
+.section-heading p{font-size:13px;color:#a5b2a6}
+.lobby-stat{min-width:112px;grid-template-columns:9px auto;padding:12px 15px;border:1px solid #a6e58b20;border-radius:13px;background:linear-gradient(145deg,#a6e58b0c,#ffffff03);box-shadow:inset 0 1px #ffffff08}
+.lobby-stat b{font-size:19px;color:#e7f5df}.lobby-stat small{font-size:10px;color:#9cae9e}
+.stat-pulse{background:#a5e58a;box-shadow:0 0 0 5px #a5e58a16,0 0 14px #a5e58a77}
+.lobby-empty{position:relative;isolation:isolate;min-height:390px;border:1px solid #b5d7a51c;border-radius:22px;background:linear-gradient(135deg,rgba(25,43,31,.94),rgba(13,25,17,.94));box-shadow:0 20px 65px #0003,inset 0 1px #ffffff0a;overflow:hidden}
+.lobby-empty:before,.lobby-empty:after{content:"";position:absolute;z-index:-1;border-radius:50%;pointer-events:none}
+.lobby-empty:before{width:380px;height:380px;top:-250px;left:calc(50% - 190px);background:#a6e58b12;filter:blur(20px)}
+.lobby-empty:after{width:240px;height:240px;bottom:-190px;right:-80px;background:#cbb47a0b;filter:blur(22px)}
+.empty-emblem{width:82px;height:82px;border-radius:25px;background:linear-gradient(145deg,#a6e58b20,#cbb47a0b);border:1px solid #c0e6a83d;color:#c4e9a9;font-size:39px;box-shadow:0 12px 36px #0003,0 0 35px #a6e58b10;animation:crestFloat 4s ease-in-out infinite}
+.lobby-empty h2{margin:23px 0 7px;font-size:22px;letter-spacing:-.4px}
+.lobby-empty p{max-width:340px;margin:0 0 23px;color:#a5b2a6;font-size:12px;line-height:1.65}
+.primary-button{position:relative;isolation:isolate;min-height:46px;padding:0 22px;border:1px solid #d3f1b080;border-radius:12px;background:linear-gradient(115deg,#b9ed98,#80cf72 55%,#a9df8a);color:#102014;font-size:12px;font-weight:850;letter-spacing:.1px;box-shadow:0 8px 24px #83c96b25,inset 0 1px #ffffffa6;overflow:hidden;transition:transform .22s,box-shadow .22s,filter .22s}
+.primary-button:before{content:"";position:absolute;z-index:-1;top:-60%;left:-55%;width:42%;height:220%;transform:rotate(24deg);background:linear-gradient(90deg,transparent,#ffffff8a,transparent);transition:left .55s ease}
+.primary-button:hover{transform:translateY(-3px);box-shadow:0 13px 30px #83c96b40,inset 0 1px #ffffffb8;filter:saturate(1.08)}
+.primary-button:hover:before{left:125%}
+.primary-button:active{transform:translateY(-1px) scale(.985)}
+.tab-add,.subtle-button,.icon-button,.chat-form button{transition:transform .2s,border-color .2s,background .2s,box-shadow .2s}
+.subtle-button{border-color:#b8d3b51e;background:linear-gradient(135deg,#ffffff09,#ffffff03);color:#dbe8d8}
+.subtle-button:hover{transform:translateY(-2px);border-color:#a6e58b70;background:#a6e58b0c;box-shadow:0 8px 20px #0003}
+.right-column{gap:18px}
+.side-panel{border:1px solid #b5d7a51c;border-radius:17px;background:linear-gradient(145deg,rgba(22,36,27,.96),rgba(13,24,17,.96));box-shadow:0 14px 40px #0002,inset 0 1px #ffffff08}
+.online-panel{min-height:285px}
+.side-heading{padding:19px 20px 16px;border-bottom-color:#c4d7c014}
+.side-heading .eyebrow{color:#b4d59d;font-size:8px;letter-spacing:2px}
+.side-heading h2{font-size:14px;letter-spacing:-.2px}
+.online-badge,.chat-lock{padding:6px 10px;border-color:#a6e58b24;background:#a6e58b0a;color:#c6e4b7;font-size:9px;letter-spacing:.7px}
+.online-badge i{background:#a5e58a;box-shadow:0 0 10px #a5e58a88}
+.side-empty{min-height:210px}
+.side-empty>span{width:48px;height:48px;display:grid;place-items:center;border-radius:15px;background:#a6e58b0d;border:1px solid #a6e58b1c;color:#b7dca0;font-size:24px}
+.side-empty b{font-size:11px;color:#e1ebdf}
+.side-empty small{color:#91a193}
+.chat-panel{border-radius:17px;background:linear-gradient(145deg,rgba(22,36,27,.96),rgba(13,24,17,.96))}
+.chat-panel .side-heading{background:#ffffff02}
+.chat-messages{padding:16px 18px}
+.chat-system{border:1px solid #b5d7a510;border-radius:11px;background:#ffffff05;color:#a9b9aa}
+.chat-form{padding:13px 16px;border-top-color:#c4d7c014}
+.chat-form input{height:42px;border-color:#b5d7a523;border-radius:11px;background:#08120c;color:#f1f5ef}
+.chat-form input:focus{border-color:#a6e58b88;box-shadow:0 0 0 3px #a6e58b12}
+.chat-form button{width:42px;border-radius:11px;background:linear-gradient(145deg,#b6e994,#7ecb70);color:#102014;font-size:18px;box-shadow:0 5px 15px #83c96b22}
+.chat-form button:hover{transform:translateY(-2px);box-shadow:0 8px 20px #83c96b40}
+.chat-footnote{color:#839586;padding-bottom:14px}
+.lobby-table-grid{gap:14px}
+.lobby-table-card{border-color:#b5d7a51e;border-radius:15px;background:linear-gradient(145deg,#19291e,#111e16);box-shadow:0 10px 26px #0002;transition:transform .22s,border-color .22s,box-shadow .22s}
+.lobby-table-card:hover{transform:translateY(-4px);border-color:#a6e58b70;box-shadow:0 16px 32px #0004,0 0 24px #a6e58b0d}
+.table-card-seats span{border-color:#b5d7a518;background:#ffffff04;color:#aebdac}
+@keyframes crestFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+@media(max-width:760px){
+ .game-header{height:70px;padding:0 14px}
+ .header-center{padding:7px 10px;font-size:8px}
+ .game-layout{width:calc(100% - 24px);padding:24px 0 34px;row-gap:18px}
+ .section-heading h1{font-size:27px}
+ .lobby-empty{min-height:340px;padding:24px 16px}
+ .right-column{display:block}
+ .online-panel{min-height:210px;margin-bottom:14px}
+ .chat-panel{min-height:240px}
+ .chat-panel .side-heading{padding:15px 16px}
+ .chat-messages{min-height:120px;max-height:160px}
+ .chat-form{padding:12px}
+}
+@media(max-width:430px){
+ .game-header{height:64px}
+ .header-center{display:none}
+ .game-layout{width:calc(100% - 20px);padding-top:19px}
+ .section-heading h1{font-size:25px}
+ .lobby-stat{min-width:88px;padding:9px 10px}
+ .lobby-empty{min-height:315px}
+ .tab-add{width:38px;justify-content:center;padding:0;font-size:0}
+ .tab-add span{font-size:20px}
+}
