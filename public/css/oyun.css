@@ -264,3 +264,11 @@ nav.lobby-tabs>.lobby-tab:first-child{
  nav.lobby-tabs>.lobby-tab:first-child{padding-left:10px!important}
 }
 
+/* Lobby workspace surface: clean white playing area */
+@media(min-width:761px){
+ .lobby-empty{background:#fff!important}
+}
+@media(max-width:760px){
+ .lobby-empty{background:#fff!important}
+}
+
