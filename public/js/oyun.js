@@ -49,36 +49,39 @@ const mainColumn=$('.main-column');
 const lobbyTabs=$('.lobby-tabs');
 const chatDefaultHeight=390;
 let chatPanelMode='normal';
-function clearChatPanelPosition(){
+function resetChatPanelInlineStyles(){
  ['position','left','right','top','bottom','width','height','minHeight','maxHeight','transform','zIndex','marginTop'].forEach(p=>chatPanel.style[p]='');
  chatPanel.classList.remove('chat-panel-grown','chat-panel-centered');
  mainColumn.classList.remove('chat-mode-centered');
 }
 function applyChatPanelMode(){
- clearChatPanelPosition();
- if(chatPanelMode==='grow'||chatPanelMode==='center'){
-  const columnRect=mainColumn.getBoundingClientRect();
-  chatPanel.style.position='fixed';
-  chatPanel.style.left=columnRect.left+'px';
-  chatPanel.style.right='auto';
-  chatPanel.style.width=columnRect.width+'px';
-  chatPanel.style.zIndex='30';
-  if(chatPanelMode==='grow'){
-   const tabsRect=lobbyTabs.getBoundingClientRect();
-   const normalRect=$('.chat-panel').getBoundingClientRect();
-   chatPanel.style.top=(tabsRect.bottom+2)+'px';
-   chatPanel.style.bottom=Math.max(0,window.innerHeight-normalRect.bottom)+'px';
-   chatPanel.style.height='auto';
-   chatPanel.style.minHeight='0';
-   chatPanel.classList.add('chat-panel-grown');
-  }else{
-   chatPanel.style.top='50%';
-   chatPanel.style.bottom='auto';
-   chatPanel.style.height=chatDefaultHeight+'px';
-   chatPanel.style.minHeight=chatDefaultHeight+'px';
-   chatPanel.style.transform='translateY(-50%)';
-   chatPanel.classList.add('chat-panel-centered');
-  }
+ resetChatPanelInlineStyles();
+ if(chatPanelMode==='normal')return;
+ /* Measure the panel in its real, normal-flow position before applying fixed positioning. */
+ const baseRect=chatPanel.getBoundingClientRect();
+ const columnRect=mainColumn.getBoundingClientRect();
+ const tabsRect=lobbyTabs.getBoundingClientRect();
+ chatPanel.style.position='fixed';
+ chatPanel.style.left=columnRect.left+'px';
+ chatPanel.style.right='auto';
+ chatPanel.style.width=columnRect.width+'px';
+ chatPanel.style.zIndex='30';
+ chatPanel.style.marginTop='0';
+ chatPanel.style.transition='none';
+ chatPanel.style.animation='none';
+ if(chatPanelMode==='grow'){
+  chatPanel.style.top=(tabsRect.bottom+2)+'px';
+  chatPanel.style.bottom=Math.max(0,window.innerHeight-baseRect.bottom)+'px';
+  chatPanel.style.height='auto';
+  chatPanel.style.minHeight='0';
+  chatPanel.classList.add('chat-panel-grown');
+ }else if(chatPanelMode==='center'){
+  chatPanel.style.top='50%';
+  chatPanel.style.bottom='auto';
+  chatPanel.style.height=chatDefaultHeight+'px';
+  chatPanel.style.minHeight=chatDefaultHeight+'px';
+  chatPanel.style.transform='translateY(-50%)';
+  chatPanel.classList.add('chat-panel-centered');
  }
 }
 function setChatPanelMode(mode){
