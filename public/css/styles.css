@@ -29,3 +29,8 @@
 }
 
 .soft-light{color-scheme:light}.soft-light .site-header{background:rgba(239,245,237,.94);border-bottom-color:rgba(18,50,25,.16)}.soft-light .brand,.soft-light #mainNav a,.soft-light .theme{color:#152719;text-shadow:none}.soft-light #mainNav a.active{color:#267b20}.soft-light .theme{border-color:rgba(24,65,31,.25);background:rgba(255,255,255,.7)}.soft-light .outline{color:#18301b;background:rgba(255,255,255,.72);border-color:#4cae38}.soft-light .radio-panel{background:rgba(241,249,239,.9);color:#172b19;border-color:rgba(63,153,47,.7)}.soft-light .volume button,.soft-light .controls button{color:#19351d}.soft-light .controls{border-left-color:rgba(25,55,30,.2)}.soft-light .radio-status,.soft-light .track p{color:#35543a}@media(max-width:760px){.soft-light .site-header #mainNav{background:rgba(239,245,237,.97)}.soft-light .site-header #mainNav a{color:#152719}}
+
+.action-status{flex-basis:100%;min-height:0;margin:-14px 0 0 4px;color:#e2eee2;font-size:12px;text-shadow:0 1px 8px #000;line-height:1.4}
+.action-status:empty{display:none}
+.soft-light .action-status{color:#fff}
+@media(max-width:760px){.action-status{margin:-5px 0 0 2px;font-size:11px}}
