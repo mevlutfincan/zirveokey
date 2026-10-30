@@ -363,6 +363,7 @@ async function refreshGameAccount(){
   $('#gameAuthActions').hidden=signed;$('#gameLogoutButton').hidden=!signed;
   $('#chatInput').disabled=!signed;$('#chatInput').placeholder=signed?'Mesajını yaz...':'Sohbete yazmak için giriş yap';
   $('#chatForm button[type="submit"]').disabled=!signed;
+  applyChatTextPreferences();
  }catch(error){$('#gameAccountState').textContent='Hesap bağlantısı yok';}
 }
 $('#gameLoginButton').addEventListener('click',()=>openGameAuth('login'));
