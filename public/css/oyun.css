@@ -589,3 +589,58 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .chat-view-tools .chat-control{min-width:0!important;height:34px!important;padding:0 8px!important;gap:5px!important;font-size:10px!important}
  .chat-view-tools .chat-control .chat-control-icon{width:19px!important;height:19px!important;font-size:15px!important}
 }
+
+
+/* Balanced ZirveOkey palette: shared graphite-green body, restrained color-coded metal trims */
+.chat-view-tools .chat-control{
+ color:#f4f0df!important;
+ background:
+  linear-gradient(145deg,#203329 0%,#14241a 52%,#0d1912 100%) padding-box,
+  linear-gradient(135deg,var(--trim-hi),var(--trim-mid) 42%,var(--trim-low) 78%,var(--trim-hi)) border-box!important;
+ box-shadow:inset 0 1px 0 #d9e7ce20,inset 0 -4px 8px #030805a8,0 3px 0 #071009,0 5px 12px #0005!important;
+}
+.chat-view-tools .chat-control::before{
+ background:linear-gradient(105deg,transparent 0%,var(--shine) 48%,transparent 75%)!important;
+ opacity:.75!important;
+}
+.chat-view-tools .chat-control::after{border-color:var(--inner-line)!important}
+.chat-view-tools .chat-control .chat-control-icon{
+ background:linear-gradient(145deg,var(--icon-top),var(--icon-bottom))!important;
+ box-shadow:inset 0 1px 0 var(--inner-line),0 2px 4px #0008!important;
+}
+.chat-view-tools .chat-grow{
+ --trim-hi:#b8df9a;--trim-mid:#57945d;--trim-low:#315f3c;
+ --shine:#9be58c55;--inner-line:#d8f1c733;
+ --icon-top:#356c3c;--icon-bottom:#183b23;
+}
+.chat-view-tools .chat-center{
+ --trim-hi:#f0d99b;--trim-mid:#b58b43;--trim-low:#765b2b;
+ --shine:#f4d58c55;--inner-line:#fff0c833;
+ --icon-top:#755a27;--icon-bottom:#3b2d16;
+}
+.chat-view-tools .chat-shrink{
+ --trim-hi:#e4bd91;--trim-mid:#b87948;--trim-low:#795033;
+ --shine:#e5b17a55;--inner-line:#f5d2ae30;
+ --icon-top:#815331;--icon-bottom:#482a18;
+}
+.chat-view-tools .chat-control .chat-control-icon{color:var(--trim-hi)!important}
+.chat-view-tools .chat-control:hover{
+ filter:brightness(1.1) saturate(1.08)!important;
+ box-shadow:inset 0 1px 0 #d9e7ce30,inset 0 -4px 8px #030805a8,0 0 0 1px var(--trim-mid),0 0 15px var(--shine),0 7px 16px #0007!important;
+}
+.chat-view-tools .chat-control.active{
+ border-color:transparent!important;filter:brightness(1.13)!important;
+ box-shadow:inset 0 1px 0 #d9e7ce30,inset 0 -4px 8px #030805a8,0 0 0 1px var(--trim-hi),0 0 17px var(--shine),0 5px 13px #0007!important;
+}
+@media(prefers-reduced-motion:no-preference){
+ .chat-view-tools .chat-control::before{animation:zirveButtonSheen 5.5s ease-in-out infinite!important}
+ .chat-view-tools .chat-control:nth-child(2)::before{animation-delay:1.2s!important}
+ .chat-view-tools .chat-control:nth-child(3)::before{animation-delay:2.4s!important}
+}
+@keyframes zirveButtonSheen{
+ 0%,72%,100%{transform:translateX(-135%)}
+ 38%{transform:translateX(135%)}
+}
+@media(prefers-reduced-motion:reduce){
+ .chat-view-tools .chat-control::before{animation:none!important}
+}
