@@ -1,19 +1,5 @@
 const $=s=>document.querySelector(s);
 const toggle=$('#mobileToggle'),nav=$('#mainNav');
-const themeButton=$('.theme');
-const root=document.documentElement;
-
-try{
-  const savedTheme=localStorage.getItem('zirveokey-theme');
-  if(savedTheme==='light'){root.classList.add('soft-light');themeButton.textContent='☀';themeButton.setAttribute('aria-label','Koyu temaya geç');}
-}catch(_){}
-
-themeButton?.addEventListener('click',()=>{
-  const light=root.classList.toggle('soft-light');
-  themeButton.textContent=light?'☀':'☾';
-  themeButton.setAttribute('aria-label',light?'Koyu temaya geç':'Açık temaya geç');
-  try{localStorage.setItem('zirveokey-theme',light?'light':'dark');}catch(_){}
-});
 
 function closeNav(){
   nav.classList.remove('open');
