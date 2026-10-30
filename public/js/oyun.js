@@ -181,7 +181,27 @@ let chatLastId=0,chatBusy=false;
   $('#chatTextGrow').disabled=size>=22;
   $('#chatTextShrink').disabled=size<=12;
  }
- $('#chatTextGrow').addEventListener('click',()=>{
+ const chatTextSettingsToggle=$('#chatTextSettingsToggle');
+const chatTextSettingsMenu=$('#chatTextSettingsMenu');
+chatTextSettingsToggle.addEventListener('click',()=>{
+ const opening=chatTextSettingsMenu.hidden;
+ chatTextSettingsMenu.hidden=!opening;
+ chatTextSettingsToggle.setAttribute('aria-expanded',String(opening));
+});
+document.addEventListener('click',e=>{
+ if(!$('#chatTextSettings').contains(e.target)){
+  chatTextSettingsMenu.hidden=true;
+  chatTextSettingsToggle.setAttribute('aria-expanded','false');
+ }
+});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&!chatTextSettingsMenu.hidden){
+  chatTextSettingsMenu.hidden=true;
+  chatTextSettingsToggle.setAttribute('aria-expanded','false');
+  chatTextSettingsToggle.focus();
+ }
+});
+$('#chatTextGrow').addEventListener('click',()=>{
   const prefs=readChatPreferences();prefs.textSize=Math.min(22,(Number(prefs.textSize)||15)+1);saveChatPreferences(prefs);applyChatTextPreferences();
  });
  $('#chatTextShrink').addEventListener('click',()=>{
