@@ -224,7 +224,7 @@ $('#chatColorSave').addEventListener('click',async()=>{
  if(!chatStyleAuthenticated||chatStyleSaving)return;
  chatStyleSaving=true;updateChatColorPreview();
  try{
-  const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value,rowColor:fixedChatRowColor})});
+  const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value})});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||'Renkler kaydedilemedi.');
   setChatColorInputs(data.chatStyle||{nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value});
