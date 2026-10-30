@@ -1170,3 +1170,7 @@ body:not(.soft-light) .community-empty{
  .auth-options{gap:8px}
  .remember-option,.text-link{font-size:12px}
 }
+
+.account-greeting{display:inline-flex;align-items:center;color:#dff8d8;font-size:13px;font-weight:700;white-space:nowrap;padding:0 8px}
+.logout-button{height:44px!important;padding:0 16px!important}
+@media(max-width:760px){.mobile-auth .account-greeting{flex:1;justify-content:center}.mobile-auth .logout-button{flex:1}}
