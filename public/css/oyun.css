@@ -272,3 +272,17 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .lobby-empty{background:#fff!important}
 }
 
+/* Force the visible lobby canvas itself to white (not only its empty child) */
+@media(min-width:761px){
+ .main-column>.lobby-view{background:#fff!important}
+ .main-column>.lobby-view>.lobby-empty{display:block!important;background:#fff!important;box-shadow:none!important;border:0!important}
+ .main-column>.lobby-view>.lobby-empty:before,
+ .main-column>.lobby-view>.lobby-empty:after{display:none!important}
+}
+@media(max-width:760px){
+ .main-column>.lobby-view{background:#fff!important}
+ .main-column>.lobby-view>.lobby-empty{display:block!important;background:#fff!important;box-shadow:none!important;border:0!important}
+ .main-column>.lobby-view>.lobby-empty:before,
+ .main-column>.lobby-view>.lobby-empty:after{display:none!important}
+}
+
