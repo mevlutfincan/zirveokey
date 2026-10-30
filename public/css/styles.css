@@ -1182,3 +1182,5 @@ body:not(.soft-light) .community-empty{
 .member-list-items li{display:flex;align-items:center;gap:10px;min-width:0;padding:7px 10px;border:1px solid rgba(150,230,150,.16);border-radius:10px;background:rgba(0,0,0,.22)}
 .member-avatar{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:rgba(112,237,53,.16);border:1px solid rgba(112,237,53,.42);color:#baf78e;font-size:13px;font-weight:800}
 .member-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f3f8f3;font-size:13px;font-weight:600}
+
+.member-time{margin-left:auto;flex:0 0 auto;color:#baf78e;font-size:11px;font-weight:700;white-space:nowrap}
