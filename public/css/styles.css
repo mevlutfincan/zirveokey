@@ -902,3 +902,28 @@ body:not(.soft-light) .community-empty{
  .site-header .brand{font-size:28px;letter-spacing:-1.5px}
  .site-header .brand .crown{left:21px;top:-14px;font-size:19px}
 }
+
+
+/* Keep the crown inline, immediately to the left of the wordmark */
+.site-header .brand .crown{
+ position:static!important;
+ display:inline-block;
+ flex:0 0 auto;
+ margin:0 7px 0 0;
+ left:auto!important;
+ top:auto!important;
+ transform:none;
+ font-size:.72em;
+ line-height:1;
+ vertical-align:middle;
+}
+.site-header .brand{
+ align-items:center;
+ gap:0;
+}
+@media(max-width:760px){
+ .site-header .brand .crown{
+  margin-right:5px;
+  font-size:.72em;
+ }
+}
