@@ -215,6 +215,12 @@ async function sendPresenceHeartbeat(){
  try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:readMemberSettings().settingShowOnline!==false})});}
  catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
 }
+async function sendActivityHeartbeat(){
+ try{
+  const response=await fetch('/api/activity/heartbeat',{method:'POST',credentials:'same-origin',cache:'no-store'});
+  if(!response.ok&&response.status!==401)throw new Error('Aktivite kaydı alınamadı');
+ }catch(error){console.warn('Üye aktivitesi güncellenemedi.');}
+}
 const notificationsButton=$('#notificationsButton');
 const notificationsPopover=$('#notificationsPopover');
 notificationsButton.addEventListener('click',()=>{
@@ -310,7 +316,7 @@ $('#gameAuthForm').addEventListener('submit',async e=>{
  try{
   const r=await fetch('/api/auth/'+gameAuthMode,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Üyelik işlemi tamamlanamadı.');
-  $('#gameLoginDialog').close();await refreshGameAccount();await sendPresenceHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
+  $('#gameLoginDialog').close();await refreshGameAccount();await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
  }catch(error){$('#gameAuthMessage').textContent=error.message;}
  finally{submit.disabled=false;}
 });
