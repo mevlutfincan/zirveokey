@@ -1052,3 +1052,48 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .chat-color-status{color:#bdcbbb!important;font-size:10px!important;line-height:1.4!important}
 .chat-messages .chat-message>b{color:var(--chat-author-color,#111111)!important}
 .chat-messages .chat-message-body{color:var(--chat-body-color,#111111)!important}
+
+
+/* Lobby radio control: isolated styling so existing chat buttons keep their current appearance. */
+.chat-view-tools .chat-control.chat-radio{
+ border:1px solid #4e9460!important;
+ background:linear-gradient(145deg,#1b3021,#09160e)!important;
+ color:#eff9eb!important;
+}
+.chat-view-tools .chat-control.chat-radio .chat-control-icon{color:#a7edaa!important}
+.chat-view-tools .chat-control.chat-radio.is-playing{
+ border-color:#8be36e!important;
+ box-shadow:0 0 0 1px #8be36e55,0 0 12px #72d65b35!important;
+}
+.radio-live-status{
+ display:inline-flex!important;
+ align-items:center!important;
+ gap:5px!important;
+ min-height:26px!important;
+ padding:0 8px!important;
+ border:1px solid #cbd8cc!important;
+ border-radius:7px!important;
+ background:#f2f5f1!important;
+ color:#687568!important;
+ font-size:10px!important;
+ font-weight:750!important;
+ white-space:nowrap!important;
+}
+.radio-live-status.is-live{
+ border-color:#8bc58b!important;
+ background:#edf8eb!important;
+ color:#236c2e!important;
+}
+.radio-live-status.is-live::before{
+ content:""!important;
+ width:7px!important;
+ height:7px!important;
+ border-radius:50%!important;
+ background:#35b84a!important;
+ box-shadow:0 0 7px #35b84a88!important;
+}
+.radio-live-status.is-playing{background:#e2f4df!important;color:#145b20!important}
+#lobbyRadioAudio{display:none!important}
+@media(max-width:760px){
+ .radio-live-status{min-height:24px!important;padding:0 7px!important;font-size:9px!important}
+}
