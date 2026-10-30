@@ -206,6 +206,15 @@ app.post('/api/auth/reset-password', dbRequired, authLimiter, asyncRoute(async (
   finally { client.release(); }
 }));
 
+app.get('/api/public/new-members', asyncRoute(async (_req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Üye listesi şu anda kullanılamıyor.' });
+  const result = await pool.query(
+    'SELECT username, created_at FROM users WHERE is_active=TRUE ORDER BY created_at DESC LIMIT 5'
+  );
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  res.json({ members: result.rows });
+}));
+
 app.use(express.static(publicDir, {
   extensions: ['html'],
   etag: true,
