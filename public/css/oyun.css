@@ -1002,3 +1002,10 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .chat-text-settings-menu .chat-text-reset{border-color:#c49b4b!important}
 .chat-text-settings-menu .chat-text-reset .chat-control-icon{color:#f3d28a!important}
 @media(max-width:760px){.chat-text-settings-menu{left:0!important;right:auto!important;min-width:180px!important}}
+
+
+/* Keep the text-settings dropdown above the chat panel instead of clipping it. */
+.chat-panel{overflow:visible!important;position:relative!important;z-index:20!important}
+.chat-panel .chat-heading{position:relative!important;z-index:21!important;overflow:visible!important}
+.chat-text-settings{position:relative!important;z-index:22!important}
+.chat-text-settings-menu{z-index:1000!important;max-height:min(70vh,260px)!important;overflow-y:auto!important}
