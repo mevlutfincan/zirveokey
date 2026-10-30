@@ -898,3 +898,5 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .chat-message>b{color:#a6e58b}.chat-message>small{margin-left:auto;color:#839384;font-size:9px}
 .chat-form button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:760px){.game-auth-actions{gap:4px}.game-auth-actions .icon-button{min-width:44px;padding:0 7px;font-size:10px}}
+
+.game-auth-actions[hidden],#gameLogoutButton[hidden]{display:none!important}
