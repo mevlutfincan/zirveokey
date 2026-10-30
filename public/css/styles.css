@@ -868,3 +868,37 @@ body:not(.soft-light) .community-empty{
 @media(prefers-reduced-motion:reduce){
  .site-header .brand .crown{animation:none!important}
 }
+
+
+/* Refined original ZirveOkey wordmark — logo slot only */
+.site-header .brand{
+ font-size:clamp(32px,2.65vw,42px);
+ letter-spacing:-2.2px;
+ font-weight:900;
+}
+.site-header .brand>span:last-child{
+ display:inline-block;
+ color:#f3f7f2;
+ background:linear-gradient(180deg,#ffffff 0%,#dce8df 48%,#9fb5a4 100%);
+ -webkit-background-clip:text;
+ background-clip:text;
+ -webkit-text-fill-color:transparent;
+}
+.site-header .brand>span:last-child b{
+ font-weight:950;
+ background:linear-gradient(180deg,#d5ffad 0%,#82f34b 43%,#35bd43 100%);
+ -webkit-background-clip:text;
+ background-clip:text;
+ -webkit-text-fill-color:transparent;
+ filter:drop-shadow(0 0 7px rgba(112,237,53,.16));
+}
+.site-header .brand:hover .crown{
+ animation-duration:1.8s;
+}
+.site-header .brand:hover>span:last-child{
+ filter:drop-shadow(0 0 9px rgba(112,237,53,.18));
+}
+@media(max-width:760px){
+ .site-header .brand{font-size:28px;letter-spacing:-1.5px}
+ .site-header .brand .crown{left:21px;top:-14px;font-size:19px}
+}
