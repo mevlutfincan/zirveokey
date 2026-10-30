@@ -72,9 +72,15 @@ async function loadActiveMembers(){
 }
 let activityHeartbeatBusy=false;
 let homeSignedIn=false;
+function readHomeShowOnlinePreference(){
+  try{
+    const settings=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');
+    return settings.settingShowOnline!==false;
+  }catch{return true;}
+}
 async function sendHomePresenceHeartbeat(){
   if(!homeSignedIn||document.visibilityState!=='visible')return;
-  try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:true})});}
+  try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:readHomeShowOnlinePreference()})});}
   catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
 }
 async function sendActivityHeartbeat(){
@@ -92,7 +98,7 @@ function startActivityTracking(){
 }
 loadActiveMembers();
 startActivityTracking();
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')sendActivityHeartbeat();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){sendActivityHeartbeat();sendHomePresenceHeartbeat();}});
 
 async function logout(){
   const buttons=[document.getElementById('logoutButton'),document.getElementById('mobileLogoutButton')].filter(Boolean);
