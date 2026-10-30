@@ -4,8 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
-<link rel="stylesheet" href="/css/oyun.css?v=20261030-43">
-<script defer src="/js/oyun.js?v=game-ui-20261030-21"></script>
+<link rel="stylesheet" href="/css/oyun.css?v=20261030-44">
+<script defer src="/js/oyun.js?v=game-ui-20261030-22"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
@@ -62,5 +62,22 @@
 </main>
 
 <dialog class="create-dialog" id="createDialog"><form method="dialog" id="createTableForm"><div class="dialog-heading"><div><span class="eyebrow">YENİ OYUN</span><h2>Masa oluştur</h2></div><button class="icon-button" value="cancel" aria-label="Kapat">×</button></div><label>Masa adı<input id="newTableName" maxlength="22" value="Klasik Okey" required></label><div class="dialog-grid"><label>Oyun türü<select id="gameType"><option>Klasik Okey</option></select></label><label>Masa düzeni<select id="tablePrivacy"><option>Açık masa</option><option>Şifreli masa</option></select></label><label class="full-field">Masa görünümü<select id="tableStyle"><option value="Standart">Standart</option><option value="Renkli">Renkli</option></select></label></div><div class="dialog-actions"><button class="subtle-button" value="cancel">Vazgeç</button><button class="primary-button" id="confirmCreateTable" value="default">Masayı oluştur</button></div><p class="dialog-note">Bu aşamada masa oluşturma yalnızca arayüz önizlemesidir; diğer oyunculara açılmaz.</p></form></dialog>
+<dialog class="settings-dialog" id="memberSettingsDialog">
+ <form method="dialog" id="memberSettingsForm">
+  <div class="dialog-heading"><div><span class="eyebrow">ÜYE TERCİHLERİ</span><h2>Ayarlar</h2></div><button class="icon-button" value="cancel" aria-label="Kapat">×</button></div>
+  <section class="settings-group"><h3>Görünüm</h3>
+   <label class="setting-row"><span><b>Arayüz animasyonları</b><small>Geçiş ve hareket efektlerini göster</small></span><input type="checkbox" id="settingAnimations" checked></label>
+   <label class="setting-row"><span><b>Koyu görünüm</b><small>Oyun alanının koyu temasını kullan</small></span><input type="checkbox" id="settingDarkMode" checked></label>
+  </section>
+  <section class="settings-group"><h3>Bildirimler</h3>
+   <label class="setting-row"><span><b>Bildirimleri göster</b><small>Yeni sistem bildirimlerini görüntüle</small></span><input type="checkbox" id="settingNotifications" checked></label>
+   <label class="setting-row"><span><b>Bildirim sesi</b><small>Desteklendiğinde bildirim sesi çal</small></span><input type="checkbox" id="settingNotificationSound"></label>
+  </section>
+  <section class="settings-group"><h3>Gizlilik</h3>
+   <label class="setting-row"><span><b>Çevrimiçi durumumu göster</b><small>Diğer üyeler çevrimiçi olduğunu görebilsin</small></span><input type="checkbox" id="settingShowOnline" checked></label>
+  </section>
+  <div class="dialog-actions"><button class="subtle-button" value="cancel">Vazgeç</button><button class="primary-button" id="saveMemberSettings" value="default">Ayarları kaydet</button></div>
+ </form>
+</dialog>
 <div class="toast" id="gameToast" role="status" aria-live="polite"></div>
 </body></html>
