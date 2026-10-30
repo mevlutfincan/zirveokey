@@ -136,12 +136,15 @@ app.post('/api/auth/register', dbRequired, authLimiter, asyncRoute(async (req, r
       [username, username.toLocaleLowerCase('tr-TR'), email, email, hash]
     );
     const user = result.rows[0];
+    await new Promise((resolve, reject) => {
+      req.session.regenerate(error => error ? reject(error) : resolve());
+    });
     req.session.user = { id: user.id, username: user.username, email: user.email };
     req.session.cookie.maxAge = req.body.rememberMe === true ? 30 * 24 * 60 * 60 * 1000 : null;
-    req.session.save(err => {
-      if (err) return res.status(500).json({ error: 'Oturum oluşturulamadı.' });
-      res.status(201).json({ ok: true, user: req.session.user });
+    await new Promise((resolve, reject) => {
+      req.session.save(error => error ? reject(error) : resolve());
     });
+    res.status(201).json({ ok: true, user: req.session.user });
   } catch (error) {
     if (error.code === '23505') return res.status(409).json({ error: 'Bu kullanıcı adı veya e-posta zaten kayıtlı.' });
     throw error;
