@@ -50,6 +50,13 @@ async function waitForServer() {
 
 async function main() {
   await waitForServer();
+  const radioStatusResponse = await request('/api/radio/status');
+  assert.equal(radioStatusResponse.status, 200, 'Radyo yayın durumu alınamadı.');
+  const radioStatus = await radioStatusResponse.json();
+  assert.equal(typeof radioStatus.configured, 'boolean', 'Radyo yapılandırma durumu boolean olmalı.');
+  assert.equal(typeof radioStatus.isLive, 'boolean', 'Radyo canlı yayın durumu boolean olmalı.');
+  assert.equal(typeof radioStatus.djName, 'string', 'Radyo yayıncı adı metin olmalı.');
+  assert.equal(typeof radioStatus.streamUrl, 'string', 'Radyo yayın adresi metin olmalı.');
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
   const users = [
     { username: 'TestA_' + suffix, email: 'testa-' + suffix + '@example.invalid', password: 'ZirveTest!2026A' },
