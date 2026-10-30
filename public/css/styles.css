@@ -826,54 +826,45 @@ body:not(.soft-light) .community-empty{
 }
 
 
-/* ZirveOkey logo replacement — keep the existing header layout and logo slot */
+/* Original ZirveOkey crown mark — refined finish */
 .site-header .brand{
- display:inline-flex!important;
- align-items:center!important;
- justify-content:center!important;
- flex:0 0 auto!important;
- width:clamp(218px,18vw,270px)!important;
- min-width:0!important;
- height:100%!important;
- position:relative!important;
- overflow:hidden;
- text-decoration:none;
+ display:inline-flex;
+ align-items:center;
+ gap:3px;
+ position:relative;
 }
-.site-header .brand-logo{
- display:block;
- width:100%;
- height:auto;
- max-height:88px;
- object-fit:contain;
- filter:drop-shadow(0 0 9px rgba(42,220,83,.18));
- animation:zirveLogoBreath 5.5s ease-in-out infinite;
-}
-.site-header .brand:after{
- content:"";
+.site-header .brand .crown{
  position:absolute;
- inset:8% -70%;
- pointer-events:none;
- background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.04) 47%,rgba(166,255,188,.42) 50%,rgba(255,255,255,.08) 53%,transparent 59%);
- transform:translateX(-75%);
- animation:zirveLogoShine 7s ease-in-out infinite;
+ left:27px;
+ top:-17px;
+ z-index:1;
+ font-size:27px;
+ line-height:1;
+ color:#b9ff72;
+ background:linear-gradient(180deg,#f7e8a1 0%,#a9f45e 52%,#279b45 100%);
+ -webkit-background-clip:text;
+ background-clip:text;
+ -webkit-text-fill-color:transparent;
+ filter:drop-shadow(0 0 5px rgba(112,237,53,.42));
+ transform-origin:50% 85%;
+ animation:crownGlimmer 4.8s ease-in-out infinite;
 }
-@keyframes zirveLogoShine{
- 0%,58%{transform:translateX(-75%);opacity:0}
- 66%{opacity:.85}
- 84%,100%{transform:translateX(75%);opacity:0}
+.site-header .brand>span:last-child{
+ position:relative;
+ z-index:0;
+ letter-spacing:-2px;
+ text-shadow:0 2px 16px rgba(0,0,0,.45),0 0 18px rgba(78,214,57,.08);
 }
-@keyframes zirveLogoBreath{
- 0%,100%{filter:drop-shadow(0 0 7px rgba(42,220,83,.15))}
- 50%{filter:drop-shadow(0 0 13px rgba(42,220,83,.34))}
+.site-header .brand>span:last-child b{
+ background:linear-gradient(180deg,#c7ff91 0%,#70ed35 55%,#31b93b 100%);
+ -webkit-background-clip:text;
+ background-clip:text;
+ -webkit-text-fill-color:transparent;
 }
-@media(min-width:761px) and (max-width:1250px){
- .site-header .brand{width:205px!important}
- .site-header .brand-logo{max-height:76px}
-}
-@media(max-width:760px){
- .site-header .brand{width:158px!important;height:64px!important}
- .site-header .brand-logo{max-height:58px}
+@keyframes crownGlimmer{
+ 0%,100%{filter:drop-shadow(0 0 4px rgba(112,237,53,.28));transform:translateY(0) scale(1)}
+ 50%{filter:drop-shadow(0 0 9px rgba(184,255,112,.68));transform:translateY(-1px) scale(1.045)}
 }
 @media(prefers-reduced-motion:reduce){
- .site-header .brand-logo,.site-header .brand:after{animation:none!important}
+ .site-header .brand .crown{animation:none!important}
 }
