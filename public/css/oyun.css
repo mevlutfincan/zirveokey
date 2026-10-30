@@ -946,7 +946,7 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .chat-messages .chat-message-emoji{
  display:inline-block!important;
  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif!important;
- font-size:32px!important;
+ font-size:38px!important;
  line-height:1.2!important;
  vertical-align:-6px!important;
 }
