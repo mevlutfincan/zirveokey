@@ -223,7 +223,8 @@ async function start() {
     await pool.query(schema);
     console.log('Database schema ready');
   } else {
-    console.warn('Account API disabled: DATABASE_URL and SESSION_SECRET are required.');
+    const missing = [!databaseUrl && 'DATABASE_URL', !sessionSecret && 'SESSION_SECRET'].filter(Boolean);
+    console.warn('Account API disabled: missing ' + missing.join(', ') + '.');
   }
   app.listen(PORT, () => console.log('ZirveOkey running on port ' + PORT));
 }
