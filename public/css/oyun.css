@@ -926,8 +926,9 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .chat-messages .chat-message>b{
  order:1!important;
  color:#111!important;
- font-size:15px!important;
- font-weight:750!important;
+ font-size:calc(var(--chat-message-size,15px) + 1px)!important;
+ font-weight:850!important;
+ letter-spacing:.1px!important;
 }
 .chat-messages .chat-message-body{
  order:2!important;
