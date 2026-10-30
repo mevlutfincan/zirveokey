@@ -43,6 +43,18 @@ $('#discardTile').addEventListener('click',()=>{if(selectedTile===null){notify('
 $('#startGame').addEventListener('click',()=>notify('Oyun motoru henüz bağlı değil.'));
 $('#tableView').addEventListener('pointerdown',resetIdleTimer);
 $('#tableView').addEventListener('keydown',resetIdleTimer);
+
+let chatFontSize=14;
+let chatCentered=false;
+const chatMessages=$('#chatMessages');
+function applyChatTextSettings(){
+ chatMessages.style.setProperty('--chat-message-size',chatFontSize+'px');
+ chatMessages.classList.toggle('chat-text-centered',chatCentered);
+}
+$('#chatTextSmaller').addEventListener('click',()=>{chatFontSize=Math.max(11,chatFontSize-1);applyChatTextSettings()});
+$('#chatTextLarger').addEventListener('click',()=>{chatFontSize=Math.min(22,chatFontSize+1);applyChatTextSettings()});
+$('#chatTextCenter').addEventListener('click',()=>{chatCentered=!chatCentered;applyChatTextSettings();$('#chatTextCenter').classList.toggle('active',chatCentered)});
+applyChatTextSettings();
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('#chatInput');if(!input.value.trim())return;notify('Sohbet sunucusu bağlı olmadığı için mesaj gönderilmedi.');input.value='';});
 renderTabs();renderLobby();renderRack();
 })();
