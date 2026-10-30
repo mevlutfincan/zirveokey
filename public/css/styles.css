@@ -675,3 +675,63 @@
  .community-section{padding:34px 16px 56px}
  .section-heading{margin-bottom:22px}
 }
+
+
+/* Keep the existing full-width lounge hero; place only the three glass tables beneath its actions */
+.hero{
+ display:block!important;
+ min-height:calc(100svh - 66px);
+ overflow:hidden!important;
+ background-position:center center!important;
+}
+.hero-content{
+ width:min(1240px,94vw)!important;
+ max-width:1240px!important;
+ display:flex!important;
+ flex-direction:column!important;
+ align-items:center!important;
+ margin:0 auto!important;
+ padding:clamp(58px,8vh,86px) 0 42px!important;
+ transform:none!important;
+}
+.hero-copy{margin:0 auto!important}
+.hero-actions{
+ width:fit-content;
+ max-width:100%;
+ margin:18px auto 0!important;
+ justify-content:center!important;
+}
+.community-section{
+ width:100%!important;
+ margin:0!important;
+ padding:30px 0 0!important;
+ background:transparent!important;
+ border:0!important;
+ box-shadow:none!important;
+ backdrop-filter:none!important;
+ -webkit-backdrop-filter:none!important;
+}
+.community-section:before,.community-section:after{display:none!important}
+.community-inner{width:100%!important;max-width:1240px;margin:0 auto}
+.community-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.community-card{min-height:245px;padding:20px 21px 18px}
+.community-card-head{margin-bottom:14px}
+.community-icon{width:46px;height:46px;border-radius:14px}
+.community-card h3{font-size:19px}
+.community-empty{min-height:100px;margin-top:17px;padding:12px}
+@media(max-width:900px){
+ .hero{min-height:calc(100svh - 66px);overflow:visible!important}
+ .hero-content{width:min(94vw,720px)!important;padding:46px 0 34px!important}
+ .community-section{padding-top:24px!important}
+ .community-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .community-card:last-child{grid-column:1/-1}
+}
+@media(max-width:600px){
+ .hero-content{width:94vw!important;padding:34px 0 28px!important}
+ .hero-actions{width:100%;flex-direction:column;align-items:stretch}
+ .hero-actions .play,.hero-actions .radio{width:100%;max-width:100%;min-width:0}
+ .community-section{padding-top:20px!important}
+ .community-grid{grid-template-columns:1fr;gap:12px}
+ .community-card:last-child{grid-column:auto}
+ .community-card{min-height:220px}
+}
