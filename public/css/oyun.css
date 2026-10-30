@@ -900,3 +900,43 @@ nav.lobby-tabs>.lobby-tab:first-child{
 @media(max-width:760px){.game-auth-actions{gap:4px}.game-auth-actions .icon-button{min-width:44px;padding:0 7px;font-size:10px}}
 
 .game-auth-actions[hidden],#gameLogoutButton[hidden]{display:none!important}
+
+
+/* Lobby chat message readability and timestamp order */
+.chat-messages .chat-message{
+ display:flex!important;
+ align-items:baseline!important;
+ flex-wrap:wrap!important;
+ gap:7px!important;
+ padding:9px 11px!important;
+ border:1px solid #e0e5e0!important;
+ border-radius:8px!important;
+ background:#f0f3f0!important;
+ color:#111!important;
+ font-size:15px!important;
+ line-height:1.55!important;
+}
+.chat-messages .chat-message-time{
+ order:0!important;
+ flex:0 0 auto!important;
+ margin:0 2px 0 0!important;
+ color:#4b5563!important;
+ font-size:12px!important;
+ font-weight:600!important;
+}
+.chat-messages .chat-message>b{
+ order:1!important;
+ color:#111!important;
+ font-size:15px!important;
+ font-weight:750!important;
+}
+.chat-messages .chat-message-body{
+ order:2!important;
+ color:#111!important;
+ font-size:15px!important;
+ overflow-wrap:anywhere!important;
+}
+.chat-messages .chat-system{
+ color:#202820!important;
+ font-size:14px!important;
+}
