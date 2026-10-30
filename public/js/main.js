@@ -52,6 +52,39 @@ function escapeHtml(value){
 }
 loadNewMembers();
 
+async function loadActiveMembers(){
+  const target=document.getElementById('activeMembersList');
+  if(!target)return;
+  try{
+    const response=await fetch('/api/public/active-members',{credentials:'same-origin',cache:'no-store'});
+    if(!response.ok)throw new Error('Aktiflik listesi alınamadı.');
+    const data=await response.json();
+    if(!Array.isArray(data.members)||!data.members.length){
+      target.innerHTML='<strong>Henüz aktivite verisi yok</strong><small>Üyeler sitede vakit geçirdikçe liste oluşacak.</small>';
+      return;
+    }
+    target.innerHTML='<ul class="member-list-items">'+data.members.map(member=>'<li><span class="member-avatar">'+escapeHtml(String(member.username||'?').slice(0,1).toLocaleUpperCase('tr-TR'))+'</span><span class="member-name">'+escapeHtml(member.username||'Üye')+'</span><span class="member-time">'+Math.floor(Number(member.active_seconds||0)/60)+' dk</span></li>').join('')+'</ul>';
+  }catch(error){
+    target.innerHTML='<strong>Aktiflik listesi şu anda yüklenemiyor</strong><small>Daha sonra tekrar deneyin.</small>';
+  }
+}
+let activityHeartbeatBusy=false;
+async function sendActivityHeartbeat(){
+  if(activityHeartbeatBusy||document.visibilityState!=='visible')return;
+  activityHeartbeatBusy=true;
+  try{await fetch('/api/activity/heartbeat',{method:'POST',credentials:'same-origin'});}
+  catch(error){console.warn('Aktivite kaydı gönderilemedi.');}
+  finally{activityHeartbeatBusy=false;}
+}
+function startActivityTracking(){
+  if(!document.getElementById('activeMembersList'))return;
+  sendActivityHeartbeat();
+  window.setInterval(sendActivityHeartbeat,60000);
+}
+loadActiveMembers();
+startActivityTracking();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')sendActivityHeartbeat();});
+
 async function logout(){
   const buttons=[document.getElementById('logoutButton'),document.getElementById('mobileLogoutButton')].filter(Boolean);
   buttons.forEach(button=>button.disabled=true);
