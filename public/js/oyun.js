@@ -211,6 +211,70 @@ let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=fal
  }
  const chatTextSettingsToggle=$('#chatTextSettingsToggle');
 const chatTextSettingsMenu=$('#chatTextSettingsMenu');
+const radioButton=$('#chatRadioButton');
+const radioStatus=$('#radioLiveStatus');
+const radioAudio=$('#lobbyRadioAudio');
+let radioInfo={isLive:false,djName:'',streamUrl:''};
+let radioStatusBusy=false;
+function renderRadioStatus(){
+ const playing=!radioAudio.paused&&!radioAudio.ended;
+ radioStatus.classList.toggle('is-live',radioInfo.isLive);
+ radioStatus.classList.toggle('is-playing',playing);
+ if(radioInfo.isLive){
+  radioStatus.textContent='Şu Anda Yayında · '+radioInfo.djName;
+  radioButton.title=playing?'Radyo yayınını durdur':'Radyo yayınını dinle';
+ }else{
+  radioStatus.textContent='Radyo çevrimdışı';
+  radioButton.title='Radyo yayın bilgisi';
+  radioButton.setAttribute('aria-pressed','false');
+  if(playing)radioAudio.pause();
+ }
+ radioButton.classList.toggle('is-playing',playing);
+ radioButton.setAttribute('aria-pressed',String(playing));
+}
+async function loadRadioStatus(){
+ if(radioStatusBusy)return;
+ radioStatusBusy=true;
+ try{
+  const response=await fetch('/api/radio/status',{credentials:'same-origin',cache:'no-store'});
+  if(!response.ok)throw new Error('Radyo durumu alınamadı.');
+  const data=await response.json();
+  radioInfo={isLive:data.isLive===true&&typeof data.streamUrl==='string'&&data.streamUrl!=='',djName:String(data.djName||''),streamUrl:String(data.streamUrl||'')};
+  if(radioInfo.isLive&&radioAudio.src!==radioInfo.streamUrl)radioAudio.src=radioInfo.streamUrl;
+  renderRadioStatus();
+ }catch(error){
+  radioInfo={isLive:false,djName:'',streamUrl:''};
+  radioStatus.textContent='Radyo durumu alınamadı';
+  radioStatus.classList.remove('is-live','is-playing');
+  radioButton.setAttribute('aria-pressed','false');
+  if(!radioAudio.paused)radioAudio.pause();
+ }finally{radioStatusBusy=false;}
+}
+radioButton.addEventListener('click',async()=>{
+ if(!radioInfo.isLive||!radioInfo.streamUrl){
+  notify('Radyo şu anda yayında değil.');
+  return;
+ }
+ if(!radioAudio.paused&&!radioAudio.ended){
+  radioAudio.pause();
+  renderRadioStatus();
+  return;
+ }
+ try{
+  if(radioAudio.src!==radioInfo.streamUrl)radioAudio.src=radioInfo.streamUrl;
+  await radioAudio.play();
+  renderRadioStatus();
+ }catch(error){
+  notify('Radyo yayını başlatılamadı. Yayın bağlantısını kontrol edin.');
+  renderRadioStatus();
+ }
+});
+radioAudio.addEventListener('pause',renderRadioStatus);
+radioAudio.addEventListener('play',renderRadioStatus);
+radioAudio.addEventListener('ended',renderRadioStatus);
+loadRadioStatus();
+window.setInterval(loadRadioStatus,5000);
+
 function selectChatSettingsTab(colors){
  $('#chatFontSettingsPane').hidden=colors;$('#chatColorsSettingsPane').hidden=!colors;
  $('#chatFontTab').classList.toggle('active',!colors);$('#chatColorsTab').classList.toggle('active',colors);
