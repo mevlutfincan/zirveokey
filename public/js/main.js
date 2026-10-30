@@ -26,6 +26,8 @@ async function refreshAuthState(){
     if(!response.ok)throw new Error('Oturum durumu alınamadı.');
     const data=await response.json();
     const signedIn=data.authenticated===true;
+    homeSignedIn=signedIn;
+    if(signedIn)sendHomePresenceHeartbeat();
     authButtons.forEach(button=>button.hidden=signedIn);
     ['logoutButton','mobileLogoutButton'].forEach(id=>{const button=document.getElementById(id);if(button)button.hidden=!signedIn;});
     ['accountGreeting','mobileAccountGreeting'].forEach(id=>{const el=document.getElementById(id);if(el){el.hidden=!signedIn;el.textContent=signedIn?'Merhaba, '+data.user.username:'';}});
@@ -69,6 +71,12 @@ async function loadActiveMembers(){
   }
 }
 let activityHeartbeatBusy=false;
+let homeSignedIn=false;
+async function sendHomePresenceHeartbeat(){
+  if(!homeSignedIn||document.visibilityState!=='visible')return;
+  try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:true})});}
+  catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
+}
 async function sendActivityHeartbeat(){
   if(activityHeartbeatBusy||document.visibilityState!=='visible')return;
   activityHeartbeatBusy=true;
@@ -79,7 +87,8 @@ async function sendActivityHeartbeat(){
 function startActivityTracking(){
   if(!document.getElementById('activeMembersList'))return;
   sendActivityHeartbeat();
-  window.setInterval(sendActivityHeartbeat,60000);
+  sendHomePresenceHeartbeat();
+  window.setInterval(()=>{sendActivityHeartbeat();sendHomePresenceHeartbeat();loadActiveMembers();},60000);
 }
 loadActiveMembers();
 startActivityTracking();
