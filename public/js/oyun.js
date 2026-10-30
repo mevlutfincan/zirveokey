@@ -83,12 +83,13 @@ function applyChatPanelMode(){
   setChatPosition('transform','none');
   chatPanel.classList.add('chat-panel-grown');
  }else if(chatPanelMode==='center'){
-  setChatPosition('top','50%');
-  setChatPosition('bottom','auto');
+  /* Keep the original bottom edge fixed and lift the panel upward by half its height. */
+  setChatPosition('top','auto');
+  setChatPosition('bottom',Math.max(0,window.innerHeight-baseRect.bottom)+'px');
   setChatPosition('height',chatDefaultHeight+'px');
   setChatPosition('min-height',chatDefaultHeight+'px');
   setChatPosition('max-height','none');
-  setChatPosition('transform','translateY(-50%)');
+  setChatPosition('transform','none');
   chatPanel.classList.add('chat-panel-centered');
  }
 }
