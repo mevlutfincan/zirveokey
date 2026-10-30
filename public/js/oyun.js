@@ -215,5 +215,6 @@ document.addEventListener('fullscreenchange',()=>{
  fullscreenButton.title=active?'Tam ekrandan çık':'Tam ekran';
  fullscreenButton.setAttribute('aria-label',active?'Tam ekrandan çık':'Tam ekran');
 });
-\nrenderTabs();renderLobby();renderRack();
+
+renderTabs();renderLobby();renderRack();
 })();
