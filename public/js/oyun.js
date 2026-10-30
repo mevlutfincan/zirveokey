@@ -17,7 +17,7 @@ function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function renderLobby(){
  const root=$('#lobbyTableGrid');root.innerHTML='';
  tables.forEach(t=>{const card=document.createElement('article');card.className='lobby-table-card'+(t.style==='Renkli'?' colored-table':'');card.innerHTML='<b>Masa '+String(t.id).padStart(3,'0')+' · '+escapeHtml(t.name)+'</b><p>'+escapeHtml(t.type)+' · '+escapeHtml(t.privacy)+' · '+escapeHtml(t.style||'Standart')+'</p><div class="table-card-seats"><span class="filled">Misafir</span><span>Boş</span><span>Boş</span><span>Boş</span></div>';card.addEventListener('click',()=>openTable(t.id));root.append(card)});
- const onlineCount=$('#onlineCount');if(onlineCount)onlineCount.textContent='—';
+ updateOnlineCount();
 }
 function renderRack(){
  const root=$('#tileRack');root.innerHTML='';
@@ -153,5 +153,38 @@ document.addEventListener('click',e=>{
  }
 });
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('#chatInput');if(!input.value.trim())return;notify('Sohbet sunucusu bağlı olmadığı için mesaj gönderilmedi.');input.value='';});
-renderTabs();renderLobby();renderRack();
+
+function updateOnlineCount(){
+ const list=$('#onlineList');
+ const count=list?[...list.children].filter(el=>!el.classList.contains('side-empty')).length:0;
+ const headerCount=$('#headerOnlineCount');if(headerCount)headerCount.textContent=String(count);
+ const sideBadge=$('.online-badge');if(sideBadge){const icon=sideBadge.querySelector('i');sideBadge.textContent=String(count);if(icon)sideBadge.prepend(icon);}
+}
+const notificationsButton=$('#notificationsButton');
+const notificationsPopover=$('#notificationsPopover');
+notificationsButton.addEventListener('click',()=>{
+ const opening=notificationsPopover.hidden;
+ notificationsPopover.hidden=!opening;
+ notificationsButton.setAttribute('aria-expanded',String(opening));
+});
+document.addEventListener('click',e=>{
+ if(!notificationsPopover.hidden&&!notificationsPopover.contains(e.target)&&!notificationsButton.contains(e.target)){
+  notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');
+ }
+});
+$('#settingsButton').addEventListener('click',()=>notify('Hesap ve oyun ayarları bölümü hazırlanıyor.'));
+const fullscreenButton=$('#fullscreenButton');
+fullscreenButton.addEventListener('click',async()=>{
+ try{
+  if(!document.fullscreenElement)await document.documentElement.requestFullscreen();
+  else await document.exitFullscreen();
+ }catch(error){notify('Tam ekran bu tarayıcıda kullanılamıyor.');}
+});
+document.addEventListener('fullscreenchange',()=>{
+ const active=!!document.fullscreenElement;
+ fullscreenButton.textContent=active?'⛶':'⛶';
+ fullscreenButton.title=active?'Tam ekrandan çık':'Tam ekran';
+ fullscreenButton.setAttribute('aria-label',active?'Tam ekrandan çık':'Tam ekran');
+});
+\nrenderTabs();renderLobby();renderRack();
 })();
