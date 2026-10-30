@@ -769,3 +769,15 @@ nav.lobby-tabs>.lobby-tab:first-child{
   transform:translateY(-50%)!important;z-index:9!important;
  }
 }
+
+/* Final geometry: expanded chat reaches the lobby-tab baseline while staying bottom-anchored */
+@media(min-width:761px){
+ .main-column:not(.chat-mode-centered)>.chat-panel.chat-panel-grown{
+  top:-18px!important;bottom:0!important;height:auto!important;min-height:0!important;
+ }
+}
+@media(max-width:760px){
+ .main-column:not(.chat-mode-centered)>.chat-panel.chat-panel-grown{
+  margin-top:-14px!important;
+ }
+}
