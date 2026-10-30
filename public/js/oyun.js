@@ -46,29 +46,52 @@ $('#tableView').addEventListener('keydown',resetIdleTimer);
 
 const chatPanel=$('.chat-panel');
 const mainColumn=$('.main-column');
+const lobbyTabs=$('.lobby-tabs');
 const chatDefaultHeight=390;
-const chatGrownHeight=560;
-function setChatPanelMode(mode){
- const nextMode=['grow','center'].includes(mode)?mode:'normal';
+let chatPanelMode='normal';
+function clearChatPanelPosition(){
+ ['position','left','right','top','bottom','width','height','minHeight','maxHeight','transform','zIndex','marginTop'].forEach(p=>chatPanel.style[p]='');
  chatPanel.classList.remove('chat-panel-grown','chat-panel-centered');
  mainColumn.classList.remove('chat-mode-centered');
- mainColumn.style.setProperty('--chat-panel-height',chatDefaultHeight+'px');
- chatPanel.style.setProperty('--chat-panel-height',chatDefaultHeight+'px');
- if(nextMode==='grow'){
-  mainColumn.style.setProperty('--chat-panel-height',chatGrownHeight+'px');
-  chatPanel.style.setProperty('--chat-panel-height',chatGrownHeight+'px');
-  chatPanel.classList.add('chat-panel-grown');
- }else if(nextMode==='center'){
-  mainColumn.classList.add('chat-mode-centered');
-  chatPanel.classList.add('chat-panel-centered');
+}
+function applyChatPanelMode(){
+ clearChatPanelPosition();
+ if(chatPanelMode==='grow'||chatPanelMode==='center'){
+  const columnRect=mainColumn.getBoundingClientRect();
+  chatPanel.style.position='fixed';
+  chatPanel.style.left=columnRect.left+'px';
+  chatPanel.style.right='auto';
+  chatPanel.style.width=columnRect.width+'px';
+  chatPanel.style.zIndex='30';
+  if(chatPanelMode==='grow'){
+   const tabsRect=lobbyTabs.getBoundingClientRect();
+   const normalRect=$('.chat-panel').getBoundingClientRect();
+   chatPanel.style.top=(tabsRect.bottom+2)+'px';
+   chatPanel.style.bottom=Math.max(0,window.innerHeight-normalRect.bottom)+'px';
+   chatPanel.style.height='auto';
+   chatPanel.style.minHeight='0';
+   chatPanel.classList.add('chat-panel-grown');
+  }else{
+   chatPanel.style.top='50%';
+   chatPanel.style.bottom='auto';
+   chatPanel.style.height=chatDefaultHeight+'px';
+   chatPanel.style.minHeight=chatDefaultHeight+'px';
+   chatPanel.style.transform='translateY(-50%)';
+   chatPanel.classList.add('chat-panel-centered');
+  }
  }
- $('#chatPanelGrow').classList.toggle('active',nextMode==='grow');
- $('#chatPanelCenter').classList.toggle('active',nextMode==='center');
- $('#chatPanelShrink').classList.toggle('active',nextMode==='normal');
+}
+function setChatPanelMode(mode){
+ chatPanelMode=['grow','center'].includes(mode)?mode:'normal';
+ applyChatPanelMode();
+ $('#chatPanelGrow').classList.toggle('active',chatPanelMode==='grow');
+ $('#chatPanelCenter').classList.toggle('active',chatPanelMode==='center');
+ $('#chatPanelShrink').classList.toggle('active',chatPanelMode==='normal');
 }
 $('#chatPanelGrow').addEventListener('click',()=>setChatPanelMode('grow'));
 $('#chatPanelCenter').addEventListener('click',()=>setChatPanelMode('center'));
 $('#chatPanelShrink').addEventListener('click',()=>setChatPanelMode('normal'));
+window.addEventListener('resize',()=>{if(chatPanelMode!=='normal')applyChatPanelMode()});
 setChatPanelMode('normal');
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('#chatInput');if(!input.value.trim())return;notify('Sohbet sunucusu bağlı olmadığı için mesaj gönderilmedi.');input.value='';});
 renderTabs();renderLobby();renderRack();
