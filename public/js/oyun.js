@@ -165,7 +165,7 @@ let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=fal
  function validChatHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
  function updateChatColorPreview(){
   const name=$('#chatNameColor').value,text=$('#chatBodyColor').value,row=$('#chatRowColor').value;
-  $('#chatColorPreview').style.backgroundColor=row;
+  $('#chatColorPreview').style.setProperty('--chat-row-color',row);
   $('#chatColorPreviewName').style.color=name;$('#chatColorPreviewText').style.color=text;
   $('#chatColorSave').disabled=!chatStyleAuthenticated||chatStyleSaving;
   $('#chatColorStatus').textContent=!chatStyleAuthenticated?'Renkleri kaydetmek için giriş yapın.':chatStyleSaving?'Kaydediliyor…':'Seçtiğin tüm renkler kaydedilebilir ve diğer üyelere aynen görünür.';
