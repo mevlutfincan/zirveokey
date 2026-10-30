@@ -136,20 +136,28 @@ function positionChatPicker(){
  chatPicker.style.zIndex='2147483000';
  chatPicker.style.maxHeight=Math.min(620,window.innerHeight-24)+'px';
 }
-smileButton.addEventListener('click',()=>{
- const opening=chatPicker.hidden;
+smileButton.addEventListener('click',event=>{
+ event.preventDefault();
+ event.stopPropagation();
+ const opening=chatPicker.hidden || chatPicker.getAttribute('aria-hidden')==='true';
+ if(chatPicker.parentElement!==document.body)document.body.append(chatPicker);
  if(opening){
-  if(chatPicker.parentElement!==document.body)document.body.append(chatPicker);
   positionChatPicker();
   chatPicker.hidden=false;
- }else chatPicker.hidden=true;
+  chatPicker.removeAttribute('aria-hidden');
+  chatPicker.style.display='block';
+ }else{
+  chatPicker.hidden=true;
+  chatPicker.setAttribute('aria-hidden','true');
+  chatPicker.style.display='none';
+ }
  smileButton.setAttribute('aria-expanded',String(opening));
 });
 window.addEventListener('resize',()=>{if(!chatPicker.hidden)positionChatPicker();});
 window.addEventListener('scroll',()=>{if(!chatPicker.hidden)positionChatPicker();},true);
 document.addEventListener('click',e=>{
- if(!chatPicker.hidden&&!chatPicker.contains(e.target)&&!smileButton.contains(e.target)){
-  chatPicker.hidden=true;smileButton.setAttribute('aria-expanded','false');
+ if(!chatPicker.hidden&&!chatPicker.contains(e.target)&&!e.composedPath().includes(smileButton)){
+  chatPicker.hidden=true;chatPicker.setAttribute('aria-hidden','true');chatPicker.style.display='none';smileButton.setAttribute('aria-expanded','false');
  }
 });
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('#chatInput');if(!input.value.trim())return;notify('Sohbet sunucusu bağlı olmadığı için mesaj gönderilmedi.');input.value='';});
