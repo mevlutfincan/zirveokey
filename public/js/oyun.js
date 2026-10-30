@@ -69,8 +69,7 @@ function setChatPanelMode(mode){
 $('#chatPanelGrow').addEventListener('click',()=>setChatPanelMode('grow'));
 $('#chatPanelCenter').addEventListener('click',()=>setChatPanelMode('center'));
 $('#chatPanelShrink').addEventListener('click',()=>setChatPanelMode('normal'));
-setChatPanelMode('normal');$('#chatTextCenter').classList.toggle('active',chatCentered)});
-applyChatTextSettings();
+setChatPanelMode('normal');
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('#chatInput');if(!input.value.trim())return;notify('Sohbet sunucusu bağlı olmadığı için mesaj gönderilmedi.');input.value='';});
 renderTabs();renderLobby();renderRack();
 })();
