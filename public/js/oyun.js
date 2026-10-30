@@ -491,7 +491,7 @@ $('#gameLogoutButton').addEventListener('click',async()=>{
 
 refreshGameAccount();loadLobbyMessages(true);loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();
 window.setInterval(()=>{loadLobbyMessages(false);loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();},25000);
-window.setInterval(loadLobbyChatStyles,2500);
+window.setInterval(loadLobbyChatStyles,1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){loadLobbyMessages(false);loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();}});
 renderTabs();renderLobby();renderRack();
 })();
