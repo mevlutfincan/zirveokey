@@ -124,16 +124,34 @@ emojiSymbols.forEach(symbol=>{
  const b=document.createElement('button');b.type='button';b.textContent=symbol;b.setAttribute('aria-label',symbol);
  b.addEventListener('click',()=>insertChatText(symbol));emojiGrid.append(b);
 });
+function positionChatPicker(){
+ const r=smileButton.getBoundingClientRect();
+ const width=Math.min(520,window.innerWidth-24);
+ const left=Math.max(12,Math.min(window.innerWidth-width-12,r.right-width));
+ chatPicker.style.position='fixed';
+ chatPicker.style.left=left+'px';
+ chatPicker.style.right='auto';
+ chatPicker.style.bottom=Math.max(12,window.innerHeight-r.top+8)+'px';
+ chatPicker.style.top='auto';
+ chatPicker.style.zIndex='2147483000';
+ chatPicker.style.maxHeight=Math.min(620,window.innerHeight-24)+'px';
+}
 smileButton.addEventListener('click',()=>{
- const opening=chatPicker.hidden;chatPicker.hidden=!opening;
+ const opening=chatPicker.hidden;
+ if(opening){
+  if(chatPicker.parentElement!==document.body)document.body.append(chatPicker);
+  positionChatPicker();
+  chatPicker.hidden=false;
+ }else chatPicker.hidden=true;
  smileButton.setAttribute('aria-expanded',String(opening));
 });
+window.addEventListener('resize',()=>{if(!chatPicker.hidden)positionChatPicker();});
+window.addEventListener('scroll',()=>{if(!chatPicker.hidden)positionChatPicker();},true);
 document.addEventListener('click',e=>{
  if(!chatPicker.hidden&&!chatPicker.contains(e.target)&&!smileButton.contains(e.target)){
   chatPicker.hidden=true;smileButton.setAttribute('aria-expanded','false');
  }
 });
-
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('#chatInput');if(!input.value.trim())return;notify('Sohbet sunucusu bağlı olmadığı için mesaj gönderilmedi.');input.value='';});
 renderTabs();renderLobby();renderRack();
 })();
