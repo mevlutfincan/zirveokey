@@ -1,5 +1,7 @@
 const $=s=>document.querySelector(s);
 const toggle=$('#mobileToggle'),nav=$('#mainNav');
+const themeButton=$('.theme');
+if(themeButton){themeButton.addEventListener('click',()=>{const light=document.documentElement.classList.toggle('soft-light');themeButton.textContent=light?'☀':'☾';document.documentElement.style.setProperty('--glass',light?'rgba(12,22,14,.78)':'rgba(3,12,8,.72)');});}
 toggle.addEventListener('click',()=>{const open=nav.classList.toggle('open');toggle.setAttribute('aria-expanded',String(open));});
 nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');toggle.setAttribute('aria-expanded','false');}));
 const backdrop=$('#backdrop'),email=$('#email');
@@ -19,3 +21,6 @@ $('#mute').addEventListener('click',()=>{if(audio.volume>0){previousVolume=audio
 $('#previous').addEventListener('click',()=>status.textContent='Canlı yayında parça atlama desteklenmiyor.');$('#next').addEventListener('click',()=>status.textContent='Canlı yayında parça atlama desteklenmiyor.');
 $('#playButton').addEventListener('click',()=>status.textContent='Oyun bağlantısı oyun uygulaması oluşturulduğunda eklenecek.');
 audio.volume=.7;
+// Keep the radio equalizer animated only while audio is actually playing.
+audio.addEventListener('play',()=>document.querySelector('.bars')?.classList.add('is-playing'));
+audio.addEventListener('pause',()=>document.querySelector('.bars')?.classList.remove('is-playing'));
