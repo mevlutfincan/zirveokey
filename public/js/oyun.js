@@ -177,8 +177,7 @@ let chatLastId=0,chatBusy=false;
   const prefs=readChatPreferences();
   const size=Math.min(22,Math.max(12,Number(prefs.textSize)||15));
   chatMessagesBox.style.setProperty('--chat-message-size',size+'px');
-  chatMessagesBox.classList.toggle('chat-text-centered',prefs.centered===true);
-  $('#chatTextCenter').classList.toggle('active',prefs.centered===true);
+  $('#chatTextReset').classList.toggle('active',size===15);
   $('#chatTextGrow').disabled=size>=22;
   $('#chatTextShrink').disabled=size<=12;
  }
@@ -188,8 +187,8 @@ let chatLastId=0,chatBusy=false;
  $('#chatTextShrink').addEventListener('click',()=>{
   const prefs=readChatPreferences();prefs.textSize=Math.max(12,(Number(prefs.textSize)||15)-1);saveChatPreferences(prefs);applyChatTextPreferences();
  });
- $('#chatTextCenter').addEventListener('click',()=>{
-  const prefs=readChatPreferences();prefs.centered=!prefs.centered;saveChatPreferences(prefs);applyChatTextPreferences();
+ $('#chatTextReset').addEventListener('click',()=>{
+  const prefs=readChatPreferences();prefs.textSize=15;delete prefs.centered;saveChatPreferences(prefs);applyChatTextPreferences();
  });
  $('#chatClearMessages').addEventListener('click',()=>{
   const prefs=readChatPreferences();prefs.clearBeforeId=Math.max(Number(prefs.clearBeforeId)||0,chatLastId);saveChatPreferences(prefs);
