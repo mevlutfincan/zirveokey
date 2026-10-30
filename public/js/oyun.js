@@ -163,18 +163,11 @@ document.addEventListener('click',e=>{
 let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=false,chatStyleAccountId=null;
  const defaultChatStyle={nameColor:'#111111',textColor:'#111111'};
  function validChatHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
- function chatColorLuminance(value){
-  const rgb=String(value).slice(1).match(/.{2}/g)||['11','11','11'];
-  const channels=rgb.map(part=>{const channel=parseInt(part,16)/255;return channel<=0.04045?channel/12.92:Math.pow((channel+0.055)/1.055,2);});
-  return 0.2126*channels[0]+0.7152*channels[1]+0.0722*channels[2];
- }
- function chatColorReadable(value){return (chatColorLuminance('#e8efe8')+0.05)/(chatColorLuminance(value)+0.05)>=4.5;}
  function updateChatColorPreview(){
   const name=$('#chatNameColor').value,text=$('#chatBodyColor').value;
   $('#chatColorPreviewName').style.color=name;$('#chatColorPreviewText').style.color=text;
-  const readable=chatColorReadable(name)&&chatColorReadable(text);
-  $('#chatColorSave').disabled=!readable||!chatStyleAuthenticated||chatStyleSaving;
-  $('#chatColorStatus').textContent=!chatStyleAuthenticated?'Renkleri kaydetmek için giriş yapın.':!readable?'Bu renk çok açık; okunabilirlik için daha koyu bir ton seçin.':chatStyleSaving?'Kaydediliyor…':'Seçtiğin renkler mesajlarında diğer üyelere de görünür.';
+  $('#chatColorSave').disabled=!chatStyleAuthenticated||chatStyleSaving;
+  $('#chatColorStatus').textContent=!chatStyleAuthenticated?'Renkleri kaydetmek için giriş yapın.':chatStyleSaving?'Kaydediliyor…':'Seçtiğin tüm renkler kaydedilebilir ve diğer üyelere aynen görünür.';
  }
  function setChatColorInputs(style){
   $('#chatNameColor').value=validChatHex(style?.nameColor)?style.nameColor:defaultChatStyle.nameColor;
@@ -226,7 +219,7 @@ $('#chatColorsTab').addEventListener('click',()=>selectChatSettingsTab(true));
 $('#chatNameColor').addEventListener('input',updateChatColorPreview);
 $('#chatBodyColor').addEventListener('input',updateChatColorPreview);
 $('#chatColorSave').addEventListener('click',async()=>{
- if(!chatStyleAuthenticated||chatStyleSaving||!chatColorReadable($('#chatNameColor').value)||!chatColorReadable($('#chatBodyColor').value))return;
+ if(!chatStyleAuthenticated||chatStyleSaving)return;
  chatStyleSaving=true;updateChatColorPreview();
  try{
   const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value})});
