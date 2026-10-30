@@ -16,7 +16,7 @@ function renderTabs(){
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function renderLobby(){
  const root=$('#lobbyTableGrid');root.innerHTML='';
- tables.forEach(t=>{const card=document.createElement('article');card.className='lobby-table-card';card.innerHTML='<b>Masa '+String(t.id).padStart(3,'0')+' · '+escapeHtml(t.name)+'</b><p>'+escapeHtml(t.type)+' · '+escapeHtml(t.privacy)+'</p><div class="table-card-seats"><span class="filled">Misafir</span><span>Boş</span><span>Boş</span><span>Boş</span></div>';card.addEventListener('click',()=>openTable(t.id));root.append(card)});
+ tables.forEach(t=>{const card=document.createElement('article');card.className='lobby-table-card';card.innerHTML='<b>Masa '+String(t.id).padStart(3,'0')+' · '+escapeHtml(t.name)+'</b><p>'+escapeHtml(t.type)+' · '+escapeHtml(t.privacy)+' · '+escapeHtml(t.style||'Standart')+'</p><div class="table-card-seats"><span class="filled">Misafir</span><span>Boş</span><span>Boş</span><span>Boş</span></div>';card.addEventListener('click',()=>openTable(t.id));root.append(card)});
  $('#onlineCount').textContent='—';
 }
 function renderRack(){
@@ -29,7 +29,7 @@ function closeTable(id){if(!confirm('Masayı kapatmak istediğinizden emin misin
 function createTable(){
  if(tables.length>=1){notify('Bu önizlemede aynı anda yalnızca bir masa açılabilir.');return}
  const name=$('#newTableName').value.trim()||'Klasik Okey';const id=1;
- tables.push({id,name,type:$('#gameType').value,privacy:$('#tablePrivacy').value,isTest:true});activeTable=id;
+ tables.push({id,name,type:$('#gameType').value,privacy:$('#tablePrivacy').value,style:$('#tableStyle').value,isTest:true});activeTable=id;
  $('#createDialog').close();renderTabs();renderLobby();openTable(id);notify('Masa arayüzü oluşturuldu. Oyun sunucusu henüz bağlı değil.');
 }
 $('#openCreateTable').addEventListener('click',()=>$('#createDialog').showModal());
