@@ -47,20 +47,24 @@ $('#tableView').addEventListener('keydown',resetIdleTimer);
 const chatPanel=$('.chat-panel');
 const mainColumn=$('.main-column');
 const chatDefaultHeight=390;
+const chatGrownHeight=560;
 function setChatPanelMode(mode){
+ const nextMode=['grow','center'].includes(mode)?mode:'normal';
  chatPanel.classList.remove('chat-panel-grown','chat-panel-centered');
+ mainColumn.classList.remove('chat-mode-centered');
  mainColumn.style.setProperty('--chat-panel-height',chatDefaultHeight+'px');
  chatPanel.style.setProperty('--chat-panel-height',chatDefaultHeight+'px');
- if(mode==='grow'){
-  mainColumn.style.setProperty('--chat-panel-height','560px');
-  chatPanel.style.setProperty('--chat-panel-height','560px');
+ if(nextMode==='grow'){
+  mainColumn.style.setProperty('--chat-panel-height',chatGrownHeight+'px');
+  chatPanel.style.setProperty('--chat-panel-height',chatGrownHeight+'px');
   chatPanel.classList.add('chat-panel-grown');
- }else if(mode==='center'){
+ }else if(nextMode==='center'){
+  mainColumn.classList.add('chat-mode-centered');
   chatPanel.classList.add('chat-panel-centered');
  }
- $('#chatPanelGrow').classList.toggle('active',mode==='grow');
- $('#chatPanelCenter').classList.toggle('active',mode==='center');
- $('#chatPanelShrink').classList.toggle('active',mode==='normal');
+ $('#chatPanelGrow').classList.toggle('active',nextMode==='grow');
+ $('#chatPanelCenter').classList.toggle('active',nextMode==='center');
+ $('#chatPanelShrink').classList.toggle('active',nextMode==='normal');
 }
 $('#chatPanelGrow').addEventListener('click',()=>setChatPanelMode('grow'));
 $('#chatPanelCenter').addEventListener('click',()=>setChatPanelMode('center'));
