@@ -739,3 +739,33 @@ nav.lobby-tabs>.lobby-tab:first-child{
  }
  .main-column:not(.chat-mode-centered)>.chat-panel{transform:none!important}
 }
+
+/* Chat controls: immediate, non-animated positioning */
+.chat-panel{transition:none!important;animation:none!important}
+@media(min-width:761px){
+ .main-column{position:relative!important}
+ .main-column>.chat-panel{transition:none!important;animation:none!important}
+ .main-column:not(.chat-mode-centered)>.chat-panel{position:relative!important;transform:none!important}
+ .main-column:not(.chat-mode-centered)>.chat-panel.chat-panel-grown{
+  position:absolute!important;left:0!important;right:0!important;top:0!important;bottom:0!important;
+  width:100%!important;height:100%!important;min-height:0!important;
+  z-index:9!important;transform:none!important;
+ }
+ .main-column.chat-mode-centered>.chat-panel{
+  position:absolute!important;left:0!important;right:0!important;top:50%!important;bottom:auto!important;
+  width:100%!important;height:390px!important;min-height:390px!important;
+  transform:translateY(-50%)!important;z-index:9!important;
+ }
+}
+@media(max-width:760px){
+ .main-column>.chat-panel{transition:none!important;animation:none!important}
+ .main-column:not(.chat-mode-centered)>.chat-panel.chat-panel-grown{
+  position:relative!important;top:auto!important;bottom:auto!important;left:auto!important;right:auto!important;
+  width:100%!important;height:460px!important;min-height:460px!important;transform:none!important;
+ }
+ .main-column.chat-mode-centered>.chat-panel{
+  position:relative!important;top:auto!important;bottom:auto!important;
+  width:100%!important;height:390px!important;min-height:390px!important;
+  transform:translateY(-50%)!important;z-index:9!important;
+ }
+}
