@@ -34,3 +34,39 @@
 .action-status:empty{display:none}
 .soft-light .action-status{color:#fff}
 @media(max-width:760px){.action-status{margin:-5px 0 0 2px;font-size:11px}}
+
+
+/* Homepage balance: centered desktop composition */
+@media(min-width:761px){
+ .site-header{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:clamp(16px,2vw,30px);
+  padding-inline:clamp(28px,4vw,68px);
+ }
+ .brand{justify-self:start;min-width:0}
+ #mainNav{justify-self:center;flex:0 1 auto;gap:clamp(16px,2vw,34px)}
+ .header-actions{justify-self:end}
+ .hero{justify-content:center}
+ .hero-content{
+  width:min(1120px,calc(100% - 64px));
+  margin:0 auto;
+  padding:48px 0 58px;
+  text-align:center;
+ }
+ .eyebrow{margin-bottom:18px}
+ .intro{margin-inline:auto}
+ .hero-actions{justify-content:center;gap:22px}
+ .play{flex:0 0 388px}
+ .radio{width:min(560px,48%);flex:0 1 560px}
+ .radio-panel{text-align:left}
+ .action-status{text-align:center;margin-left:0}
+}
+@media(max-width:760px){
+ .hero-content{text-align:center;margin-inline:auto}
+ .eyebrow{justify-content:center}
+ .intro{margin-inline:auto}
+ .hero-actions{align-items:center}
+ .play,.radio{width:100%}
+ .action-status{text-align:center;margin-left:0}
+}
