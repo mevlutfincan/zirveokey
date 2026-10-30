@@ -1189,3 +1189,9 @@ body:not(.soft-light) .community-empty{
 .member-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f3f8f3;font-size:13px;font-weight:600}
 
 .member-time{margin-left:auto;flex:0 0 auto;color:#baf78e;font-size:11px;font-weight:700;white-space:nowrap}
+
+/* Mobile navigation anchor: follow the actual two-row header height. */
+@media(max-width:760px){
+ .site-header{position:relative!important}
+ .site-header #mainNav{top:100%!important}
+}
