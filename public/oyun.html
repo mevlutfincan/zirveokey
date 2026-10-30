@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
+<title>Oyun | ZirveOkey</title>
+<link rel="stylesheet" href="/css/oyun.css?v=game-ui-20261030-1">
+<script defer src="/js/oyun.js?v=game-ui-20261030-1"></script>
+</head>
+<body class="game-page">
+<header class="game-header">
+ <div class="game-brand"><span class="brand-crown">♛</span><span><b>Zirve</b>Okey</span><small>OYUN ALANI</small></div>
+ <div class="header-center"><span class="live-dot"></span><span>OYUN LOBİSİ</span><span class="header-divider"></span><span id="connectionState">Arayüz önizlemesi</span></div>
+ <div class="header-user"><span class="user-avatar">M</span><span class="user-meta"><b>Misafir Oyuncu</b><small>Oturum bilgisi bağlanacak</small></span><button class="icon-button" type="button" aria-label="Ayarlar">⚙</button></div>
+</header>
+
+<nav class="lobby-tabs" aria-label="Lobi ve masa sekmeleri">
+ <button class="lobby-tab active" type="button" data-tab="lobby"><span class="tab-symbol">⌂</span><span>Lobi</span><i class="tab-live"></i></button>
+ <div class="tab-divider"></div>
+ <div class="open-table-tabs" id="openTableTabs" aria-live="polite"><span class="empty-tabs">Açık masa yok</span></div>
+ <button class="tab-add" id="openCreateTable" type="button"><span>＋</span> Masa oluştur</button>
+</nav>
+
+<main class="game-layout">
+ <section class="main-column">
+  <div class="lobby-view" id="lobbyView">
+   <div class="section-heading"><div><span class="eyebrow">ZİRVEOKEY TOPLULUĞU</span><h1>Oyun Lobisi</h1><p>Oyuncuları keşfet, masalara göz at.</p></div><div class="lobby-stat"><span class="stat-pulse"></span><b id="onlineCount">—</b><small>çevrimiçi</small></div></div>
+   <div class="lobby-empty"><div class="empty-emblem">♛</div><h2>Lobiye hoş geldin</h2><p>Şu anda listelenecek açık masa bulunmuyor.</p><button class="primary-button" id="lobbyCreateTable" type="button">＋ İlk masanı oluştur</button></div>
+   <div class="lobby-table-grid" id="lobbyTableGrid"></div>
+  </div>
+
+  <section class="table-view" id="tableView" hidden>
+   <div class="table-topline"><div><span class="eyebrow">OYUN MASASI</span><h1 id="tableTitle">Masa 1</h1></div><div class="table-tools"><span class="table-number">MASA #001</span><button class="subtle-button" id="leaveTable" type="button">Masadan çık</button></div></div>
+   <div class="felt-stage">
+    <div class="felt-table">
+     <div class="felt-center"><div class="center-brand">♛ <b>ZirveOkey</b></div><span class="round-status" id="roundStatus">Masa hazır • Oyuncular bekleniyor</span><div class="indicator-tiles"><span class="tile mini red">12</span><span class="tile mini black">5</span><span class="tile mini blue">9</span></div><span class="table-hint">Oyun başladığında taşlar burada oynanır</span></div>
+     <div class="seat seat-top"><span class="seat-avatar">?</span><b>Boş</b><small>Oyuncu bekleniyor</small></div>
+     <div class="seat seat-left"><span class="seat-avatar">?</span><b>Boş</b><small>Oyuncu bekleniyor</small></div>
+     <div class="seat seat-right"><span class="seat-avatar">?</span><b>Boş</b><small>Oyuncu bekleniyor</small></div>
+     <div class="seat seat-bottom"><span class="seat-avatar self">M</span><b>Misafir Oyuncu</b><small>Sen</small></div>
+    </div>
+   </div>
+   <div class="rack-toolbar"><div><b>Taşların</b><span id="rackCount">14 taş • örnek dizilim</span></div><div class="rack-actions"><button class="subtle-button" id="sortTiles" type="button">Taşları diz</button><button class="subtle-button" id="sortPairs" type="button">Çift diz</button></div></div>
+   <div class="tile-rack" id="tileRack" aria-label="Oyuncu taşları"></div>
+   <div class="table-bottom-actions"><button class="subtle-button" id="discardTile" type="button">Seçili taşı at</button><button class="primary-button" id="startGame" type="button" disabled>Oyun başlat</button><span class="demo-note">Oyun motoru bağlantısı bekleniyor</span></div>
+  </section>
+ </section>
+
+ <aside class="right-column">
+  <section class="side-panel online-panel"><div class="side-heading"><div><span class="eyebrow">TOPLULUK</span><h2>Çevrimiçi oyuncular</h2></div><span class="online-badge"><i></i> 0</span></div><div class="online-list" id="onlineList"><div class="side-empty"><span>♙</span><b>Oyuncu listesi bekleniyor</b><small>Canlı oyuncu bağlantısı henüz etkin değil.</small></div></div></section>
+  <section class="side-panel chat-panel"><div class="side-heading"><div><span class="eyebrow">SOHBET</span><h2>Lobi sohbeti</h2></div><span class="chat-lock">LOBI</span></div><div class="chat-messages" id="chatMessages" aria-live="polite"><div class="chat-system">ZirveOkey lobisine hoş geldin. Sohbet bağlantısı etkinleştirildiğinde mesajlar burada görünecek.</div></div><form class="chat-form" id="chatForm"><input id="chatInput" type="text" maxlength="300" placeholder="Mesajını yaz..." autocomplete="off" aria-label="Sohbet mesajı"><button type="submit" aria-label="Mesaj gönder">➤</button></form><small class="chat-footnote">Sohbet sunucusu bağlantısı bekleniyor</small></section>
+ </aside>
+</main>
+
+<dialog class="create-dialog" id="createDialog"><form method="dialog" id="createTableForm"><div class="dialog-heading"><div><span class="eyebrow">YENİ OYUN</span><h2>Masa oluştur</h2></div><button class="icon-button" value="cancel" aria-label="Kapat">×</button></div><label>Masa adı<input id="newTableName" maxlength="22" value="Klasik Okey" required></label><div class="dialog-grid"><label>Oyun türü<select id="gameType"><option>Klasik Okey</option><option>101 Okey</option></select></label><label>Masa düzeni<select id="tablePrivacy"><option>Açık masa</option><option>Şifreli masa</option></select></label></div><div class="dialog-actions"><button class="subtle-button" value="cancel">Vazgeç</button><button class="primary-button" id="confirmCreateTable" value="default">Masayı oluştur</button></div><p class="dialog-note">Bu aşamada masa oluşturma yalnızca arayüz önizlemesidir; diğer oyunculara açılmaz.</p></form></dialog>
+<div class="toast" id="gameToast" role="status" aria-live="polite"></div>
+</body></html>
