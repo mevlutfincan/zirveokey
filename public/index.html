@@ -14,20 +14,20 @@
 <nav id="mainNav" aria-label="Ana menü">
 <a class="active" href="/"><span class="nav-icon">⌂</span><span>Anasayfa</span></a><a href="#siralama"><span class="nav-icon">🏆</span><span>Sıralama</span></a><a href="#turnuvalar"><span class="nav-icon">🏆</span><span>Turnuvalar</span></a><a href="#yardim"><span class="nav-icon">❔</span><span>Yardım</span></a><a href="#iletisim"><span class="nav-icon">✉</span><span>İletişim</span></a>
 </nav>
-<div class="header-actions"><button class="theme" aria-label="Tema">☾</button><aside class="radio" id="radio">
+<div class="header-actions"><button class="theme" aria-label="Tema">☾</button><button class="outline" data-modal="login">♟ Giriş Yap</button><button class="green" data-modal="register">♟ Üye Ol</button></div>
+</header>
+<main><section class="hero"><div class="hero-content">
+<p class="eyebrow">GERÇEK OYUNCULAR <i></i> GERÇEK KEYİF</p>
+<h1>Türkiye’nin<br><em>En Keyifli</em><br>Okey Platformu</h1>
+<p class="intro">Yeni insanlarla tanış, keyifli masalara katıl,<br class="desktop"> dostlukların tadını çıkar.</p>
+<div class="hero-actions"><button class="play" id="playButton"><span>▶</span><b>Hemen Oyuna Başla</b><i>→</i></button><aside class="radio" id="radio">
 <button class="radio-collapsed" id="radioExpand" aria-expanded="false"><strong class="headphones">♫</strong><span><b>ZirveFm</b><small>Radyo Dinle</small></span><strong class="mini-play">▶</strong><strong class="chevron">⌃</strong></button>
 <div class="radio-panel" id="radioPanel" hidden>
 <div class="radio-head"><span><b class="headphones">♫</b><strong>ZirveFm<small>Radyo Dinle</small></strong></span><button id="radioClose" aria-label="Küçült">×</button></div>
 <div class="track"><div class="station">Zirve<span>Fm</span><small>RADYO</small></div><p><small>ŞİMDİ ÇALIYOR</small><b id="trackName">ZirveFm Canlı Yayın</b><span>Radyo yayını</span></p></div>
 <div class="volume"><button id="mute" aria-label="Sessize al">◖</button><input id="volume" type="range" min="0" max="100" value="70"><output id="volumeValue">70</output></div>
 <div class="controls"><button id="previous" aria-label="Önceki">|◀</button><button id="radioPlay" class="play-toggle" aria-label="Başlat">▶</button><button id="next" aria-label="Sonraki">▶|</button><span class="bars">▂ ▅ ▇ ▄ ▆</span></div>
-<p class="radio-status" id="radioStatus">Canlı yayın adresi eklendiğinde yayın başlayacak.</p></div><audio id="radioAudio" preload="none"></audio></aside><button class="outline" data-modal="login">♟ Giriş Yap</button><button class="green" data-modal="register">♟ Üye Ol</button></div>
-</header>
-<main><section class="hero"><div class="hero-content">
-<p class="eyebrow">GERÇEK OYUNCULAR <i></i> GERÇEK KEYİF</p>
-<h1>Türkiye’nin<br><em>En Keyifli</em><br>Okey Platformu</h1>
-<p class="intro">Yeni insanlarla tanış, keyifli masalara katıl,<br class="desktop"> dostlukların tadını çıkar.</p>
-<button class="play" id="playButton"><span>▶</span><b>Hemen Oyuna Başla</b><i>→</i></button>
+<p class="radio-status" id="radioStatus">Canlı yayın adresi eklendiğinde yayın başlayacak.</p></div><audio id="radioAudio" preload="none"></audio></aside></div>
 </div></section></main>
 
 <div class="backdrop" id="backdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="close" id="modalClose">×</button><div class="modal-brand">♛ <b>ZirveOkey</b></div><h2 id="modalTitle">Giriş Yap</h2><p id="modalDesc">Hesabına giriş yap ve oyuna katıl.</p><form id="authForm"><input id="email" type="email" placeholder="E-posta adresi" hidden><input type="text" placeholder="Kullanıcı adı" required><input type="password" placeholder="Şifre" required><button class="green" id="authSubmit">Giriş Yap</button></form><small id="modalNote">Hesap işlemleri sunucu bağlantısı eklendiğinde etkinleştirilecek.</small></section></div>
