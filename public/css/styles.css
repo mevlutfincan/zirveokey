@@ -927,3 +927,94 @@ body:not(.soft-light) .community-empty{
   font-size:.72em;
  }
 }
+
+
+/* Mobile header refinement: logo, navigation and account actions only */
+@media(max-width:760px){
+ .site-header{
+  height:68px;
+  padding:0 14px;
+  gap:10px;
+  justify-content:space-between;
+ }
+ .site-header .brand{
+  min-width:0!important;
+  flex:0 1 auto;
+  white-space:nowrap;
+  font-size:clamp(24px,6.2vw,29px);
+  letter-spacing:-1.4px;
+  line-height:1;
+ }
+ .site-header .brand .crown{
+  font-size:.68em;
+  margin-right:5px;
+  filter:drop-shadow(0 0 4px rgba(112,237,53,.34));
+ }
+ .site-header .mobile-toggle{
+  order:3;
+  flex:0 0 42px;
+  width:42px;
+  height:42px;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(151,231,123,.24);
+  border-radius:11px;
+  background:rgba(255,255,255,.045);
+ }
+ .site-header .mobile-toggle i{
+  width:20px;
+  height:2px;
+  border-radius:2px;
+  transition:transform .2s ease,opacity .2s ease;
+ }
+ .site-header .mobile-toggle[aria-expanded="true"] i:first-child{transform:translateY(7px) rotate(45deg)}
+ .site-header .mobile-toggle[aria-expanded="true"] i:nth-child(2){opacity:0}
+ .site-header .mobile-toggle[aria-expanded="true"] i:last-child{transform:translateY(-7px) rotate(-45deg)}
+ .site-header #mainNav{
+  top:68px;
+  left:10px;
+  right:10px;
+  padding:10px;
+  border:1px solid rgba(151,231,123,.2);
+  border-radius:0 0 16px 16px;
+  background:rgba(3,16,9,.98);
+  box-shadow:0 16px 34px rgba(0,0,0,.38);
+ }
+ .site-header #mainNav a{
+  min-height:46px;
+  padding:0 12px;
+  border-radius:9px;
+  font-size:14px;
+ }
+ .site-header #mainNav a.active{
+  background:rgba(112,237,53,.09);
+ }
+ .site-header #mainNav a.active:after{
+  left:0;
+  top:9px;
+  bottom:9px;
+  width:3px;
+  border-radius:3px;
+ }
+ .site-header .mobile-auth{
+  gap:8px;
+  padding:12px 2px 2px;
+  margin-top:8px;
+  border-top-color:rgba(151,231,123,.18);
+ }
+ .site-header .mobile-auth button{
+  min-width:0;
+  height:42px;
+  border-radius:10px;
+  font-size:13px;
+ }
+ .site-header .header-actions{display:none}
+}
+@media(max-width:360px){
+ .site-header{padding:0 10px;gap:6px}
+ .site-header .brand{font-size:23px;letter-spacing:-1.2px}
+ .site-header .mobile-toggle{width:39px;height:39px;flex-basis:39px}
+}
+@media(prefers-reduced-motion:reduce){
+ .site-header .mobile-toggle i{transition:none}
+}
