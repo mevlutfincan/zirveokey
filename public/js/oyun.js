@@ -161,11 +161,12 @@ document.addEventListener('click',e=>{
  }
 });
 let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=false,chatStyleAccountId=null;
- const defaultChatStyle={nameColor:'#111111',textColor:'#111111',rowColor:'#e8efe8'};
+ const defaultChatStyle={nameColor:'#111111',textColor:'#111111'};
+ const fixedChatRowColor='#e8efe8';
  function validChatHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
  function updateChatColorPreview(){
-  const name=$('#chatNameColor').value,text=$('#chatBodyColor').value,row=$('#chatRowColor').value;
-  $('#chatColorPreview').style.setProperty('--chat-row-color',row);
+  const name=$('#chatNameColor').value,text=$('#chatBodyColor').value;
+  $('#chatColorPreview').style.setProperty('--chat-row-color',fixedChatRowColor);
   $('#chatColorPreviewName').style.color=name;$('#chatColorPreviewText').style.color=text;
   $('#chatColorSave').disabled=!chatStyleAuthenticated||chatStyleSaving;
   $('#chatColorStatus').textContent=!chatStyleAuthenticated?'Renkleri kaydetmek için giriş yapın.':chatStyleSaving?'Kaydediliyor…':'Seçtiğin tüm renkler kaydedilebilir ve diğer üyelere aynen görünür.';
@@ -173,7 +174,6 @@ let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=fal
  function setChatColorInputs(style){
   $('#chatNameColor').value=validChatHex(style?.nameColor)?style.nameColor:defaultChatStyle.nameColor;
   $('#chatBodyColor').value=validChatHex(style?.textColor)?style.textColor:defaultChatStyle.textColor;
-  $('#chatRowColor').value=validChatHex(style?.rowColor)?style.rowColor:defaultChatStyle.rowColor;
   updateChatColorPreview();
  }
  async function loadChatStyle(signed,accountId){
@@ -220,12 +220,11 @@ $('#chatFontTab').addEventListener('click',()=>selectChatSettingsTab(false));
 $('#chatColorsTab').addEventListener('click',()=>selectChatSettingsTab(true));
 $('#chatNameColor').addEventListener('input',updateChatColorPreview);
 $('#chatBodyColor').addEventListener('input',updateChatColorPreview);
-$('#chatRowColor').addEventListener('input',updateChatColorPreview);
 $('#chatColorSave').addEventListener('click',async()=>{
  if(!chatStyleAuthenticated||chatStyleSaving)return;
  chatStyleSaving=true;updateChatColorPreview();
  try{
-  const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value,rowColor:$('#chatRowColor').value})});
+  const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value,rowColor:fixedChatRowColor})});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||'Renkler kaydedilemedi.');
   setChatColorInputs(data.chatStyle||{nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value});
@@ -284,8 +283,7 @@ $('#chatTextGrow').addEventListener('click',()=>{
   const author=document.createElement('b');author.textContent=String(message.username||'Üye');
   const nameColor=validChatHex(message.chat_name_color)?message.chat_name_color:defaultChatStyle.nameColor;
   const textColor=validChatHex(message.chat_text_color)?message.chat_text_color:defaultChatStyle.textColor;
-  const rowColor=validChatHex(message.chat_row_color)?message.chat_row_color:defaultChatStyle.rowColor;
-  item.style.setProperty('--chat-author-color',nameColor);item.style.setProperty('--chat-body-color',textColor);item.style.setProperty('--chat-row-color',rowColor);
+  item.style.setProperty('--chat-author-color',nameColor);item.style.setProperty('--chat-body-color',textColor);item.style.setProperty('--chat-row-color',fixedChatRowColor);
   const body=document.createElement('span');body.className='chat-message-body';
   const messageText=String(message.message||'');
   if(typeof Intl!=='undefined'&&Intl.Segmenter){
