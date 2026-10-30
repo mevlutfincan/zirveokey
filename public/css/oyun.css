@@ -201,3 +201,44 @@ body.game-page{background:radial-gradient(ellipse at 14% 0%,rgba(89,142,86,.16),
  .online-panel .side-heading{text-align:left;justify-content:space-between}
  .online-list{width:100%}
 }
+
+
+/* Browser-fitted lobby layout based on the supplied reference */
+html,body.game-page{width:100%;height:100%;min-height:100%;margin:0}
+body.game-page{min-height:100vh;overflow:hidden}
+.game-header{height:68px;min-height:68px;box-sizing:border-box}
+.lobby-tabs{height:44px;min-height:44px;box-sizing:border-box}
+.game-layout{box-sizing:border-box;width:100%;max-width:none;height:calc(100vh - 112px);min-height:0;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,25%);grid-template-rows:minmax(0,1fr);gap:0;align-items:stretch}
+.main-column{grid-column:1;grid-row:1;min-width:0;min-height:0;height:100%;padding:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) 300px;gap:0}
+.lobby-view{grid-row:1;grid-column:1;min-width:0;min-height:0;height:100%;padding:10px 12px 8px;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;overflow:hidden}
+.section-heading{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-start;text-align:left;margin:0 0 8px;padding:0}
+.section-heading h1{margin:0;font-size:22px;line-height:1.2}
+.lobby-stat{margin-left:auto}
+.lobby-table-grid{order:1;flex:0 0 auto;width:100%;min-height:0;margin:0 0 8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,260px));justify-content:start;align-content:start;justify-items:start;align-items:start;gap:8px;max-height:160px;overflow:auto}
+.lobby-table-card{width:100%;justify-self:start}
+.lobby-empty{order:2;display:block!important;flex:1 1 auto;width:100%;min-height:0;margin:0;border:0;border-radius:0;background:#18241d;box-shadow:inset 0 1px rgba(255,255,255,.035);overflow:hidden}
+.right-column{grid-column:2;grid-row:1;min-width:0;min-height:0;height:100%;padding:0;display:block}
+.online-panel{height:100%;min-height:0;box-sizing:border-box;display:flex;flex-direction:column;border-radius:0}
+.online-panel .side-heading{flex:0 0 auto;text-align:left;justify-content:space-between}
+.online-list{flex:1 1 auto;width:100%;min-height:0;overflow:auto}
+.chat-panel{grid-column:1;grid-row:2;width:100%;height:300px;min-height:0;box-sizing:border-box;align-self:stretch;justify-self:stretch;border-radius:0;display:flex;flex-direction:column}
+.chat-panel .side-heading{flex:0 0 auto}
+.chat-messages{flex:1 1 auto;min-height:0;max-height:none;overflow:auto}
+.chat-form{flex:0 0 auto}
+.chat-footnote{flex:0 0 auto}
+@media(max-width:760px){
+ body.game-page{height:auto;min-height:100vh;overflow:auto}
+ .game-header{height:62px;min-height:62px}
+ .lobby-tabs{height:48px;min-height:48px}
+ .game-layout{height:auto;min-height:calc(100vh - 110px);display:flex;flex-direction:column;width:100%;padding:0;gap:0}
+ .main-column{height:auto;min-height:0;display:flex;flex-direction:column;gap:0}
+ .lobby-view{height:auto;min-height:45vh;padding:10px}
+ .section-heading{display:flex;align-items:center;justify-content:flex-start;text-align:left}
+ .section-heading h1{font-size:20px}
+ .lobby-table-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));max-height:none}
+ .lobby-empty{display:block!important;min-height:180px;flex:1 1 auto}
+ .right-column{height:auto;min-height:220px;display:block}
+ .online-panel{height:auto;min-height:220px}
+ .online-list{min-height:140px}
+ .chat-panel{height:280px;min-height:280px}
+}
