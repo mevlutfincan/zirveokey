@@ -175,7 +175,16 @@ let chatLastId=0,chatBusy=false;
   time.textContent=Number.isNaN(createdAt.getTime())?'--:--':createdAt.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
   time.className='chat-message-time';
   const author=document.createElement('b');author.textContent=String(message.username||'Üye');
-  const body=document.createElement('span');body.className='chat-message-body';body.textContent=String(message.message||'');
+  const body=document.createElement('span');body.className='chat-message-body';
+  const messageText=String(message.message||'');
+  if(typeof Intl!=='undefined'&&Intl.Segmenter){
+   const segmenter=new Intl.Segmenter('tr',{granularity:'grapheme'});
+   for(const part of segmenter.segment(messageText)){
+    if(/[\\p{Extended_Pictographic}\\p{Regional_Indicator}]/u.test(part.segment)){
+     const emoji=document.createElement('span');emoji.className='chat-message-emoji';emoji.textContent=part.segment;body.append(emoji);
+    }else body.append(document.createTextNode(part.segment));
+   }
+  }else body.textContent=messageText;
   item.append(time,author,body);
   const box=$('#chatMessages');
   const next=[...box.querySelectorAll('.chat-message')].find(node=>Number(node.dataset.messageId)>numericId);
