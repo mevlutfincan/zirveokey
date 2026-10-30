@@ -142,7 +142,7 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
     [normalized]
   );
   const user = result.rows[0];
-  const valid = user ? await bcrypt.compare(password, user.password_hash) : await bcrypt.compare(password, '$2a$12$C6UzMDM.H6dfI/f/IKcEe.7b0xX5K5e6QjJQ1Y0X8z8qFQq9p1u5K');
+  const valid = user ? await bcrypt.compare(password, user.password_hash) : await bcrypt.compare(password, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
   if (!user || !valid) return res.status(401).json({ error: 'Giriş bilgileri hatalı.' });
   await pool.query('UPDATE users SET last_login_at=NOW() WHERE id=$1', [user.id]);
   req.session.regenerate(err => {
