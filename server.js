@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 );
 CREATE INDEX IF NOT EXISTS password_reset_user_idx ON password_reset_tokens(user_id);
 CREATE INDEX IF NOT EXISTS password_reset_expiry_idx ON password_reset_tokens(expires_at);
+CREATE TABLE IF NOT EXISTS user_activity (user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), active_seconds BIGINT NOT NULL DEFAULT 0);
+CREATE INDEX IF NOT EXISTS user_activity_recent_idx ON user_activity(last_seen_at DESC, active_seconds DESC);
 `;
 
 const authLimiter = rateLimit({
@@ -211,6 +213,34 @@ app.get('/api/public/new-members', asyncRoute(async (_req, res) => {
   const result = await pool.query(
     'SELECT username, created_at FROM users WHERE is_active=TRUE ORDER BY created_at DESC LIMIT 5'
   );
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  res.json({ members: result.rows });
+}));
+
+app.post('/api/activity/heartbeat', dbRequired, asyncRoute(async (req, res) => {
+  if (!req.session.user?.id) return res.status(401).json({ error: 'Aktivite kaydı için giriş yapmalısınız.' });
+  await pool.query(`
+    INSERT INTO user_activity(user_id,last_seen_at,active_seconds)
+    VALUES($1,NOW(),0)
+    ON CONFLICT(user_id) DO UPDATE SET
+      active_seconds=user_activity.active_seconds + CASE
+        WHEN user_activity.last_seen_at > NOW()-INTERVAL '2 minutes'
+        THEN LEAST(90,GREATEST(0,EXTRACT(EPOCH FROM (NOW()-user_activity.last_seen_at))::BIGINT))
+        ELSE 0 END,
+      last_seen_at=NOW()
+  `, [req.session.user.id]);
+  res.status(204).end();
+}));
+
+app.get('/api/public/active-members', asyncRoute(async (_req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Aktif üye listesi şu anda kullanılamıyor.' });
+  const result = await pool.query(`
+    SELECT u.username, a.active_seconds
+    FROM user_activity a JOIN users u ON u.id=a.user_id
+    WHERE u.is_active=TRUE AND a.last_seen_at > NOW()-INTERVAL '7 days'
+    ORDER BY a.active_seconds DESC, a.last_seen_at DESC
+    LIMIT 5
+  `);
   res.setHeader('Cache-Control', 'public, max-age=60');
   res.json({ members: result.rows });
 }));
