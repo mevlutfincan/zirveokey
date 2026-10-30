@@ -201,15 +201,3 @@ body.game-page{background:radial-gradient(ellipse at 14% 0%,rgba(89,142,86,.16),
  .online-panel .side-heading{text-align:left;justify-content:space-between}
  .online-list{width:100%}
 }
-
-
-
-
-/* Balanced vertical proportion: give more height to the lobby workspace */
-@media(min-width:761px){
- .main-column{grid-template-rows:minmax(0,1fr) 250px!important}
- .chat-panel{height:250px!important;min-height:250px!important}
-}
-@media(max-width:760px){
- .chat-panel{height:260px!important;min-height:260px!important}
-}
