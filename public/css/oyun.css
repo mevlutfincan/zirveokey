@@ -201,3 +201,14 @@ body.game-page{background:radial-gradient(ellipse at 14% 0%,rgba(89,142,86,.16),
  .online-panel .side-heading{text-align:left;justify-content:space-between}
  .online-list{width:100%}
 }
+
+/* Keep the actual lobby canvas visible; remove only its promotional copy */
+@media(min-width:761px){
+ .lobby-view{display:flex;flex-direction:column;min-height:0}
+ .lobby-table-grid{flex:0 0 auto;min-height:0;margin:0 0 12px;order:1}
+ .lobby-empty{display:block!important;order:2;flex:1 1 auto;width:100%;min-height:260px;margin:0;border:1px solid rgba(181,215,165,.13);border-radius:16px;background:linear-gradient(145deg,rgba(18,34,24,.52),rgba(9,20,13,.34));box-shadow:inset 0 1px rgba(255,255,255,.025)}
+}
+@media(max-width:760px){
+ .lobby-table-grid{order:1;margin:0 0 10px}
+ .lobby-empty{display:block!important;order:2;width:100%;min-height:260px;margin:0;border:1px solid rgba(181,215,165,.13);border-radius:14px;background:linear-gradient(145deg,rgba(18,34,24,.52),rgba(9,20,13,.34))}
+}
