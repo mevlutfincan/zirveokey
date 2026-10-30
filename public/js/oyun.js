@@ -83,11 +83,11 @@ function applyChatPanelMode(){
   setChatPosition('transform','none');
   chatPanel.classList.add('chat-panel-grown');
  }else if(chatPanelMode==='center'){
-  /* Keep the original bottom edge fixed and lift the panel upward by half its height. */
-  setChatPosition('top','auto');
+  /* Align the panel's top edge with the viewport midpoint while preserving its original bottom edge. */
+  setChatPosition('top',(window.innerHeight/2)+'px');
   setChatPosition('bottom',Math.max(0,window.innerHeight-baseRect.bottom)+'px');
-  setChatPosition('height',chatDefaultHeight+'px');
-  setChatPosition('min-height',chatDefaultHeight+'px');
+  setChatPosition('height','auto');
+  setChatPosition('min-height','0');
   setChatPosition('max-height','none');
   setChatPosition('transform','none');
   chatPanel.classList.add('chat-panel-centered');
