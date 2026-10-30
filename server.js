@@ -247,7 +247,7 @@ app.post('/api/lobby/messages', dbRequired, authLimiter, asyncRoute(async (req, 
     'INSERT INTO lobby_messages(user_id,username,message) VALUES($1,$2,$3) RETURNING id',
     [user.id, user.username, message]
   );
-  const decorated = await pool.query('SELECT m.id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id=$1', [result.rows[0].id]);
+  const decorated = await pool.query('SELECT m.id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id=$1', [result.rows[0].id]);
   await pool.query('DELETE FROM lobby_messages WHERE id < (SELECT GREATEST(COALESCE(MAX(id),0)-500,0) FROM lobby_messages)');
   res.status(201).json({ message: decorated.rows[0] });
 }));
