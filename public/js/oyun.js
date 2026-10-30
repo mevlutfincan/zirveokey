@@ -192,7 +192,7 @@ $('#chatForm').addEventListener('submit',async e=>{
 });
 
 
-function updateOnlineCount(count){
+function updateOnlineCount(count=0){
  const headerCount=$('#headerOnlineCount');if(headerCount)headerCount.textContent=String(count);
  const sideBadge=$('.online-badge');if(sideBadge){const icon=sideBadge.querySelector('i');sideBadge.textContent=String(count);if(icon)sideBadge.prepend(icon);}
 }
