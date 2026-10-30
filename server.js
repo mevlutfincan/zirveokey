@@ -174,7 +174,8 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
 
 app.post('/api/auth/logout', dbRequired, (req, res) => {
   if (!req.session) return res.json({ ok: true });
-  pool?.query('DELETE FROM user_presence WHERE user_id=$1', [req.session.user?.id]).catch(() => {});\n  req.session.destroy(() => {
+  pool?.query('DELETE FROM user_presence WHERE user_id=$1', [req.session.user?.id]).catch(() => {});
+  req.session.destroy(() => {
     res.clearCookie('zirve.sid', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
     res.json({ ok: true });
   });
