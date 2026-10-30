@@ -874,3 +874,8 @@ nav.lobby-tabs>.lobby-tab:first-child{
 /* Explicit visibility state for the emoji picker after it is detached from the chat form. */
 #chatPicker[hidden]{display:none!important}
 #chatPicker:not([hidden]){display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+
+/* Notifications dropdown is attached to the page layer, not clipped by header stacking. */
+#notificationsPopover{position:fixed!important;top:86px!important;right:24px!important;left:auto!important;z-index:2147482500!important;width:min(320px,calc(100vw - 28px))!important;max-height:calc(100vh - 110px)!important;overflow:auto!important}
+#notificationsPopover[hidden]{display:none!important}
+@media(max-width:760px){#notificationsPopover{top:72px!important;right:12px!important}}
