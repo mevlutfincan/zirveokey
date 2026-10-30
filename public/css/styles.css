@@ -180,3 +180,90 @@
 @media(max-width:760px){
  .hero-content{transform:translateY(-12px)}
 }
+
+
+/* Rebuild expanded radio as a clean two-row control card */
+.radio.is-open .radio-panel{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) auto;
+ grid-template-rows:auto auto;
+ align-items:center;
+ column-gap:16px;
+ row-gap:8px;
+ width:100%;
+ height:auto;
+ min-height:132px;
+ max-height:190px;
+ padding:12px 16px 30px;
+ overflow:hidden;
+ border:1px solid var(--line);
+ border-radius:18px;
+}
+.radio.is-open .radio-head{
+ grid-column:1 / -1;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ width:100%;
+ min-width:0;
+}
+.radio.is-open .radio-head>span{display:flex;align-items:center;gap:10px}
+.radio.is-open .radio-head strong{font-size:23px}
+.radio.is-open .radio-head small{font-size:12px}
+.radio.is-open .radio-head .headphones{font-size:30px}
+.radio.is-open .radio-head button{display:grid;flex:0 0 28px}
+.radio.is-open .track{display:none}
+.radio.is-open .volume{
+ grid-column:1;
+ grid-row:2;
+ display:flex;
+ align-items:center;
+ width:100%;
+ min-width:0;
+ gap:9px;
+}
+.radio.is-open .volume input{min-width:30px;width:100%}
+.radio.is-open .controls{
+ grid-column:2;
+ grid-row:2;
+ display:flex;
+ align-items:center;
+ justify-content:flex-end;
+ gap:10px;
+ padding:0;
+ border:0;
+ white-space:nowrap;
+}
+.radio.is-open .controls button{font-size:16px;padding:3px}
+.radio.is-open .controls .play-toggle{width:42px;height:42px;font-size:18px}
+.radio.is-open .bars:before{width:42px;height:26px}
+.radio.is-open .radio-status{
+ position:absolute;
+ left:16px;right:16px;bottom:7px;
+ width:auto;margin:0;padding:0;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ font-size:9px;line-height:1.2;
+}
+@media(min-width:761px){
+ .radio.is-open .radio-panel{min-height:132px;height:auto;max-height:190px}
+}
+@media(max-width:760px){
+ .radio.is-open .radio-panel{
+  grid-template-columns:minmax(0,1fr) auto;
+  min-height:122px;max-height:180px;
+  padding:9px 11px 27px;
+  column-gap:8px;row-gap:7px;
+ }
+ .radio.is-open .radio-head strong{font-size:19px}
+ .radio.is-open .radio-head small{font-size:11px}
+ .radio.is-open .radio-head .headphones{font-size:25px}
+ .radio.is-open .controls{gap:5px}
+ .radio.is-open .controls .play-toggle{width:36px;height:36px}
+ .radio.is-open .bars:before{width:28px;height:22px}
+ .radio.is-open .radio-status{left:11px;right:11px;bottom:7px;font-size:8px}
+}
+@media(max-width:390px){
+ .radio.is-open .controls{gap:2px}
+ .radio.is-open .bars{display:none}
+ .radio.is-open .volume output{font-size:10px}
+}
