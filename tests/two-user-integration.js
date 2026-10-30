@@ -86,10 +86,17 @@ async function main() {
   const savedStyle = savedStyleData.chatStyle;
   assert.equal(savedStyle.nameColor, '#7f1d1d');
   assert.equal(savedStyle.textColor, '#1e3a8a');
-  const invalidStyle = await request('/api/account/chat-style', {
-    method: 'PUT', cookie: cookieA, body: { nameColor: '#ffffff', textColor: '#ffffff' }
+  const lightStyleResponse = await request('/api/account/chat-style', {
+    method: 'PUT', cookie: cookieA, body: { nameColor: '#ffffff', textColor: '#ffff00' }
   });
-  assert.equal(invalidStyle.status, 400, 'Okunamayacak açık renkler kabul edildi.');
+  assert.equal(lightStyleResponse.status, 200, 'Beyaz ve sarı gibi açık renkler de kaydedilebilmeli.');
+  const lightStyle = (await lightStyleResponse.json()).chatStyle;
+  assert.equal(lightStyle.nameColor, '#ffffff');
+  assert.equal(lightStyle.textColor, '#ffff00');
+  const restoredStyleResponse = await request('/api/account/chat-style', {
+    method: 'PUT', cookie: cookieA, body: { nameColor: '#7f1d1d', textColor: '#1e3a8a' }
+  });
+  assert.equal(restoredStyleResponse.status, 200, 'Açık renklerden sonra renkler yeniden değiştirilemedi.');
 
   const anonymousPost = await request('/api/lobby/messages', { method: 'POST', body: { message: 'Yetkisiz test' } });
   assert.equal(anonymousPost.status, 401, 'Oturumsuz kullanıcının sohbet mesajı engellenmedi.');
