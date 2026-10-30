@@ -70,6 +70,7 @@ function expanded(open){
   radio.classList.toggle('is-open',open);
   expand.setAttribute('aria-expanded',String(open));
   panel.setAttribute('aria-hidden',String(!open));
+  panel.inert=!open;
   if(open)$('#radioClose').focus({preventScroll:true});
   else expand.focus({preventScroll:true});
 }
