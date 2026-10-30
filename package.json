@@ -4,6 +4,15 @@
   "private": true,
   "description": "ZirveOkey homepage",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "dependencies": { "express": "^4.21.2" }
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "bcryptjs": "^2.4.3",
+    "connect-pg-simple": "^10.0.0",
+    "express-rate-limit": "^7.5.0",
+    "express-session": "^1.18.1",
+    "pg": "^8.13.1"
+  }
 }
