@@ -1128,6 +1128,11 @@ body:not(.soft-light) .community-empty{
 }
 
 
+/* Respect auth state even where responsive button rules set display explicitly */
+.site-header .header-actions button[hidden],
+.site-header .mobile-auth button[hidden],
+.site-header .account-greeting[hidden]{display:none!important}
+
 /* Login form options shared by desktop and mobile */
 .auth-options{
  display:flex;
