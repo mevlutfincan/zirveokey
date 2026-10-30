@@ -870,3 +870,7 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .member-light-theme .header-center,.member-light-theme .header-user,.member-light-theme .lobby-tab{color:#243526}
 .member-light-theme .icon-button{background:#fff!important;color:#243526!important;border-color:#cbd8c8!important}
 @media(max-width:520px){.settings-dialog form{padding:17px}.settings-dialog .dialog-heading h2{font-size:20px}}
+
+/* Explicit visibility state for the emoji picker after it is detached from the chat form. */
+#chatPicker[hidden]{display:none!important}
+#chatPicker:not([hidden]){display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
