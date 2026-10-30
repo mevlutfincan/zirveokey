@@ -2,7 +2,8 @@
 const $=s=>document.querySelector(s);
 const toast=$('#gameToast');let toastTimer;
 function notify(message){toast.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2600)}
-let tables=[],activeTable=null,selectedTile=null;\nconst discarded=[];
+let tables=[],activeTable=null,selectedTile=null;
+const discarded=[];
 const sampleTiles=[{v:1,c:'red'},{v:2,c:'red'},{v:3,c:'red'},{v:4,c:'red'},{v:5,c:'red'},{v:6,c:'blue'},{v:7,c:'blue'},{v:8,c:'blue'},{v:9,c:'blue'},{v:10,c:'black'},{v:11,c:'black'},{v:12,c:'black'},{v:13,c:'black'},{v:5,c:'yellow'}];
 function renderTabs(){
  const root=$('#openTableTabs');root.innerHTML='';
@@ -29,7 +30,8 @@ function createTable(){
  $('#createDialog').close();renderTabs();renderLobby();openTable(id);notify('Masa arayüzü oluşturuldu. Oyun sunucusu henüz bağlı değil.');
 }
 $('#openCreateTable').addEventListener('click',()=>$('#createDialog').showModal());
-$('#lobbyCreateTable').addEventListener('click',()=>$('#createDialog').showModal());\n$('.lobby-tab').addEventListener('click',()=>{activeTable=null;$('#tableView').hidden=true;$('#lobbyView').hidden=false;renderTabs();});
+$('#lobbyCreateTable').addEventListener('click',()=>$('#createDialog').showModal());
+$('.lobby-tab').addEventListener('click',()=>{activeTable=null;$('#tableView').hidden=true;$('#lobbyView').hidden=false;renderTabs();});
 $('#createTableForm').addEventListener('submit',e=>{e.preventDefault();createTable()});
 $('#leaveTable').addEventListener('click',()=>{if(!activeTable)return;const id=activeTable;if(!confirm('Masadan çıkmak istediğinizden emin misiniz?'))return;tables=tables.filter(t=>t.id!==id);activeTable=null;$('#tableView').hidden=true;$('#lobbyView').hidden=false;renderTabs();renderLobby();notify('Masadan ayrıldın.')});
 $('#sortTiles').addEventListener('click',()=>{sampleTiles.sort((a,b)=>a.c.localeCompare(b.c)||a.v-b.v);selectedTile=null;renderRack();notify('Taşlar renge ve sayıya göre sıralandı (örnek).')});
