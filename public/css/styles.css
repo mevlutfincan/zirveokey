@@ -1126,3 +1126,47 @@ body:not(.soft-light) .community-empty{
  .site-header .header-actions{gap:7px!important}
  .site-header .header-actions button{font-size:13px!important}
 }
+
+
+/* Login form options shared by desktop and mobile */
+.auth-options{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:12px;
+ margin:0 0 2px;
+}
+.auth-options[hidden]{display:none!important}
+.remember-option{
+ display:inline-flex;
+ align-items:center;
+ gap:8px;
+ color:#dce8df;
+ font-size:13px;
+ cursor:pointer;
+ user-select:none;
+}
+.modal .remember-option input{
+ width:16px;
+ height:16px;
+ margin:0;
+ padding:0;
+ accent-color:#70ed35;
+ cursor:pointer;
+}
+.text-link{
+ border:0;
+ padding:4px 0;
+ background:none;
+ color:#9af16f;
+ font:inherit;
+ font-size:13px;
+ font-weight:700;
+ cursor:pointer;
+}
+.text-link:hover{text-decoration:underline;color:#c7ffad}
+.modal input[hidden]{display:none!important}
+@media(max-width:390px){
+ .auth-options{gap:8px}
+ .remember-option,.text-link{font-size:12px}
+}
