@@ -241,3 +241,8 @@ body.game-page{background:radial-gradient(ellipse at 14% 0%,rgba(89,142,86,.16),
  .tab-add span{font-size:20px}
 }
 
+/* Remove the unused leading inset before the first lobby tab */
+.lobby-tabs{padding-left:0!important}
+.lobby-tabs>.lobby-tab:first-child{margin-left:0!important}
+@media(max-width:760px){.lobby-tabs{padding-left:0!important}}
+
