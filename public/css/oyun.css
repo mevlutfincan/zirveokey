@@ -679,3 +679,37 @@ nav.lobby-tabs>.lobby-tab:first-child{
   linear-gradient(135deg,var(--trim-hi),var(--trim-mid) 42%,var(--trim-low) 78%,var(--trim-hi)) border-box!important;
  box-shadow:inset 0 1px 0 #d9e7ce20,inset 0 -4px 8px #030805a8,0 3px 0 #071009,0 5px 12px #0005!important;
 }
+
+
+/* Minimal, coordinated chat controls — static surfaces and restrained accents */
+.chat-view-tools .chat-control{
+ min-width:88px!important;height:36px!important;padding:0 11px!important;gap:7px!important;
+ border:1px solid #465b4b!important;border-radius:8px!important;
+ background:#1b2a20!important;color:#e8eee5!important;
+ box-shadow:inset 0 1px 0 #ffffff0a,0 1px 3px #0003!important;
+ font-size:11px!important;font-weight:700!important;letter-spacing:.1px!important;
+ text-shadow:none!important;
+}
+.chat-view-tools .chat-control .chat-control-icon{
+ width:auto!important;height:auto!important;padding:0!important;
+ border:0!important;border-radius:0!important;background:transparent!important;
+ box-shadow:none!important;font-size:14px!important;color:inherit!important;
+}
+.chat-view-tools .chat-grow{border-color:#52745b!important;color:#d8ead4!important}
+.chat-view-tools .chat-center{border-color:#85734d!important;color:#eee2c4!important}
+.chat-view-tools .chat-shrink{border-color:#76604d!important;color:#ead8c8!important}
+.chat-view-tools .chat-control:hover,
+.chat-view-tools .chat-control:focus,
+.chat-view-tools .chat-control:focus-visible,
+.chat-view-tools .chat-control:active,
+.chat-view-tools .chat-control.active{
+ animation:none!important;transition:none!important;transform:none!important;filter:none!important;
+ background:#1b2a20!important;
+ box-shadow:inset 0 1px 0 #ffffff0a,0 1px 3px #0003!important;
+}
+.chat-view-tools .chat-control::before,
+.chat-view-tools .chat-control::after,
+.chat-view-tools .chat-control:hover::before,
+.chat-view-tools .chat-control:hover::after{
+ content:none!important;display:none!important;animation:none!important;background:none!important;
+}
