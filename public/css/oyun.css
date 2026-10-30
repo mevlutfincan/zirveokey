@@ -1009,3 +1009,21 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .chat-panel .chat-heading{position:relative!important;z-index:21!important;overflow:visible!important}
 .chat-text-settings{position:relative!important;z-index:22!important}
 .chat-text-settings-menu{z-index:1000!important;max-height:min(70vh,260px)!important;overflow-y:auto!important}
+
+
+/* Each lobby message gets a soft translucent light row so the existing black text stays readable. */
+.chat-messages .chat-message{
+ background:rgba(232,239,232,.78)!important;
+ border:1px solid rgba(255,255,255,.22)!important;
+ border-radius:8px!important;
+ padding:7px 10px!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.18)!important;
+}
+.chat-messages .chat-message-time{color:#4b5563!important}
+.chat-messages .chat-message>b,
+.chat-messages .chat-message-body{color:#111!important}
+.chat-messages .chat-system{
+ background:rgba(232,239,232,.72)!important;
+ border:1px solid rgba(255,255,255,.2)!important;
+ border-radius:8px!important;
+}
