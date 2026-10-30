@@ -56,6 +56,20 @@ CREATE INDEX IF NOT EXISTS password_reset_user_idx ON password_reset_tokens(user
 CREATE INDEX IF NOT EXISTS password_reset_expiry_idx ON password_reset_tokens(expires_at);
 CREATE TABLE IF NOT EXISTS user_activity (user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), active_seconds BIGINT NOT NULL DEFAULT 0);
 CREATE INDEX IF NOT EXISTS user_activity_recent_idx ON user_activity(last_seen_at DESC, active_seconds DESC);
+CREATE TABLE IF NOT EXISTS user_presence (
+  user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  show_online BOOLEAN NOT NULL DEFAULT TRUE
+);
+CREATE INDEX IF NOT EXISTS user_presence_seen_idx ON user_presence(last_seen_at DESC);
+CREATE TABLE IF NOT EXISTS lobby_messages (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  username VARCHAR(24) NOT NULL,
+  message VARCHAR(300) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS lobby_messages_created_idx ON lobby_messages(created_at DESC);
 `;
 
 const authLimiter = rateLimit({
@@ -160,11 +174,52 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
 
 app.post('/api/auth/logout', dbRequired, (req, res) => {
   if (!req.session) return res.json({ ok: true });
-  req.session.destroy(() => {
+  pool?.query('DELETE FROM user_presence WHERE user_id=$1', [req.session.user?.id]).catch(() => {});\n  req.session.destroy(() => {
     res.clearCookie('zirve.sid', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
     res.json({ ok: true });
   });
 });
+app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
+  if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
+  const showOnline = req.body.showOnline !== false;
+  await pool.query(`
+    INSERT INTO user_presence(user_id,last_seen_at,show_online) VALUES($1,NOW(),$2)
+    ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=EXCLUDED.show_online
+  `, [req.session.user.id, showOnline]);
+  res.status(204).end();
+}));
+
+app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
+  const result = await pool.query(`
+    SELECT u.id,u.username
+    FROM user_presence p JOIN users u ON u.id=p.user_id
+    WHERE p.show_online=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds' AND u.is_active=TRUE
+    ORDER BY u.username_normalized ASC LIMIT 100
+  `);
+  res.json({ members: result.rows, count: result.rows.length });
+}));
+
+app.get('/api/lobby/messages', dbRequired, asyncRoute(async (req, res) => {
+  const afterId = Math.max(0, Number.parseInt(req.query.after || '0', 10) || 0);
+  const result = afterId
+    ? await pool.query('SELECT id,username,message,created_at FROM lobby_messages WHERE id>$1 ORDER BY id ASC LIMIT 100', [afterId])
+    : await pool.query('SELECT id,username,message,created_at FROM (SELECT id,username,message,created_at FROM lobby_messages ORDER BY id DESC LIMIT 50) recent ORDER BY id ASC');
+  res.json({ messages: result.rows });
+}));
+
+app.post('/api/lobby/messages', dbRequired, authLimiter, asyncRoute(async (req, res) => {
+  if (!req.session.user?.id) return res.status(401).json({ error: 'Sohbete yazmak için önce giriş yapmalısınız.' });
+  const message = String(req.body.message || '').trim();
+  if (!message || message.length > 300) return res.status(400).json({ error: 'Mesaj 1-300 karakter arasında olmalı.' });
+  const user = req.session.user;
+  const result = await pool.query(
+    'INSERT INTO lobby_messages(user_id,username,message) VALUES($1,$2,$3) RETURNING id,username,message,created_at',
+    [user.id, user.username, message]
+  );
+  await pool.query('DELETE FROM lobby_messages WHERE id < (SELECT GREATEST(COALESCE(MAX(id),0)-500,0) FROM lobby_messages)');
+  res.status(201).json({ message: result.rows[0] });
+}));
+
 
 app.post('/api/auth/forgot-password', dbRequired, resetLimiter, asyncRoute(async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
