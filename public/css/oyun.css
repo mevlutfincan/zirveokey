@@ -338,3 +338,9 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .chat-form{align-items:center!important}
 }
 
+/* Give the lobby chat more vertical room by moving its top edge upward */
+@media(min-width:761px){
+ .main-column{grid-template-rows:minmax(0,1fr) 340px!important}
+ .chat-panel{height:340px!important;min-height:340px!important}
+}
+
