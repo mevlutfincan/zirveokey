@@ -1097,3 +1097,40 @@ nav.lobby-tabs>.lobby-tab:first-child{
 @media(max-width:760px){
  .radio-live-status{min-height:24px!important;padding:0 7px!important;font-size:9px!important}
 }
+
+
+/* Place the radio control directly beside the lobby chat title; leave utility buttons in their existing group. */
+.chat-heading-brand{
+ display:flex!important;
+ align-items:center!important;
+ justify-content:flex-start!important;
+ flex:0 0 auto!important;
+ gap:9px!important;
+ min-width:0!important;
+}
+.chat-heading-brand h2{margin:0!important;white-space:nowrap!important}
+.chat-heading-brand .chat-radio{
+ display:inline-flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+ gap:5px!important;
+ min-width:0!important;
+ height:32px!important;
+ padding:0 9px!important;
+ border:1px solid #4e9460!important;
+ border-radius:8px!important;
+ background:linear-gradient(145deg,#1b3021,#09160e)!important;
+ color:#eff9eb!important;
+ font-size:11px!important;
+ font-weight:750!important;
+ cursor:pointer!important;
+}
+.chat-heading-brand .chat-radio .chat-control-icon{color:#a7edaa!important}
+.chat-heading-brand .chat-radio.is-playing{
+ border-color:#8be36e!important;
+ box-shadow:0 0 0 1px #8be36e55,0 0 12px #72d65b35!important;
+}
+@media(max-width:760px){
+ .chat-heading-brand{gap:6px!important;flex-wrap:wrap!important}
+ .chat-heading-brand .chat-radio{height:29px!important;padding:0 7px!important;font-size:10px!important}
+}
