@@ -175,3 +175,29 @@ body.game-page{background:radial-gradient(ellipse at 14% 0%,rgba(89,142,86,.16),
  .lobby-empty{min-height:290px}
  .chat-panel{height:270px;min-height:270px}
 }
+
+
+/* Alignment correction: each lobby region stays anchored to its own column */
+@media(min-width:761px){
+ .game-layout{width:calc(100% - 34px);max-width:1900px;min-height:calc(100vh - 162px);height:calc(100vh - 162px);grid-template-columns:minmax(0,3.2fr) minmax(280px,1fr);grid-template-rows:minmax(0,1fr);align-items:stretch}
+ .main-column{grid-column:1;grid-row:1;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) 285px;align-items:stretch}
+ .lobby-view{min-height:0;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start}
+ .section-heading{width:100%;align-items:flex-start;justify-content:space-between;text-align:left}
+ .lobby-empty{display:none!important}
+ .lobby-table-grid{width:100%;margin:0;display:grid;grid-template-columns:repeat(auto-fill,260px);justify-content:start;align-content:start;justify-items:start;align-items:start;max-height:none;overflow:auto}
+ .lobby-table-card{justify-self:start}
+ .right-column{grid-column:2;grid-row:1;min-width:0;min-height:0;display:block}
+ .online-panel{height:100%;min-height:0;display:flex;flex-direction:column;align-items:stretch}
+ .online-panel .side-heading{text-align:left;justify-content:space-between}
+ .online-list{width:100%;min-height:0;flex:1;overflow:auto}
+ .chat-panel{width:100%;height:285px;min-height:285px;align-self:stretch;justify-self:stretch}
+}
+@media(max-width:760px){
+ .lobby-empty{display:none!important}
+ .lobby-view{align-items:stretch;justify-content:flex-start;text-align:left}
+ .section-heading{align-items:flex-start;justify-content:space-between;text-align:left}
+ .lobby-table-grid{width:100%;justify-content:start;align-content:start;justify-items:start}
+ .lobby-table-card{justify-self:start}
+ .online-panel .side-heading{text-align:left;justify-content:space-between}
+ .online-list{width:100%}
+}
