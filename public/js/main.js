@@ -39,6 +39,7 @@ document.querySelectorAll('[data-modal]').forEach(button=>button.addEventListene
   $('#modalDesc').textContent=register?'ZirveOkey ailesine katıl.':'Hesabına giriş yap ve oyuna katıl.';
   $('#authSubmit').textContent=register?'Üye Ol':'Giriş Yap';
   email.hidden=!register;email.required=register;email.value='';
+  authForm.querySelector('input[type="password"]').setAttribute('autocomplete',register?'new-password':'current-password');
   authForm.reset();
   $('#modalNote').textContent='Hesap işlemleri sunucu bağlantısı eklendiğinde etkinleştirilecek.';
   backdrop.hidden=false;
