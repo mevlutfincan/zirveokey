@@ -944,8 +944,9 @@ nav.lobby-tabs>.lobby-tab:first-child{
 
 /* Emojis in sent lobby messages are intentionally larger than message text. */
 .chat-messages .chat-message-emoji{
- display:inline-block;
- font-size:25px;
- line-height:1.15;
- vertical-align:-3px;
+ display:inline-block!important;
+ font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif!important;
+ font-size:32px!important;
+ line-height:1.2!important;
+ vertical-align:-6px!important;
 }
