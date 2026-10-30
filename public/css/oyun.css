@@ -485,3 +485,51 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .chat-view-tools{gap:3px!important}
  .chat-view-tools button{min-width:29px!important;height:28px!important;padding:0 5px!important}
 }
+
+
+/* ZirveOkey custom lobby-chat controls and upward panel modes */
+.chat-panel .chat-heading{justify-content:space-between!important;gap:12px!important}
+.chat-view-tools{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;flex:0 0 auto!important;position:relative!important;z-index:2!important}
+.chat-view-tools .chat-control{
+ position:relative!important;isolation:isolate!important;overflow:hidden!important;
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;
+ min-width:88px!important;height:38px!important;padding:0 12px!important;
+ border:1px solid #52745b!important;border-radius:10px!important;
+ background:linear-gradient(145deg,#233d2b 0%,#102318 58%,#0b1910 100%)!important;
+ color:#f3f7ed!important;font-size:12px!important;font-weight:800!important;letter-spacing:.25px!important;
+ text-shadow:0 1px 2px #000!important;cursor:pointer!important;
+ box-shadow:inset 0 1px 0 #ffffff20,inset 0 -2px 0 #0005,0 3px 8px #14271920!important;
+ transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,filter .22s ease!important;
+}
+.chat-view-tools .chat-control::before{
+ content:""!important;position:absolute!important;inset:0!important;z-index:-1!important;
+ background:linear-gradient(110deg,transparent 15%,#ffffff16 48%,transparent 75%)!important;
+ transform:translateX(-130%)!important;transition:transform .55s ease!important;
+}
+.chat-view-tools .chat-control:hover::before{transform:translateX(130%)!important}
+.chat-view-tools .chat-control:hover{transform:translateY(-2px)!important;filter:brightness(1.14)!important;box-shadow:inset 0 1px 0 #ffffff2b,0 5px 14px #152d1c30!important}
+.chat-view-tools .chat-control:active{transform:translateY(1px) scale(.97)!important;box-shadow:inset 0 2px 5px #0008!important}
+.chat-view-tools .chat-control .chat-control-icon{font-size:17px!important;line-height:1!important;font-weight:500!important}
+.chat-view-tools .chat-grow,.chat-view-tools .chat-shrink{border-color:#4e9460!important}
+.chat-view-tools .chat-grow .chat-control-icon,.chat-view-tools .chat-shrink .chat-control-icon{color:#a7edaa!important}
+.chat-view-tools .chat-center{border-color:#c49b4b!important;background:linear-gradient(145deg,#49391c 0%,#2b2414 58%,#17160e 100%)!important}
+.chat-view-tools .chat-center .chat-control-icon{color:#f3d28a!important}
+.chat-view-tools .chat-control.active{border-color:#e3c36e!important;box-shadow:inset 0 1px 0 #ffffff35,0 0 0 1px #d9b75b55,0 0 15px #c99b3c40!important}
+.chat-panel{transition:height .42s cubic-bezier(.2,.75,.25,1),min-height .42s cubic-bezier(.2,.75,.25,1),transform .42s cubic-bezier(.2,.75,.25,1),box-shadow .3s ease!important}
+@media(min-width:761px){
+ .main-column{grid-template-rows:minmax(0,1fr) var(--chat-panel-height,390px)!important}
+ .chat-panel{height:var(--chat-panel-height,390px)!important;min-height:var(--chat-panel-height,390px)!important;transform:translateY(0)!important}
+ .chat-panel.chat-panel-grown{box-shadow:0 8px 28px rgba(22,38,27,.18)!important}
+ .chat-panel.chat-panel-centered{transform:translateY(-105px)!important;z-index:4!important;box-shadow:0 12px 32px rgba(22,38,27,.2)!important}
+}
+@media(max-width:760px){
+ .chat-panel{height:var(--chat-panel-height,390px)!important;min-height:240px!important}
+ .chat-panel.chat-panel-grown{height:460px!important;min-height:460px!important}
+ .chat-panel.chat-panel-centered{transform:translateY(-70px)!important;position:relative!important;z-index:4!important}
+ .chat-view-tools{gap:4px!important}
+ .chat-view-tools .chat-control{min-width:0!important;height:32px!important;padding:0 8px!important;gap:4px!important;font-size:10px!important}
+ .chat-view-tools .chat-control .chat-control-icon{font-size:14px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .chat-panel,.chat-view-tools .chat-control,.chat-view-tools .chat-control::before{transition:none!important}
+}
