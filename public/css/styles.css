@@ -70,3 +70,50 @@
  .play,.radio{width:100%}
  .action-status{text-align:center;margin-left:0}
 }
+
+
+/* Reference-led visual polish: compact hero, aligned actions, animated navigation and wordmark */
+@media(min-width:761px){
+ .hero-content{transform:translateY(-34px);padding-top:24px;padding-bottom:34px}
+ .hero-actions{align-items:center;gap:18px}
+ .radio{width:min(520px,46%);flex:0 1 520px}
+ .radio-panel{height:88px;min-height:88px;padding:10px 16px 24px;position:relative;flex-wrap:nowrap}
+ .radio-status{position:absolute;left:16px;right:16px;bottom:6px;width:auto;margin:0;padding:0;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+#mainNav a{
+ min-width:78px;padding:8px 13px 9px;border:1px solid transparent;border-radius:13px;
+ transition:color .22s ease,background .22s ease,border-color .22s ease,transform .22s ease,box-shadow .22s ease;
+}
+#mainNav a.active:after{display:none}
+#mainNav a:hover{
+ color:var(--green);background:rgba(112,237,53,.10);border-color:rgba(112,237,53,.34);
+ box-shadow:0 5px 22px rgba(66,218,42,.12);transform:translateY(-3px)
+}
+#mainNav a.active{
+ color:var(--green);background:linear-gradient(145deg,rgba(112,237,53,.17),rgba(112,237,53,.045));
+ border-color:rgba(112,237,53,.48);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 18px rgba(66,218,42,.10)
+}
+#mainNav .nav-icon{transition:transform .25s ease,filter .25s ease}
+#mainNav a:hover .nav-icon{transform:translateY(-2px) scale(1.12);filter:drop-shadow(0 0 6px rgba(112,237,53,.55))}
+.brand{display:inline-flex;align-items:center;gap:0;position:relative;transition:filter .25s ease,transform .25s ease}
+.brand:hover{filter:drop-shadow(0 0 13px rgba(112,237,53,.3));transform:translateY(-1px)}
+.brand .crown{
+ left:23px;top:-18px;transform-origin:50% 90%;
+ animation:crownPulse 3.4s ease-in-out infinite;
+ filter:drop-shadow(0 0 7px rgba(112,237,53,.45))
+}
+.brand>span:last-child{background:linear-gradient(100deg,#fff 0 48%,#baf78e 72%,#fff 100%);background-size:220% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:wordmarkShine 7s linear infinite}
+@keyframes crownPulse{0%,82%,100%{transform:translateY(0) rotate(0)}88%{transform:translateY(-3px) rotate(-7deg)}94%{transform:translateY(0) rotate(7deg)}}
+@keyframes wordmarkShine{0%,65%{background-position:100% center}100%{background-position:-120% center}}
+.soft-light #mainNav a.active{background:rgba(67,155,42,.12);border-color:rgba(67,155,42,.35);color:#267b20}
+.soft-light #mainNav a:hover{background:rgba(67,155,42,.09);border-color:rgba(67,155,42,.25);color:#267b20}
+@media(max-width:760px){
+ #mainNav a{border-radius:9px;padding:8px 12px}
+ .brand .crown{animation:none}
+ .brand>span:last-child{animation:none}
+ .radio-panel{position:relative}
+ .radio-status{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ .brand .crown,.brand>span:last-child{animation:none!important}
+}
