@@ -105,6 +105,68 @@ $('#chatPanelCenter').addEventListener('click',()=>setChatPanelMode('center'));
 $('#chatPanelShrink').addEventListener('click',()=>setChatPanelMode('normal'));
 window.addEventListener('resize',()=>{if(chatPanelMode!=='normal')applyChatPanelMode()});
 setChatPanelMode('normal');
+
+/* Chat composer media picker: emoji/sticker insertion and GIF URL attachment preview. */
+const smileButton=$('#chatSmileButton');
+const chatPicker=$('#chatPicker');
+const pickerContent=$('#chatPickerContent');
+const emojiSets={
+ emoji:['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','😉','😍','🥰','😘','😋','😎','🤩','🥳','😭','😢','😡','🤔','🤗','🤝','👏','👍','👎','❤️','💚','🔥','✨','🎉','💯','🙏','☕'],
+ stickers:['😁','😂','🥰','😍','😘','😎','🤩','🥳','😭','😡','🤔','🙄','😴','🤗','👏','👍','❤️','💚','🔥','🎉','💯','🙏']
+};
+let pendingChatGif='';
+function insertChatText(value){
+ const input=$('#chatInput');
+ const start=input.selectionStart??input.value.length;
+ const end=input.selectionEnd??input.value.length;
+ input.value=input.value.slice(0,start)+value+input.value.slice(end);
+ input.focus();
+ const caret=start+value.length;
+ input.setSelectionRange(caret,caret);
+}
+function renderEmojiPicker(type){
+ pickerContent.innerHTML='';
+ if(type==='gif'){
+  const wrap=document.createElement('div');wrap.className='chat-gif-entry';
+  const note=document.createElement('p');note.textContent='GIF bağlantısını yapıştırarak mesaja ekle.';
+  const field=document.createElement('input');field.type='url';field.id='chatGifUrl';field.placeholder='https://.../animasyon.gif';field.setAttribute('aria-label','GIF bağlantısı');
+  const add=document.createElement('button');add.type='button';add.className='chat-gif-add';add.textContent='GIF’i ekle';
+  const preview=document.createElement('div');preview.className='chat-gif-preview';preview.id='chatGifPreview';
+  add.addEventListener('click',()=>{
+   const raw=field.value.trim();
+   try{
+    const url=new URL(raw);
+    if(url.protocol!=='https:'||! /\.(gif|webp)(\?.*)?$/i.test(url.pathname+url.search))throw new Error('invalid');
+    pendingChatGif=url.href;
+    preview.innerHTML='';
+    const img=document.createElement('img');img.src=pendingChatGif;img.alt='Mesaja eklenecek GIF';preview.append(img);
+    const status=document.createElement('small');status.textContent='GIF eklendi. Mesaj sunucusu bağlandığında gönderime dahil edilebilir.';preview.append(status);
+   }catch(_){notify('Geçerli bir HTTPS GIF bağlantısı gir.')}
+  });
+  wrap.append(note,field,add,preview);pickerContent.append(wrap);return;
+ }
+ const grid=document.createElement('div');grid.className='chat-emoji-grid';
+ (emojiSets[type]||emojiSets.emoji).forEach(symbol=>{
+  const b=document.createElement('button');b.type='button';b.textContent=symbol;b.setAttribute('aria-label',symbol);
+  b.addEventListener('click',()=>insertChatText(symbol));grid.append(b);
+ });
+ pickerContent.append(grid);
+}
+smileButton.addEventListener('click',()=>{
+ const opening=chatPicker.hidden;chatPicker.hidden=!opening;
+ smileButton.setAttribute('aria-expanded',String(opening));
+ if(opening)renderEmojiPicker('emoji');
+});
+chatPicker.querySelectorAll('[data-picker-tab]').forEach(tab=>tab.addEventListener('click',()=>{
+ chatPicker.querySelectorAll('[data-picker-tab]').forEach(t=>t.classList.toggle('active',t===tab));
+ renderEmojiPicker(tab.dataset.pickerTab);
+}));
+document.addEventListener('click',e=>{
+ if(!chatPicker.hidden&&!chatPicker.contains(e.target)&&!smileButton.contains(e.target)){
+  chatPicker.hidden=true;smileButton.setAttribute('aria-expanded','false');
+ }
+});
+
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('#chatInput');if(!input.value.trim())return;notify('Sohbet sunucusu bağlı olmadığı için mesaj gönderilmedi.');input.value='';});
 renderTabs();renderLobby();renderRack();
 })();
