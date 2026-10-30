@@ -49,38 +49,46 @@ const mainColumn=$('.main-column');
 const lobbyTabs=$('.lobby-tabs');
 const chatDefaultHeight=390;
 let chatPanelMode='normal';
+const chatPositionProps=['position','left','right','top','bottom','width','height','min-height','max-height','transform','z-index','margin-top','transition','animation'];
 function resetChatPanelInlineStyles(){
- ['position','left','right','top','bottom','width','height','minHeight','maxHeight','transform','zIndex','marginTop'].forEach(p=>chatPanel.style[p]='');
+ chatPositionProps.forEach(p=>chatPanel.style.removeProperty(p));
  chatPanel.classList.remove('chat-panel-grown','chat-panel-centered');
  mainColumn.classList.remove('chat-mode-centered');
+}
+function setChatPosition(prop,value){
+ chatPanel.style.setProperty(prop,value,'important');
 }
 function applyChatPanelMode(){
  resetChatPanelInlineStyles();
  if(chatPanelMode==='normal')return;
- /* Measure the panel in its real, normal-flow position before applying fixed positioning. */
+ /* Always measure the panel in its original flow position, never from a previous mode. */
  const baseRect=chatPanel.getBoundingClientRect();
  const columnRect=mainColumn.getBoundingClientRect();
  const tabsRect=lobbyTabs.getBoundingClientRect();
- chatPanel.style.position='fixed';
- chatPanel.style.left=columnRect.left+'px';
- chatPanel.style.right='auto';
- chatPanel.style.width=columnRect.width+'px';
- chatPanel.style.zIndex='30';
- chatPanel.style.marginTop='0';
- chatPanel.style.transition='none';
- chatPanel.style.animation='none';
+ setChatPosition('position','fixed');
+ setChatPosition('left',columnRect.left+'px');
+ setChatPosition('right','auto');
+ setChatPosition('width',columnRect.width+'px');
+ setChatPosition('z-index','30');
+ setChatPosition('margin-top','0');
+ setChatPosition('transition','none');
+ setChatPosition('animation','none');
  if(chatPanelMode==='grow'){
-  chatPanel.style.top=(tabsRect.bottom+2)+'px';
-  chatPanel.style.bottom=Math.max(0,window.innerHeight-baseRect.bottom)+'px';
-  chatPanel.style.height='auto';
-  chatPanel.style.minHeight='0';
+  /* Top edge meets the tabs; bottom edge stays at its original screen coordinate. */
+  setChatPosition('top',(tabsRect.bottom+2)+'px');
+  setChatPosition('bottom',Math.max(0,window.innerHeight-baseRect.bottom)+'px');
+  setChatPosition('height','auto');
+  setChatPosition('min-height','0');
+  setChatPosition('max-height','none');
+  setChatPosition('transform','none');
   chatPanel.classList.add('chat-panel-grown');
  }else if(chatPanelMode==='center'){
-  chatPanel.style.top='50%';
-  chatPanel.style.bottom='auto';
-  chatPanel.style.height=chatDefaultHeight+'px';
-  chatPanel.style.minHeight=chatDefaultHeight+'px';
-  chatPanel.style.transform='translateY(-50%)';
+  setChatPosition('top','50%');
+  setChatPosition('bottom','auto');
+  setChatPosition('height',chatDefaultHeight+'px');
+  setChatPosition('min-height',chatDefaultHeight+'px');
+  setChatPosition('max-height','none');
+  setChatPosition('transform','translateY(-50%)');
   chatPanel.classList.add('chat-panel-centered');
  }
 }
