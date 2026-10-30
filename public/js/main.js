@@ -64,10 +64,17 @@ authForm.addEventListener('submit',e=>{
   $('#modalNote').textContent='Hesap sistemi henüz sunucuya bağlı değil. Şu anda kayıt veya giriş işlemi yapılmadı.';
 });
 
-const panel=$('#radioPanel'),expand=$('#radioExpand'),audio=$('#radioAudio'),play=$('#radioPlay'),status=$('#radioStatus'),volume=$('#volume');
+const panel=$('#radioPanel'),expand=$('#radioExpand'),radio=$('#radio'),audio=$('#radioAudio'),play=$('#radioPlay'),status=$('#radioStatus'),volume=$('#volume');
 let streamUrl='',previousVolume=.7;
-function expanded(open){panel.hidden=!open;expand.setAttribute('aria-expanded',String(open));}
-expand.addEventListener('click',()=>expanded(panel.hidden));
+function expanded(open){
+  radio.classList.toggle('is-open',open);
+  expand.setAttribute('aria-expanded',String(open));
+  panel.setAttribute('aria-hidden',String(!open));
+  if(open)$('#radioClose').focus({preventScroll:true});
+  else expand.focus({preventScroll:true});
+}
+expanded(false);
+expand.addEventListener('click',()=>expanded(!radio.classList.contains('is-open')));
 $('#radioClose').addEventListener('click',()=>expanded(false));
 function playing(value){
   play.textContent=value?'Ⅱ':'▶';
