@@ -71,6 +71,25 @@ async function main() {
     assert.equal(data.user.username, expected, label + ' yanlış kullanıcıya bağlandı.');
   }
 
+  const anonymousStyle = await request('/api/account/chat-style');
+  assert.equal(anonymousStyle.status, 401, 'Oturumsuz kullanıcının renk tercihleri okunabildi.');
+  const defaultStyleResponse = await request('/api/account/chat-style', { cookie: cookieA });
+  assert.equal(defaultStyleResponse.status, 200, 'A varsayılan sohbet renklerini alamadı.');
+  const defaultStyle = (await defaultStyleResponse.json()).chatStyle;
+  assert.equal(defaultStyle.nameColor, '#111111', 'Varsayılan isim rengi beklenenden farklı.');
+  assert.equal(defaultStyle.textColor, '#111111', 'Varsayılan mesaj rengi beklenenden farklı.');
+  const savedStyleResponse = await request('/api/account/chat-style', {
+    method: 'PUT', cookie: cookieA, body: { nameColor: '#7f1d1d', textColor: '#1e3a8a' }
+  });
+  assert.equal(savedStyleResponse.status, 200, 'A renk tercihlerini kaydedemedi: ' + await savedStyleResponse.text());
+  const savedStyle = (await savedStyleResponse.json()).chatStyle;
+  assert.equal(savedStyle.nameColor, '#7f1d1d');
+  assert.equal(savedStyle.textColor, '#1e3a8a');
+  const invalidStyle = await request('/api/account/chat-style', {
+    method: 'PUT', cookie: cookieA, body: { nameColor: '#ffffff', textColor: '#ffffff' }
+  });
+  assert.equal(invalidStyle.status, 400, 'Okunamayacak açık renkler kabul edildi.');
+
   const anonymousPost = await request('/api/lobby/messages', { method: 'POST', body: { message: 'Yetkisiz test' } });
   assert.equal(anonymousPost.status, 401, 'Oturumsuz kullanıcının sohbet mesajı engellenmedi.');
 
@@ -80,11 +99,16 @@ async function main() {
   const sentData = await sent.json().catch(() => ({}));
   assert.equal(sent.status, 201, 'A kullanıcısının mesajı kaydedilemedi: ' + JSON.stringify(sentData));
   const messageId = sentData.message.id;
+  assert.equal(sentData.message.chat_name_color, '#7f1d1d', 'Gönderilen mesajda isim rengi bulunmuyor.');
+  assert.equal(sentData.message.chat_text_color, '#1e3a8a', 'Gönderilen mesajda yazı rengi bulunmuyor.');
 
   const received = await request('/api/lobby/messages?after=' + (messageId - 1), { cookie: cookieB });
   assert.equal(received.status, 200, 'B kullanıcısı sohbeti okuyamadı.');
   const receivedData = await received.json();
-  assert.ok(receivedData.messages.some(message => message.id === messageId && message.username === users[0].username && message.message === 'TWO-USER-' + suffix), 'A mesajı B kullanıcısına ulaşmadı.');
+  const receivedMessage = receivedData.messages.find(message => message.id === messageId && message.username === users[0].username && message.message === 'TWO-USER-' + suffix);
+  assert.ok(receivedMessage, 'A mesajı B kullanıcısına ulaşmadı.');
+  assert.equal(receivedMessage.chat_name_color, '#7f1d1d', 'B kullanıcısı A seçtiği isim rengini göremedi.');
+  assert.equal(receivedMessage.chat_text_color, '#1e3a8a', 'B kullanıcısı A seçtiği mesaj rengini göremedi.');
 
   const heartbeatA = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: { showOnline: true } });
   const heartbeatB = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
@@ -119,6 +143,9 @@ async function main() {
 
   console.log('PASS: iki ayrı hesap kaydı ve oturum doğrulama');
   console.log('PASS: oturumsuz sohbet yazma engeli');
+  console.log('PASS: hesap bazlı renk tercihleri kaydedildi ve doğrulandı');
+  console.log('PASS: iki kullanıcı arasında seçilen isim ve mesaj renkleri iletildi');
+  console.log('PASS: okunamayacak renkler reddedildi');
   console.log('PASS: A mesajı B tarafından alındı');
   console.log('PASS: iki kullanıcının çevrimiçi görünmesi');
   console.log('PASS: çevrimiçi görünürlüğü tercihi');
