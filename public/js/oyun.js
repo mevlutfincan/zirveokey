@@ -162,7 +162,7 @@ document.addEventListener('click',e=>{
 });
 let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=false,chatStyleAccountId=null;
  const defaultChatStyle={nameColor:'#111111',textColor:'#111111'};
- const fixedChatRowColor='#e8efe8';
+ const fixedChatRowColor='rgba(232,239,232,.92)';
  function validChatHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
  function updateChatColorPreview(){
   const name=$('#chatNameColor').value,text=$('#chatBodyColor').value;
