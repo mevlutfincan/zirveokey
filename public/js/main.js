@@ -17,20 +17,36 @@ document.addEventListener('click',e=>{
 });
 
 const backdrop=$('#backdrop'),email=$('#email'),authForm=$('#authForm');
-let lastTrigger=null;
+const username=$('#username'),password=$('#password'),loginOptions=$('#loginOptions');
+let lastTrigger=null,authMode='login';
 document.querySelectorAll('[data-modal]').forEach(button=>button.addEventListener('click',()=>{
   lastTrigger=button;
-  const register=button.dataset.modal==='register';
-  $('#modalTitle').textContent=register?'Üye Ol':'Giriş Yap';
-  $('#modalDesc').textContent=register?'ZirveOkey ailesine katıl.':'Hesabına giriş yap ve oyuna katıl.';
-  $('#authSubmit').textContent=register?'Üye Ol':'Giriş Yap';
-  email.hidden=!register;email.required=register;email.value='';
-  authForm.querySelector('input[type="password"]').setAttribute('autocomplete',register?'new-password':'current-password');
+  authMode=button.dataset.modal==='register'?'register':'login';
+  $('#modalTitle').textContent=authMode==='register'?'Üye Ol':'Giriş Yap';
+  $('#modalDesc').textContent=authMode==='register'?'ZirveOkey ailesine katıl.':'Hesabına giriş yap ve oyuna katıl.';
+  $('#authSubmit').textContent=authMode==='register'?'Üye Ol':'Giriş Yap';
+  email.hidden=authMode!=='register';email.required=authMode==='register';email.value='';
+  username.hidden=false;username.required=true;username.value='';
+  password.hidden=false;password.required=true;password.value='';
+  loginOptions.hidden=authMode!=='login';
+  password.setAttribute('autocomplete',authMode==='register'?'new-password':'current-password');
   authForm.reset();
   $('#modalNote').textContent='Hesap işlemleri sunucu bağlantısı eklendiğinde etkinleştirilecek.';
   backdrop.hidden=false;
   backdrop.querySelector('input:not([hidden])')?.focus();
 }));
+$('#forgotPassword').addEventListener('click',()=>{
+  authMode='forgot';
+  $('#modalTitle').textContent='Şifremi Unuttum';
+  $('#modalDesc').textContent='Şifre sıfırlama bağlantısı için kayıtlı e-posta adresini gir.';
+  email.hidden=false;email.required=true;email.value='';
+  username.hidden=true;username.required=false;
+  password.hidden=true;password.required=false;
+  loginOptions.hidden=true;
+  $('#authSubmit').textContent='Sıfırlama Bağlantısı Gönder';
+  $('#modalNote').textContent='Şifre sıfırlama işlemi sunucu bağlantısı eklendiğinde etkinleştirilecek.';
+  email.focus();
+});
 function closeModal(){
   backdrop.hidden=true;
   lastTrigger?.focus();
@@ -48,7 +64,12 @@ document.addEventListener('keydown',e=>{
 });
 authForm.addEventListener('submit',e=>{
   e.preventDefault();
-  $('#modalNote').textContent='Hesap sistemi henüz sunucuya bağlı değil. Şu anda kayıt veya giriş işlemi yapılmadı.';
+  const messages={
+    login:'Hesap sistemi henüz sunucuya bağlı değil. Şu anda giriş yapılmadı.',
+    register:'Hesap sistemi henüz sunucuya bağlı değil. Şu anda kayıt oluşturulmadı.',
+    forgot:'Şifre sıfırlama sistemi henüz sunucuya bağlı değil. Şu anda e-posta gönderilmedi.'
+  };
+  $('#modalNote').textContent=messages[authMode];
 });
 
 const panel=$('#radioPanel'),expand=$('#radioExpand'),radio=$('#radio'),audio=$('#radioAudio'),play=$('#radioPlay'),status=$('#radioStatus'),volume=$('#volume');
