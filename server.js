@@ -222,14 +222,7 @@ app.put('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
   const nameColor = String(req.body.nameColor || '').toLowerCase();
   const textColor = String(req.body.textColor || '').toLowerCase();
   const validHex = value => /^#[0-9a-f]{6}$/.test(value);
-  const luminance = value => {
-    const channels = value.slice(1).match(/.{2}/g).map(part => parseInt(part, 16) / 255).map(channel => channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2));
-    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
-  };
-  const backgroundLuminance = luminance('#e8efe8');
-  const readable = value => (backgroundLuminance + 0.05) / (luminance(value) + 0.05) >= 4.5;
   if (!validHex(nameColor) || !validHex(textColor)) return res.status(400).json({ error: 'Geçerli bir HEX renk seçin.' });
-  if (!readable(nameColor) || !readable(textColor)) return res.status(400).json({ error: 'Seçilen renk çok açık. Sohbette okunabilmesi için daha koyu bir renk seçin.' });
   const result = await pool.query('UPDATE users SET chat_name_color=$1,chat_text_color=$2 WHERE id=$3 RETURNING chat_name_color,chat_text_color', [nameColor, textColor, req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
   res.json({ ok: true, chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color } });
