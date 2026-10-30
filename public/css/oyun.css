@@ -142,3 +142,36 @@ body.game-page{background:radial-gradient(ellipse at 14% 0%,rgba(89,142,86,.16),
  .tab-add{width:38px;justify-content:center;padding:0;font-size:0}
  .tab-add span{font-size:20px}
 }
+
+
+/* Reference layout: wide lobby and chat on the left, online members on the right */
+.game-layout{width:calc(100% - 34px);max-width:1900px;margin:0 auto;padding:18px 0 24px;display:grid;grid-template-columns:minmax(0,3.2fr) minmax(280px,1fr);grid-template-rows:minmax(0,1fr);gap:14px;align-items:stretch;min-height:calc(100vh - 162px)}
+.main-column{grid-column:1;grid-row:1;min-width:0;display:grid;grid-template-rows:minmax(390px,1fr) 285px;gap:14px}
+.lobby-view{min-width:0;min-height:0;display:flex;flex-direction:column}
+.section-heading{flex:0 0 auto;margin:0 0 14px}
+.lobby-empty{flex:1;min-height:300px;margin:0;border-radius:16px}
+.lobby-table-grid{flex:0 0 auto;margin-top:12px;max-height:150px;overflow:auto}
+.right-column{grid-column:2;grid-row:1;display:block;min-width:0;min-height:0}
+.online-panel{height:100%;min-height:0;display:flex;flex-direction:column}
+.online-list{flex:1;min-height:0;overflow:auto}
+.chat-panel{grid-column:auto;grid-row:auto;min-height:0;height:285px;display:flex;flex-direction:column}
+.chat-panel .side-heading{padding:13px 17px;border-bottom:1px solid #c4d7c014}
+.chat-messages{flex:1;min-height:0;max-height:none;justify-content:flex-start;overflow:auto}
+.chat-form{flex:0 0 auto;padding:10px 13px;border-top:1px solid #c4d7c014}
+.chat-footnote{padding:0 13px 9px}
+@media(max-width:760px){
+ .game-layout{width:calc(100% - 20px);min-height:0;display:flex;flex-direction:column;padding:14px 0 24px;gap:13px}
+ .main-column{display:flex;flex-direction:column;gap:13px}
+ .lobby-view{min-height:440px}
+ .lobby-empty{min-height:330px}
+ .lobby-table-grid{max-height:none}
+ .right-column{display:block}
+ .online-panel{height:auto;min-height:190px}
+ .online-list{min-height:120px}
+ .chat-panel{height:280px;min-height:280px}
+}
+@media(max-width:430px){
+ .lobby-view{min-height:390px}
+ .lobby-empty{min-height:290px}
+ .chat-panel{height:270px;min-height:270px}
+}
