@@ -34,6 +34,10 @@ jobs:
           if [ "$ready" -ne 1 ]; then cat /tmp/zirveokey.log; exit 1; fi
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'ZirveOkey'
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'hero-copy'
+          curl --fail --silent http://127.0.0.1:3000/ | grep -q 'Yeni Üyeler'
+          curl --fail --silent http://127.0.0.1:3000/ | grep -q 'En Çok Aktif Üyeler'
+          curl --fail --silent http://127.0.0.1:3000/ | grep -q 'Puan Sıralaması'
+          curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q '.community-card'
           curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q '.hero-copy'
           curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q 'radio.is-open .radio-panel'
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'radioPlay'
