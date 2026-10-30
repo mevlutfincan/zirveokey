@@ -227,7 +227,9 @@ $('#chatColorSave').addEventListener('click',async()=>{
   const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value,rowColor:'#e8efe8'})});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||'Renkler kaydedilemedi.');
-  setChatColorInputs(data.chatStyle||{nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value});
+  const savedStyle=data.chatStyle||{nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value};
+  setChatColorInputs(savedStyle);
+  if(chatStyleAccountId)applyLobbyChatStyles([{id:chatStyleAccountId,chat_name_color:savedStyle.nameColor,chat_text_color:savedStyle.textColor}]);
   $('#chatColorStatus').textContent='Renk tercihlerin hesabına kaydedildi.';
   chatLastId=0;renderedChatMessageIds.clear();chatMessagesBox.replaceChildren();await loadLobbyMessages(true);
  }catch(error){$('#chatColorStatus').textContent=error.message;}
@@ -276,6 +278,7 @@ $('#chatTextGrow').addEventListener('click',()=>{
   if(Number.isFinite(numericId))chatLastId=Math.max(chatLastId,numericId);
   if(Number.isFinite(numericId)&&numericId<=(Number(readChatPreferences().clearBeforeId)||0))return;
   const item=document.createElement('div');item.className='chat-message';item.dataset.messageId=id;
+  if(message.user_id!==undefined&&message.user_id!==null)item.dataset.userId=String(message.user_id);
   const time=document.createElement('small');
   const createdAt=new Date(message.created_at);
   time.textContent=Number.isNaN(createdAt.getTime())?'--:--':createdAt.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
@@ -299,6 +302,31 @@ $('#chatTextGrow').addEventListener('click',()=>{
   const next=[...box.querySelectorAll('.chat-message')].find(node=>Number(node.dataset.messageId)>numericId);
   if(next)box.insertBefore(item,next);else box.append(item);
   box.scrollTop=box.scrollHeight;
+ }
+ function applyLobbyChatStyles(members){
+  (members||[]).forEach(member=>{
+   const userId=String(member.id||'');
+   if(!userId)return;
+   const nameColor=validChatHex(member.chat_name_color)?member.chat_name_color:defaultChatStyle.nameColor;
+   const textColor=validChatHex(member.chat_text_color)?member.chat_text_color:defaultChatStyle.textColor;
+   chatMessagesBox.querySelectorAll('.chat-message').forEach(item=>{
+    if(item.dataset.userId!==userId)return;
+    item.style.setProperty('--chat-author-color',nameColor);
+    item.style.setProperty('--chat-body-color',textColor);
+   });
+  });
+ }
+ let chatStyleSyncBusy=false;
+ async function loadLobbyChatStyles(){
+  if(chatStyleSyncBusy||document.visibilityState==='hidden')return;
+  chatStyleSyncBusy=true;
+  try{
+   const response=await fetch('/api/lobby/chat-styles',{credentials:'same-origin',cache:'no-store'});
+   if(!response.ok)throw new Error('Sohbet renkleri alınamadı');
+   const data=await response.json();
+   applyLobbyChatStyles(data.members||[]);
+  }catch(error){console.warn('Sohbet renkleri eşitlenemedi.');}
+  finally{chatStyleSyncBusy=false;}
  }
  async function loadLobbyMessages(initial=false){
  if(chatBusy)return;chatBusy=true;
@@ -461,8 +489,9 @@ $('#gameLogoutButton').addEventListener('click',async()=>{
  catch(error){notify(error.message);}
 });
 
-refreshGameAccount();loadLobbyMessages(true);loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();
+refreshGameAccount();loadLobbyMessages(true);loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();
 window.setInterval(()=>{loadLobbyMessages(false);loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();},25000);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){loadLobbyMessages(false);loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();}});
+window.setInterval(loadLobbyChatStyles,2500);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){loadLobbyMessages(false);loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();}});
 renderTabs();renderLobby();renderRack();
 })();
