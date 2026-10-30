@@ -133,7 +133,8 @@ authForm.addEventListener('submit',async e=>{
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'İşlem tamamlanamadı. Lütfen tekrar deneyin.');
     if(authMode==='login'||authMode==='register'){
-      $('#modalNote').textContent='Hoş geldin, '+data.user.username+'. Hesabına başarıyla giriş yaptın.';\n      await refreshAuthState();
+      $('#modalNote').textContent='Hoş geldin, '+data.user.username+'. Hesabına başarıyla giriş yaptın.';
+      await refreshAuthState();
       setTimeout(()=>{backdrop.hidden=true;},900);
     }else if(authMode==='forgot'){
       $('#modalNote').textContent=data.message||'Adres kayıtlıysa sıfırlama bağlantısı gönderilecektir.';
