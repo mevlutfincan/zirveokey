@@ -61,20 +61,49 @@ function setChatPosition(prop,value){
 function applyChatPanelMode(){
  resetChatPanelInlineStyles();
  if(chatPanelMode==='normal')return;
- /* Always measure the panel in its original flow position, never from a previous mode. */
+ /* Measure from the normal layout before applying any floating position. */
  const baseRect=chatPanel.getBoundingClientRect();
  const columnRect=mainColumn.getBoundingClientRect();
  const tabsRect=lobbyTabs.getBoundingClientRect();
+ const isMobile=window.matchMedia('(max-width:760px)').matches;
+ const viewportHeight=window.visualViewport?.height||window.innerHeight;
+ const viewportTop=window.visualViewport?.offsetTop||0;
  setChatPosition('position','fixed');
- setChatPosition('left',columnRect.left+'px');
+ setChatPosition('left',Math.max(8,columnRect.left)+'px');
  setChatPosition('right','auto');
- setChatPosition('width',columnRect.width+'px');
- setChatPosition('z-index','30');
+ setChatPosition('width',Math.min(columnRect.width,window.innerWidth-16)+'px');
+ setChatPosition('z-index','80');
  setChatPosition('margin-top','0');
  setChatPosition('transition','none');
  setChatPosition('animation','none');
+ if(isMobile){
+  /* On phones the panel floats above the page; no negative transforms or flow-dependent sizing. */
+  setChatPosition('max-width','calc(100vw - 16px)');
+  setChatPosition('box-sizing','border-box');
+  if(chatPanelMode==='grow'){
+   const top=Math.max(viewportTop+8,Math.min(tabsRect.bottom+8,viewportTop+viewportHeight-220));
+   setChatPosition('top',top+'px');
+   setChatPosition('bottom',Math.max(8,window.innerHeight-(viewportTop+viewportHeight-8))+'px');
+   setChatPosition('height','auto');
+   setChatPosition('min-height','220px');
+   setChatPosition('max-height','none');
+   setChatPosition('transform','none');
+   chatPanel.classList.add('chat-panel-grown');
+  }else if(chatPanelMode==='center'){
+   const panelHeight=Math.min(Math.round(viewportHeight*.70),560);
+   setChatPosition('top',(viewportTop+viewportHeight/2)+'px');
+   setChatPosition('bottom','auto');
+   setChatPosition('height',panelHeight+'px');
+   setChatPosition('min-height',panelHeight+'px');
+   setChatPosition('max-height',Math.round(viewportHeight*.82)+'px');
+   setChatPosition('transform','translateY(-50%)');
+   chatPanel.classList.add('chat-panel-centered');
+  }
+  return;
+ }
+ setChatPosition('width',columnRect.width+'px');
  if(chatPanelMode==='grow'){
-  /* Top edge meets the tabs; bottom edge stays at its original screen coordinate. */
+  /* Desktop: extend the chat panel upward to the lobby tabs. */
   setChatPosition('top',(tabsRect.bottom+2)+'px');
   setChatPosition('bottom',Math.max(0,window.innerHeight-baseRect.bottom)+'px');
   setChatPosition('height','auto');
@@ -83,7 +112,6 @@ function applyChatPanelMode(){
   setChatPosition('transform','none');
   chatPanel.classList.add('chat-panel-grown');
  }else if(chatPanelMode==='center'){
-  /* Align the panel's top edge with the viewport midpoint while preserving its original bottom edge. */
   setChatPosition('top',(window.innerHeight/2)+'px');
   setChatPosition('bottom',Math.max(0,window.innerHeight-baseRect.bottom)+'px');
   setChatPosition('height','auto');
@@ -104,6 +132,7 @@ $('#chatPanelGrow').addEventListener('click',()=>setChatPanelMode('grow'));
 $('#chatPanelCenter').addEventListener('click',()=>setChatPanelMode('center'));
 $('#chatPanelShrink').addEventListener('click',()=>setChatPanelMode('normal'));
 window.addEventListener('resize',()=>{if(chatPanelMode!=='normal')applyChatPanelMode()});
+window.visualViewport?.addEventListener('resize',()=>{if(chatPanelMode!=='normal')applyChatPanelMode()});
 setChatPanelMode('normal');
 
 /* Expanded single-page emoji and smile collection. */
