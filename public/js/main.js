@@ -163,7 +163,7 @@ backdrop.addEventListener('click',e=>{if(e.target===backdrop)closeModal();});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){if(!backdrop.hidden)closeModal();else closeNav();}
   if(e.key==='Tab'&&!backdrop.hidden){
-    const focusable=[...backdrop.querySelectorAll('button:not([disabled]),input:not([hidden]):not([disabled])')];
+    const focusable=[...backdrop.querySelectorAll('button:not([disabled]),input:not([hidden]):not([disabled]),select:not([disabled])')];
     const first=focusable[0],last=focusable[focusable.length-1];
     if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
