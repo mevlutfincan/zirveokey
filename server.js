@@ -49,6 +49,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS chat_text_color VARCHAR(7) NOT NULL D
 ALTER TABLE users ADD COLUMN IF NOT EXISTS chat_row_color VARCHAR(7) NOT NULL DEFAULT '#e8efe8';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(80);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(40);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE;
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -170,7 +171,7 @@ app.post('/api/auth/register', dbRequired, authLimiter, asyncRoute(async (req, r
       [username, username.toLocaleLowerCase('tr-TR'), email, email, hash, country, gender]
     );
     const user = result.rows[0];
-    await pool.query("INSERT INTO user_notifications(user_id,category,title,message) VALUES($1,'system',$2,$3)",[user.id,'ZirveOkey’e hoş geldin','Hesabın başarıyla oluşturuldu. Oyun lobisinde seni bekliyoruz.']);
+    await pool.query("INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE",[user.id,'ZirveOkey’e hoş geldin','Hesabın başarıyla oluşturuldu. Oyun lobisinde seni bekliyoruz.']);
     await new Promise((resolve, reject) => {
       req.session.regenerate(error => error ? reject(error) : resolve());
     });
@@ -198,7 +199,7 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
   const user = result.rows[0];
   const valid = user ? await bcrypt.compare(password, user.password_hash) : await bcrypt.compare(password, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
   if (!user || !valid) return res.status(401).json({ error: 'Giriş bilgileri hatalı.' });
-  await pool.query("INSERT INTO user_notifications(user_id,category,title,message) VALUES($1,'system',$2,$3)",[user.id,'Hesabına giriş yapıldı','ZirveOkey hesabına yeni bir oturum açıldı. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.']);
+  await pool.query("INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE",[user.id,'Hesabına giriş yapıldı','ZirveOkey hesabına yeni bir oturum açıldı. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.']);
   await pool.query('UPDATE users SET last_login_at=NOW() WHERE id=$1', [user.id]);
   req.session.regenerate(err => {
     if (err) return res.status(500).json({ error: 'Oturum açılamadı.' });
@@ -343,17 +344,21 @@ app.post('/api/auth/reset-password', dbRequired, authLimiter, asyncRoute(async (
 const notificationCategories = ['friendship','players','game','system','management','rewards'];
 app.get('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Bildirimleri görmek için giriş yapmalısınız.'});
-  const category = String(req.query.category || 'all');
-  if (category !== 'all' && !notificationCategories.includes(category)) return res.status(400).json({error:'Geçersiz bildirim kategorisi.'});
-  const params=[req.session.user.id];
-  let where='user_id=$1';
-  if(category!=='all'){params.push(category);where+=' AND category=$2';}
+  const pref=await pool.query('SELECT notifications_enabled FROM users WHERE id=$1',[req.session.user.id]);
+  const enabled=pref.rows[0]?.notifications_enabled===true;
   const [items,counts]=await Promise.all([
-    pool.query(`SELECT id,category,title,message,action_url,read_at,created_at FROM user_notifications WHERE ${where} ORDER BY created_at DESC LIMIT 50`,params),
+    pool.query('SELECT id,category,title,message,action_url,read_at,created_at FROM user_notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50',[req.session.user.id]),
     pool.query('SELECT COUNT(*)::int AS unread FROM user_notifications WHERE user_id=$1 AND read_at IS NULL',[req.session.user.id])
   ]);
   res.setHeader('Cache-Control','no-store');
-  res.json({notifications:items.rows,unreadCount:counts.rows[0].unread});
+  res.json({notifications:items.rows,unreadCount:enabled?counts.rows[0].unread:0,enabled});
+}));
+app.put('/api/notifications/preferences', dbRequired, asyncRoute(async(req,res)=>{
+  if(!req.session.user?.id)return res.status(401).json({error:'Giriş yapmalısınız.'});
+  if(typeof req.body.enabled!=='boolean')return res.status(400).json({error:'Bildirim tercihi geçersiz.'});
+  const result=await pool.query('UPDATE users SET notifications_enabled=$1 WHERE id=$2 RETURNING notifications_enabled',[req.body.enabled,req.session.user.id]);
+  res.setHeader('Cache-Control','no-store');
+  res.json({enabled:result.rows[0]?.notifications_enabled===true});
 }));
 app.post('/api/notifications/:id/read', dbRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
