@@ -875,9 +875,7 @@ nav.lobby-tabs>.lobby-tab:first-child{
 #chatPicker:not([hidden]){display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
 
 /* Notifications dropdown is attached to the page layer, not clipped by header stacking. */
-#notificationsPopover{position:fixed!important;top:86px!important;right:24px!important;left:auto!important;z-index:2147482500!important;width:min(320px,calc(100vw - 28px))!important;max-height:calc(100vh - 110px)!important;overflow:auto!important}
 #notificationsPopover[hidden]{display:none!important}
-@media(max-width:760px){#notificationsPopover{top:72px!important;right:12px!important}}
 
 /* Account and live community controls; preserve existing game layout geometry. */
 .game-auth-actions{display:flex;gap:6px}
@@ -2489,3 +2487,7 @@ nav.lobby-tabs>.lobby-tab:first-child{
 /* Notification flyout stays attached to the notification control. */
 .game-header,.header-tools,.notification-anchor{overflow:visible!important}
 .notification-anchor .notification-panel{right:auto!important;bottom:auto!important;transform:none!important}
+
+/* Authoritative anchor override: the legacy fixed viewport rule is removed. */
+.notification-anchor>#notificationsPopover{position:absolute!important;top:calc(100% + 10px)!important;left:0!important;right:auto!important;bottom:auto!important;transform:none!important;z-index:2147482500!important;width:min(470px,calc(100vw - 24px))!important;max-height:min(680px,calc(100vh - 100px))!important;overflow:auto!important}
+@media(max-width:760px){.notification-anchor>#notificationsPopover{width:min(450px,calc(100vw - 20px))!important;max-height:calc(100vh - 90px)!important}}
