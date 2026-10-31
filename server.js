@@ -94,7 +94,8 @@ CREATE INDEX IF NOT EXISTS user_notifications_unread_idx ON user_notifications(u
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
+  // Keep production throttling strict; integration tests share one localhost IP.
+  limit: process.env.NODE_ENV === 'test' ? 100 : 10,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Çok fazla deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin.' }
