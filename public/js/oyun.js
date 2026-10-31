@@ -577,6 +577,7 @@ async function pollNotificationCount(){
 pollNotificationCount();notificationPollTimer=setInterval(pollNotificationCount,30000);
 
 const settingsDialog=$('#memberSettingsDialog');
+$('#memberSettingsForm').addEventListener('submit',event=>event.preventDefault());
 let memberAvatarData=null;
 function paintMemberAvatar(value){
  memberAvatarData=value||null;
