@@ -612,9 +612,9 @@ $('#removeSettingAvatar').addEventListener('click',async()=>{
  try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:null})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaldırılamadı.');paintMemberAvatar(null);$('#settingAvatarFile').value='';$('#settingAvatarStatus').textContent='Avatar kaldırıldı.';notify('Avatar kaldırıldı.');}
  catch(error){$('#settingAvatarStatus').textContent=error.message;}
 });
-const settingsKeys=['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingShowOnline','settingPrivateMessages','settingFriendRequests','settingAutoArrange','settingConfirmExit','settingCompactUI'];
+const settingsKeys=['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingShowOnline','settingPrivateMessages','settingFriendRequests','settingCompactUI'];
 let memberPreferences={};
-const preferenceDefaults={settingAnimations:true,settingDarkMode:true,settingNotifications:true,settingNotificationSound:false,settingShowOnline:true,settingPrivateMessages:true,settingFriendRequests:true,settingAutoArrange:false,settingConfirmExit:true,settingCompactUI:false};
+const preferenceDefaults={settingAnimations:true,settingDarkMode:true,settingNotifications:true,settingNotificationSound:false,settingShowOnline:true,settingPrivateMessages:true,settingFriendRequests:true,settingCompactUI:false};
 function applyMemberSettings(values){
  document.body.classList.toggle('member-reduce-motion',!values.settingAnimations);
  document.body.classList.toggle('member-light-theme',!values.settingDarkMode);
@@ -657,10 +657,12 @@ function showSettingsCategory(category){
  $$('.settings-category').forEach(button=>button.classList.toggle('active',button.dataset.settingsCategory===category));
  $$('.settings-page').forEach(page=>{const active=page.dataset.settingsPage===category;page.hidden=!active;page.classList.toggle('active',active);});
 }
-$$('.settings-category').forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsCategory)));
+$('.settings-category').forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsCategory)));
+$('[data-settings-open]').forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsOpen)));
+$('.password-visibility-toggle').forEach(button=>button.addEventListener('click',()=>{const input=$('#'+button.dataset.passwordTarget);if(!input)return;const reveal=input.type==='password';input.type=reveal?'text':'password';button.textContent=reveal?'Gizle':'Göster';button.setAttribute('aria-label',reveal?'Şifreyi gizle':'Şifreyi göster');}));
 $('#closeMemberSettings').addEventListener('click',()=>settingsDialog.close());
 settingsDialog.addEventListener('click',e=>{if(e.target===settingsDialog)settingsDialog.close()});
-settingsKeys.forEach(id=>$('#'+id).addEventListener('change',async()=>{
+settingsKeys.forEach(id=>{const control=$('#'+id);if(!control)return;control.addEventListener('change',async()=>{
  const value=$('#'+id).checked;$('#settingsSaveState').textContent='Kaydediliyor…';
  applyMemberSettings({...memberPreferences,[id]:value});
  try{
@@ -674,7 +676,7 @@ settingsKeys.forEach(id=>$('#'+id).addEventListener('change',async()=>{
   if(id==='settingNotifications'){notificationsEnabled=!value;renderNotificationPreference();}
   $('#settingsSaveState').textContent=error.message;notify(error.message);
  }
-}));
+});});
 $('#settingsButton').addEventListener('click',async()=>{showSettingsCategory('account');await loadMemberSettings();loadMemberAvatar();settingsDialog.showModal();});
 function updateMemberColorPreview(){const name=$('#settingNickColor').value,text=$('#settingMessageColor').value;$('#memberColorPreviewName').style.color=name;$('#memberColorPreviewText').style.color=text;}
 $('#settingNickColor').addEventListener('input',updateMemberColorPreview);
