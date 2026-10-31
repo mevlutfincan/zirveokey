@@ -651,8 +651,18 @@ settingsDialog.addEventListener('click',e=>{if(e.target===settingsDialog)setting
 settingsKeys.forEach(id=>$('#'+id).addEventListener('change',async()=>{
  const value=$('#'+id).checked;$('#settingsSaveState').textContent='Kaydediliyor…';
  applyMemberSettings({...memberPreferences,[id]:value});
- try{await saveMemberPreferences({[id]:value});}
- catch(error){$('#'+id).checked=!value;applyMemberSettings(memberPreferences);$('#settingsSaveState').textContent=error.message;notify(error.message);}
+ try{
+  if(id==='settingNotifications'){
+   const response=await fetch('/api/notifications/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:value})});
+   const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Bildirim tercihi kaydedilemedi.');
+   notificationsEnabled=data.enabled;renderNotificationPreference();
+  }
+  await saveMemberPreferences({[id]:value});
+ }catch(error){
+  $('#'+id).checked=!value;applyMemberSettings(memberPreferences);
+  if(id==='settingNotifications'){notificationsEnabled=!value;renderNotificationPreference();}
+  $('#settingsSaveState').textContent=error.message;notify(error.message);
+ }
 }));
 $('#settingsButton').addEventListener('click',async()=>{showSettingsCategory('account');await loadMemberSettings();loadMemberAvatar();settingsDialog.showModal();});
 function updateMemberColorPreview(){const name=$('#settingNickColor').value,text=$('#settingMessageColor').value;$('#memberColorPreviewName').style.color=name;$('#memberColorPreviewText').style.color=text;}
