@@ -484,18 +484,82 @@ async function sendActivityHeartbeat(){
   if(!response.ok&&response.status!==401)throw new Error('Aktivite kaydı alınamadı');
  }catch(error){console.warn('Üye aktivitesi güncellenemedi.');}
 }
+
 const notificationsButton=$('#notificationsButton');
 const notificationsPopover=$('#notificationsPopover');
+const notificationList=$('#notificationList');
+const notificationUnreadLabel=$('#notificationUnreadLabel');
+const notificationStatus=$('#notificationStatus');
+let notificationFilter='all',notificationUnreadCount=0,notificationPollTimer=null;
+const notificationCategoryNames={friendship:'Arkadaşlık',players:'Oyuncular',game:'Oyun',system:'Sistem',management:'Yönetim',rewards:'Ödüller'};
+const notificationCategoryIcons={friendship:'user-plus',players:'users',game:'gamepad-2',system:'shield-check',management:'megaphone',rewards:'gift'};
+function updateNotificationBadge(count){
+ notificationUnreadCount=Math.max(0,Number(count)||0);
+ let badge=$('#notificationBadge');
+ if(!badge){badge=document.createElement('span');badge.id='notificationBadge';badge.className='notification-badge';notificationsButton.append(badge);}
+ badge.textContent=notificationUnreadCount>99?'99+':String(notificationUnreadCount);
+ badge.hidden=notificationUnreadCount===0;
+ notificationsButton.classList.toggle('has-notifications',notificationUnreadCount>0);
+ notificationUnreadLabel.textContent=notificationUnreadCount?notificationUnreadCount+' okunmamış bildirim':'Okunmamış bildirim yok';
+}
+function notificationTime(value){
+ const date=new Date(value);if(Number.isNaN(date.getTime()))return '';
+ return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(date);
+}
+async function loadNotifications(){
+ if(!gameSignedIn){notificationList.innerHTML='<div class="notification-empty"><b>Bildirimlerini görmek için giriş yap</b><span>Bildirimlerin hesabına özel olarak saklanır.</span><button type="button" id="notificationLogin">Giriş yap</button></div>';notificationUnreadLabel.textContent='Üye hesabı gerekli';return;}
+ try{
+  const response=await fetch('/api/notifications?category='+encodeURIComponent(notificationFilter),{credentials:'same-origin',cache:'no-store'});
+  if(!response.ok)throw new Error(response.status===401?'Oturumun sona ermiş.':'Bildirimler yüklenemedi.');
+  const data=await response.json();updateNotificationBadge(data.unreadCount);
+  notificationStatus.textContent=data.notifications.length+' bildirim';
+  if(!data.notifications.length){notificationList.innerHTML='<div class="notification-empty"><b>Henüz bildirimin yok</b><span>Yeni etkinlikler burada görünecek.</span></div>';return;}
+  notificationList.replaceChildren();
+  data.notifications.forEach(item=>{
+   const card=document.createElement('article');card.className='notification-item'+(item.read_at?'':' unread');card.dataset.id=item.id;
+   const icon=document.createElement('span');icon.className='notification-icon';icon.textContent=({friendship:'♙',players:'●',game:'◆',system:'⚙',management:'✦',rewards:'★'})[item.category]||'•';
+   const body=document.createElement('div');body.className='notification-copy';
+   const title=document.createElement('strong');title.textContent=item.title;
+   const message=document.createElement('p');message.textContent=item.message;
+   const time=document.createElement('time');time.textContent=notificationTime(item.created_at);
+   body.append(title,message,time);card.append(icon,body);
+   const actions=document.createElement('div');actions.className='notification-item-actions';
+   if(!item.read_at){const read=document.createElement('button');read.type='button';read.textContent='Okundu';read.setAttribute('aria-label','Okundu işaretle');read.addEventListener('click',()=>markNotificationRead(item.id));actions.append(read);}
+   const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label','Bildirimi sil');remove.addEventListener('click',()=>deleteNotification(item.id));actions.append(remove);card.append(actions);
+   if(item.action_url){const safe=new URL(item.action_url,location.origin);if(safe.origin===location.origin){card.classList.add('actionable');card.addEventListener('click',e=>{if(e.target.closest('button'))return;location.href=safe.pathname+safe.search+safe.hash;});}}
+   notificationList.append(card);
+  });
+ }catch(error){notificationList.innerHTML='<div class="notification-empty">'+error.message+'</div>';}
+}
+async function notificationAction(url,method='POST'){
+ const response=await fetch(url,{method,credentials:'same-origin',cache:'no-store'});
+ if(!response.ok)throw new Error('Bildirim işlemi tamamlanamadı.');
+ await loadNotifications();
+}
+async function markNotificationRead(id){try{await notificationAction('/api/notifications/'+id+'/read');}catch(e){notify(e.message);}}
+async function deleteNotification(id){try{await notificationAction('/api/notifications/'+id,'DELETE');}catch(e){notify(e.message);}}
 notificationsButton.addEventListener('click',()=>{
- const opening=notificationsPopover.hidden;
- notificationsPopover.hidden=!opening;
+ const opening=notificationsPopover.hidden;notificationsPopover.hidden=!opening;
  notificationsButton.setAttribute('aria-expanded',String(opening));
+ if(opening)loadNotifications();
+});
+notificationList.addEventListener('click',e=>{if(e.target.id==='notificationLogin')openGameAuth('login');});
+$('#notificationReadAll').addEventListener('click',async()=>{try{await notificationAction('/api/notifications/read-all');}catch(e){notify(e.message);}});
+$('#notificationClearAll').addEventListener('click',async()=>{if(!confirm('Tüm bildirimlerini silmek istediğinden emin misin?'))return;try{await notificationAction('/api/notifications','DELETE');}catch(e){notify(e.message);}});
+$('.notification-filters').addEventListener('click',e=>{
+ const button=e.target.closest('[data-notification-filter]');if(!button)return;
+ notificationFilter=button.dataset.notificationFilter;
+ $('.notification-filters').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));loadNotifications();
 });
 document.addEventListener('click',e=>{
- if(!notificationsPopover.hidden&&!notificationsPopover.contains(e.target)&&!notificationsButton.contains(e.target)){
-  notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');
- }
+ if(!notificationsPopover.hidden&&!notificationsPopover.contains(e.target)&&!notificationsButton.contains(e.target)){notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');}
 });
+async function pollNotificationCount(){
+ if(!gameSignedIn){updateNotificationBadge(0);return;}
+ try{const response=await fetch('/api/notifications?category=all',{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();updateNotificationBadge(data.unreadCount);if(!notificationsPopover.hidden)loadNotifications();}}
+ catch(_){}
+}
+pollNotificationCount();notificationPollTimer=setInterval(pollNotificationCount,30000);
 
 const settingsDialog=$('#memberSettingsDialog');
 const settingsKeys=['settingAnimations','settingDarkMode','settingNotifications','settingShowOnline'];
