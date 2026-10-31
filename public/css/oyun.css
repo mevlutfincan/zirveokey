@@ -2491,3 +2491,9 @@ nav.lobby-tabs>.lobby-tab:first-child{
 /* Authoritative anchor override: the legacy fixed viewport rule is removed. */
 .notification-anchor>#notificationsPopover{position:absolute!important;top:calc(100% + 10px)!important;left:0!important;right:auto!important;bottom:auto!important;transform:none!important;z-index:2147482500!important;width:min(470px,calc(100vw - 24px))!important;max-height:min(680px,calc(100vh - 100px))!important;overflow:auto!important}
 @media(max-width:760px){.notification-anchor>#notificationsPopover{width:min(450px,calc(100vw - 20px))!important;max-height:calc(100vh - 90px)!important}}
+
+/* Keep the notification flyout above the lobby tab strip. The header owns the higher stacking layer. */
+.game-header{position:relative!important;z-index:2147482501!important;overflow:visible!important}
+.game-header .header-tools,.game-header .notification-anchor{position:relative!important;z-index:2147482502!important;overflow:visible!important}
+.lobby-tabs{position:relative!important;z-index:1!important}
+#notificationsPopover{z-index:2147482503!important}
