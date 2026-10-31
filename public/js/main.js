@@ -124,6 +124,8 @@ document.querySelectorAll('[data-modal]').forEach(button=>button.addEventListene
   $('#modalDesc').textContent=authMode==='register'?'ZirveOkey ailesine katıl.':'Hesabına giriş yap ve oyuna katıl.';
   $('#authSubmit').textContent=authMode==='register'?'Üye Ol':'Giriş Yap';
   email.hidden=authMode!=='register';email.required=authMode==='register';email.value='';
+  $('#registerProfileFields').hidden=authMode!=='register';$('#registerCountry').required=authMode==='register';$('#registerGender').required=authMode==='register';
+  $('#authModeSwitch').hidden=authMode==='forgot'||authMode==='reset';$('#authModeSwitch').textContent=authMode==='register'?'Hesabınız varsa Giriş yap':'Hesabınız yoksa Üye Ol';
   username.hidden=false;username.required=true;username.value='';
   password.hidden=false;password.required=true;password.value='';
   loginOptions.hidden=authMode!=='login';
@@ -133,6 +135,13 @@ document.querySelectorAll('[data-modal]').forEach(button=>button.addEventListene
   backdrop.hidden=false;
   backdrop.querySelector('input:not([hidden])')?.focus();
 }));
+$('#authModeSwitch').addEventListener('click',()=>{
+  authMode=authMode==='register'?'login':'register';
+  $('#modalTitle').textContent=authMode==='register'?'Üye Ol':'Giriş Yap';$('#modalDesc').textContent=authMode==='register'?'ZirveOkey ailesine katıl.':'Hesabına giriş yap ve oyuna katıl.';
+  $('#authSubmit').textContent=authMode==='register'?'Üye Ol':'Giriş Yap';email.hidden=authMode!=='register';email.required=authMode==='register';username.hidden=false;username.required=true;password.hidden=false;password.required=true;
+  $('#registerProfileFields').hidden=authMode!=='register';$('#registerCountry').required=authMode==='register';$('#registerGender').required=authMode==='register';loginOptions.hidden=authMode!=='login';
+  password.setAttribute('autocomplete',authMode==='register'?'new-password':'current-password');$('#authModeSwitch').textContent=authMode==='register'?'Hesabınız varsa Giriş yap':'Hesabınız yoksa Üye Ol';$('#modalNote').textContent='';
+});
 $('#forgotPassword').addEventListener('click',()=>{
   authMode='forgot';
   $('#modalTitle').textContent='Şifremi Unuttum';
@@ -140,7 +149,7 @@ $('#forgotPassword').addEventListener('click',()=>{
   email.hidden=false;email.required=true;email.value='';
   username.hidden=true;username.required=false;
   password.hidden=true;password.required=false;
-  loginOptions.hidden=true;
+  loginOptions.hidden=true;$('#registerProfileFields').hidden=true;$('#registerCountry').required=false;$('#registerGender').required=false;$('#authModeSwitch').hidden=true;
   $('#authSubmit').textContent='Sıfırlama Bağlantısı Gönder';
   $('#modalNote').textContent='Şifre sıfırlama bağlantısı kayıtlı e-posta adresine gönderilir.';
   email.focus();
@@ -189,7 +198,7 @@ authForm.addEventListener('submit',async e=>{
     payload={username:username.value.trim(),password:password.value,rememberMe:$('#rememberMe').checked};
   }else if(authMode==='register'){
     endpoint='/api/auth/register';
-    payload={username:username.value.trim(),email:email.value.trim(),password:password.value,rememberMe:$('#rememberMe').checked};
+    payload={username:username.value.trim(),email:email.value.trim(),password:password.value,rememberMe:$('#rememberMe').checked,country:$('#registerCountry').value,gender:$('#registerGender').value};
   }else if(authMode==='forgot'){
     endpoint='/api/auth/forgot-password';
     payload={email:email.value.trim()};
