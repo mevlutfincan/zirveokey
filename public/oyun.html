@@ -4,8 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
-<link rel="stylesheet" href="/css/oyun.css?v=settings-no-appearance-20261031">
-<script defer src="/js/oyun.js?v=settings-no-appearance-20261031"></script>
+<link rel="stylesheet" href="/css/oyun.css?v=settings-notification-categories-20261031">
+<script defer src="/js/oyun.js?v=settings-notification-categories-20261031"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
@@ -112,6 +112,18 @@
      <div class="settings-control-group">
       <label class="setting-row"><span><b>Bildirimleri etkinleştir</b><small>Sistem ve hesap bildirimlerini göster</small></span><input type="checkbox" id="settingNotifications"></label>
       <label class="setting-row"><span><b>Bildirim sesi</b><small>Yeni bildirim geldiğinde kısa sesli uyarı ver</small></span><input type="checkbox" id="settingNotificationSound"></label>
+      <details class="settings-disclosure notification-category-settings" open>
+       <summary>Bildirim kategorileri</summary>
+       <p>Buradaki tercihler bildirim menüsünde hangi bildirimleri göreceğini ve okunmamış bildirim sayısını belirler.</p>
+       <div class="settings-control-group">
+        <label class="setting-row"><span><b>Arkadaşlık istekleri</b><small>Arkadaşlık bildirimleri</small></span><input type="checkbox" id="settingFriendRequests"></label>
+        <label class="setting-row"><span><b>Üye hareketleri</b><small>Üye ve oyuncu bildirimleri</small></span><input type="checkbox" id="settingNotifyPlayers"></label>
+        <label class="setting-row"><span><b>Oyun bildirimleri</b><small>Masa ve oyun gelişmeleri</small></span><input type="checkbox" id="settingNotifyGame"></label>
+        <label class="setting-row"><span><b>Sistem bildirimleri</b><small>Teknik ve sistem duyuruları</small></span><input type="checkbox" id="settingNotifySystem"></label>
+        <label class="setting-row"><span><b>Yönetim bildirimleri</b><small>Yönetim kaynaklı bilgilendirmeler</small></span><input type="checkbox" id="settingNotifyManagement"></label>
+        <label class="setting-row"><span><b>Ödül bildirimleri</b><small>Ödül ve kazanım haberleri</small></span><input type="checkbox" id="settingNotifyRewards"></label>
+       </div>
+      </details>
      </div>
      <details class="settings-disclosure"><summary>Bildirim ayarları hakkında</summary><p>Bildirimleri kapattığında bildirim paneli gizlenir. Bildirim geçmişin sunucudaki hesabında saklanmaya devam eder.</p></details>
     </section>
@@ -119,7 +131,6 @@
      <span class="eyebrow">GİZLİLİK KONTROLLERİ</span><h3>Gizlilik ve Sohbet</h3><p>Diğer üyelerin seni nasıl göreceğini ve arkadaşlık bildirimlerini yönet.</p>
      <div class="settings-control-group">
       <label class="setting-row"><span><b>Çevrimiçi durumumu göster</b><small>Çevrimiçi listesinde görünür ol</small></span><input type="checkbox" id="settingShowOnline"></label>
-      <label class="setting-row"><span><b>Arkadaşlık isteği bildirimleri</b><small>Yeni arkadaşlık istekleri için uyarı al</small></span><input type="checkbox" id="settingFriendRequests"></label>
      </div>
      <details class="settings-disclosure"><summary>Gizlilik tercihlerinin kapsamı</summary><p>Çevrimiçi görünürlüğü kapatmak listede görünmeni sınırlar. Arkadaşlık isteği bildirimlerini kapatmak yalnızca bu bildirim kategorisini gizler; mevcut arkadaşlıklarını etkilemez.</p></details>
     </section>
