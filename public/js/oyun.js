@@ -546,18 +546,23 @@ document.addEventListener('fullscreenchange',()=>{
 let gameAuthMode='login';
 function openGameAuth(mode='login'){
  gameAuthMode=mode;
- $('#gameAuthTitle').textContent=mode==='register'?'Üye Ol':'Giriş Yap';
- $('#gameAuthSubmit').textContent=mode==='register'?'Üye Ol':'Giriş Yap';
- $('#gameAuthIdentifierLabel').firstChild.textContent=mode==='register'?'Kullanıcı adı':'Kullanıcı adı';
- $('#gameAuthIdentifier').placeholder='Kullanıcı adını gir';
- $('#gameAuthIdentifier').maxLength=24;
- $('#gameAuthIdentifier').value='';
- $('#gameAuthEmailRow').hidden=mode!=='register';
- $('#gameAuthEmail').required=mode==='register';$('#gameAuthEmail').value='';
- $('#gameAuthProfileFields').hidden=mode!=='register';$('#gameAuthCountry').required=mode==='register';$('#gameAuthGender').required=mode==='register';$('#gameAuthCountry').value='';$('#gameAuthGender').value='';
- $('#gameAuthPassword').value='';$('#gameAuthPassword').setAttribute('autocomplete',mode==='register'?'new-password':'current-password');
- $('#gameAuthSwitch').hidden=mode==='register';$('#gameAuthLoginSwitch').hidden=mode!=='register';
- $('#gameAuthMessage').textContent='';$('#gameLoginDialog').showModal();
+ const registering=mode==='register',forgot=mode==='forgot';
+ $('#gameAuthTitle').textContent=registering?'Üye Ol':forgot?'Şifremi Unuttum':'Giriş Yap';
+ $('#gameAuthDesc').textContent=registering?'ZirveOkey ailesine katıl.':forgot?'Şifre sıfırlama bağlantısı için kayıtlı e-posta adresini gir.':'Hesabına giriş yap ve oyuna katıl.';
+ $('#gameAuthSubmit').textContent=registering?'Üye Ol':forgot?'Sıfırlama Bağlantısı Gönder':'Giriş Yap';
+ $('#gameAuthEmailRow').hidden=!(registering||forgot);
+ $('#gameAuthEmail').required=registering||forgot;$('#gameAuthEmail').value='';
+ $('#gameAuthIdentifierLabel').hidden=forgot;
+ $('#gameAuthIdentifier').required=!forgot;$('#gameAuthIdentifier').value='';$('#gameAuthIdentifier').placeholder='Kullanıcı adını gir';$('#gameAuthIdentifier').maxLength=24;
+ $('#gameAuthPasswordRow').hidden=forgot;
+ $('#gameAuthPassword').required=!forgot;$('#gameAuthPassword').value='';$('#gameAuthPassword').setAttribute('autocomplete',registering?'new-password':'current-password');
+ $('#gameAuthProfileFields').hidden=!registering;
+ $('#gameAuthCountry').required=registering;$('#gameAuthGender').required=registering;$('#gameAuthCountry').value='';$('#gameAuthGender').value='';
+ $('#gameAuthLoginOptions').hidden=mode!=='login';
+ $('#gameAuthSwitch').hidden=registering||forgot;
+ $('#gameAuthLoginSwitch').hidden=!registering;
+ $('#gameAuthMessage').textContent='';
+ $('#gameLoginDialog').showModal();
 }
 async function refreshGameAccount(){
  try{
@@ -584,18 +589,30 @@ $('#gameRegisterButton').addEventListener('click',()=>openGameAuth('register'));
 $('#gameAuthClose').addEventListener('click',()=>$('#gameLoginDialog').close());
 $('#gameAuthSwitch').addEventListener('click',()=>openGameAuth('register'));
 $('#gameAuthLoginSwitch').addEventListener('click',()=>openGameAuth('login'));
+$('#gameAuthForgotPassword').addEventListener('click',()=>openGameAuth('forgot'));
 $('#gameAuthForm').addEventListener('submit',async e=>{
- e.preventDefault();const submit=$('#gameAuthSubmit');submit.disabled=true;$('#gameAuthMessage').textContent='İşleniyor…';
- const payload=gameAuthMode==='register'
-  ?{username:$('#gameAuthIdentifier').value.trim(),email:$('#gameAuthEmail').value.trim(),password:$('#gameAuthPassword').value,country:$('#gameAuthCountry').value,gender:$('#gameAuthGender').value}
-  :{username:$('#gameAuthIdentifier').value.trim(),password:$('#gameAuthPassword').value};
+ e.preventDefault();
+ const mode=gameAuthMode,submit=$('#gameAuthSubmit');
+ submit.disabled=true;submit.textContent='İşleniyor…';$('#gameAuthMessage').textContent='';
+ let endpoint='/api/auth/'+mode,payload={};
+ if(mode==='register'){
+  payload={email:$('#gameAuthEmail').value.trim(),username:$('#gameAuthIdentifier').value.trim(),password:$('#gameAuthPassword').value,gender:$('#gameAuthGender').value,country:$('#gameAuthCountry').value};
+ }else if(mode==='forgot'){
+  endpoint='/api/auth/forgot-password';payload={email:$('#gameAuthEmail').value.trim()};
+ }else{
+  payload={username:$('#gameAuthIdentifier').value.trim(),password:$('#gameAuthPassword').value,rememberMe:$('#gameRememberMe').checked};
+ }
  try{
-  const r=await fetch('/api/auth/'+gameAuthMode,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const r=await fetch(endpoint,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Üyelik işlemi tamamlanamadı.');
-  $('#gameLoginDialog').close();await refreshGameAccount();await loadLobbyMessages(true);await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
-   if(gameAuthMode==='register'&&pendingMembershipAction){const resume=pendingMembershipAction;pendingMembershipAction=null;resume();}
+  if(mode==='forgot'){
+   $('#gameAuthMessage').textContent=data.message||'Adres kayıtlıysa sıfırlama bağlantısı gönderilecektir.';
+  }else{
+   $('#gameLoginDialog').close();await refreshGameAccount();await loadLobbyMessages(true);await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
+   if(mode==='register'&&pendingMembershipAction){const resume=pendingMembershipAction;pendingMembershipAction=null;resume();}
+  }
  }catch(error){$('#gameAuthMessage').textContent=error.message;}
- finally{submit.disabled=false;}
+ finally{submit.disabled=false;submit.textContent=mode==='register'?'Üye Ol':mode==='forgot'?'Sıfırlama Bağlantısı Gönder':'Giriş Yap';}
 });
 $('#gameLogoutButton').addEventListener('click',async()=>{
  try{const r=await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'});if(!r.ok)throw new Error('Çıkış yapılamadı.');await refreshGameAccount();chatMessagesBox.replaceChildren();renderedChatMessageIds.clear();chatLastId=0;loadOnlineMembers();notify('Oturum kapatıldı.');}
