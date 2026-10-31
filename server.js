@@ -75,6 +75,18 @@ CREATE TABLE IF NOT EXISTS lobby_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS lobby_messages_created_idx ON lobby_messages(created_at DESC);
+CREATE TABLE IF NOT EXISTS user_notifications (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  category VARCHAR(24) NOT NULL CHECK (category IN ('friendship','players','game','system','management','rewards')),
+  title VARCHAR(120) NOT NULL,
+  message VARCHAR(500) NOT NULL,
+  action_url VARCHAR(300),
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS user_notifications_user_created_idx ON user_notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS user_notifications_unread_idx ON user_notifications(user_id, created_at DESC) WHERE read_at IS NULL;
 `;
 
 const authLimiter = rateLimit({
@@ -323,6 +335,47 @@ app.post('/api/auth/reset-password', dbRequired, authLimiter, asyncRoute(async (
     res.json({ ok: true, message: 'Şifreniz güncellendi. Yeni şifrenizle giriş yapabilirsiniz.' });
   } catch (error) { await client.query('ROLLBACK'); throw error; }
   finally { client.release(); }
+}));
+
+
+const notificationCategories = ['friendship','players','game','system','management','rewards'];
+app.get('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
+  if (!req.session.user?.id) return res.status(401).json({error:'Bildirimleri görmek için giriş yapmalısınız.'});
+  const category = String(req.query.category || 'all');
+  if (category !== 'all' && !notificationCategories.includes(category)) return res.status(400).json({error:'Geçersiz bildirim kategorisi.'});
+  const params=[req.session.user.id];
+  let where='user_id=$1';
+  if(category!=='all'){params.push(category);where+=' AND category=$2';}
+  const [items,counts]=await Promise.all([
+    pool.query(`SELECT id,category,title,message,action_url,read_at,created_at FROM user_notifications WHERE ${where} ORDER BY created_at DESC LIMIT 50`,params),
+    pool.query('SELECT COUNT(*)::int AS unread FROM user_notifications WHERE user_id=$1 AND read_at IS NULL',[req.session.user.id])
+  ]);
+  res.setHeader('Cache-Control','no-store');
+  res.json({notifications:items.rows,unreadCount:counts.rows[0].unread});
+}));
+app.post('/api/notifications/:id/read', dbRequired, asyncRoute(async (req,res) => {
+  if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
+  const id=Number.parseInt(req.params.id,10);
+  if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({error:'Geçersiz bildirim.'});
+  await pool.query('UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE id=$1 AND user_id=$2',[id,req.session.user.id]);
+  res.json({ok:true});
+}));
+app.post('/api/notifications/read-all', dbRequired, asyncRoute(async (req,res) => {
+  if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
+  await pool.query('UPDATE user_notifications SET read_at=NOW() WHERE user_id=$1 AND read_at IS NULL',[req.session.user.id]);
+  res.json({ok:true});
+}));
+app.delete('/api/notifications/:id', dbRequired, asyncRoute(async (req,res) => {
+  if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
+  const id=Number.parseInt(req.params.id,10);
+  if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({error:'Geçersiz bildirim.'});
+  await pool.query('DELETE FROM user_notifications WHERE id=$1 AND user_id=$2',[id,req.session.user.id]);
+  res.json({ok:true});
+}));
+app.delete('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
+  if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
+  await pool.query('DELETE FROM user_notifications WHERE user_id=$1',[req.session.user.id]);
+  res.json({ok:true});
 }));
 
 app.get('/api/public/new-members', asyncRoute(async (_req, res) => {
