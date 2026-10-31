@@ -2570,3 +2570,11 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .settings-page h3{font-size:18px}
  .settings-footer{align-items:flex-start;flex-direction:column}
 }
+
+/* Compact UI preference: reduce density without changing game layout. */
+.member-compact-ui .lobby-tabs{min-height:38px!important}
+.member-compact-ui .lobby-tab{padding-top:7px!important;padding-bottom:7px!important}
+.member-compact-ui .chat-messages{gap:4px!important}
+.member-compact-ui .chat-message{padding-top:3px!important;padding-bottom:3px!important}
+.member-compact-ui .setting-row{padding-top:11px!important;padding-bottom:11px!important}
+.member-compact-ui .notification-item{padding-top:9px!important;padding-bottom:9px!important}
