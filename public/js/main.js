@@ -27,7 +27,7 @@ async function refreshAuthState(){
     const data=await response.json();
     const signedIn=data.authenticated===true;
     homeSignedIn=signedIn;
-    if(signedIn)sendHomePresenceHeartbeat();
+    if(signedIn){homePreferencesLoaded=await loadHomeAccountPreferences();if(homePreferencesLoaded)sendHomePresenceHeartbeat();}else{homePreferencesLoaded=false;}
     authButtons.forEach(button=>button.hidden=signedIn);
     ['logoutButton','mobileLogoutButton'].forEach(id=>{const button=document.getElementById(id);if(button)button.hidden=!signedIn;});
     ['accountGreeting','mobileAccountGreeting'].forEach(id=>{const el=document.getElementById(id);if(el){el.hidden=!signedIn;el.textContent=signedIn?'Merhaba, '+data.user.username:'';}});
@@ -71,15 +71,28 @@ async function loadActiveMembers(){
   }
 }
 let activityHeartbeatBusy=false;
-let homeSignedIn=false;
+let homeSignedIn=false,homePreferencesLoaded=false;
 function readHomeShowOnlinePreference(){
   try{
     const settings=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');
     return settings.settingShowOnline!==false;
   }catch{return true;}
 }
+async function loadHomeAccountPreferences(){
+  try{
+    const response=await fetch('/api/account/preferences',{credentials:'same-origin',cache:'no-store'});
+    if(!response.ok)throw new Error('Hesap tercihleri alınamadı.');
+    const data=await response.json();
+    const current=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');
+    localStorage.setItem('zirveMemberSettings',JSON.stringify({...current,...(data.preferences||{})}));
+    return true;
+  }catch(error){
+    console.warn('Hesap gizlilik tercihleri yüklenemedi:',error.message);
+    return false;
+  }
+}
 async function sendHomePresenceHeartbeat(){
-  if(!homeSignedIn||document.visibilityState!=='visible')return;
+  if(!homeSignedIn||!homePreferencesLoaded||document.visibilityState!=='visible')return;
   try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:readHomeShowOnlinePreference()})});}
   catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
 }
