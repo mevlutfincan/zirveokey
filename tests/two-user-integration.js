@@ -313,6 +313,29 @@ async function main() {
   assert.ok(!online.members.some(member => member.username === users[0].username), 'Gizli görünürlükte A online listede kaldı.');
   assert.ok(online.members.some(member => member.username === users[1].username), 'A gizlenince B de online listesinden kayboldu.');
 
+  const secondLoginA = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: users[0].password } });
+  assert.equal(secondLoginA.status, 200, 'A ikinci cihaz oturumu açamadı.');
+  const cookieASecond = cookieFrom(secondLoginA);
+  const wrongCurrentPassword = await request('/api/account/password', {
+    method: 'PUT', cookie: cookieA, body: { currentPassword: 'WrongPassword!2026', newPassword: 'ZirveNew!2026A' }
+  });
+  assert.equal(wrongCurrentPassword.status, 400, 'Yanlış mevcut şifreyle şifre değiştirilebildi.');
+  const changePasswordA = await request('/api/account/password', {
+    method: 'PUT', cookie: cookieA, body: { currentPassword: users[0].password, newPassword: 'ZirveNew!2026A' }
+  });
+  assert.equal(changePasswordA.status, 200, 'A şifresini değiştiremedi: ' + await changePasswordA.text());
+  const currentSessionAfterPasswordChange = await request('/api/auth/me', { cookie: cookieA });
+  assert.equal((await currentSessionAfterPasswordChange.json()).authenticated, true, 'Şifre değişikliğinde geçerli cihazın oturumu gereksiz yere kapatıldı.');
+  const otherSessionAfterPasswordChange = await request('/api/auth/me', { cookie: cookieASecond });
+  assert.equal((await otherSessionAfterPasswordChange.json()).authenticated, false, 'Şifre değişikliğinde diğer cihazın oturumu kapatılmadı.');
+  const oldPasswordLogin = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: users[0].password } });
+  assert.equal(oldPasswordLogin.status, 401, 'Eski şifreyle yeniden giriş yapılabildi.');
+  const newPasswordLogin = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: 'ZirveNew!2026A' } });
+  assert.equal(newPasswordLogin.status, 200, 'Yeni şifreyle giriş yapılamadı.');
+  const cookieANewLogin = cookieFrom(newPasswordLogin);
+  const logoutNewLogin = await request('/api/auth/logout', { method: 'POST', cookie: cookieANewLogin });
+  assert.equal(logoutNewLogin.status, 200, 'Yeni şifre doğrulama oturumu kapatılamadı.');
+
   const logoutA = await request('/api/auth/logout', { method: 'POST', cookie: cookieA });
   assert.equal(logoutA.status, 200, 'A çıkış yapamadı.');
   const meAfterLogout = await request('/api/auth/me', { cookie: cookieA });
