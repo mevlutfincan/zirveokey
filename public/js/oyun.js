@@ -554,8 +554,9 @@ function openGameAuth(mode='login'){
  $('#gameAuthIdentifier').value='';
  $('#gameAuthEmailRow').hidden=mode!=='register';
  $('#gameAuthEmail').required=mode==='register';$('#gameAuthEmail').value='';
+ $('#gameAuthProfileFields').hidden=mode!=='register';$('#gameAuthCountry').required=mode==='register';$('#gameAuthGender').required=mode==='register';$('#gameAuthCountry').value='';$('#gameAuthGender').value='';
  $('#gameAuthPassword').value='';$('#gameAuthPassword').setAttribute('autocomplete',mode==='register'?'new-password':'current-password');
- $('#gameAuthSwitch').hidden=false;$('#gameAuthSwitch').textContent=mode==='register'?'Zaten hesabın var mı? Giriş yap':'Hesabın yok mu? Üye ol';
+ $('#gameAuthSwitch').hidden=mode==='register';$('#gameAuthLoginSwitch').hidden=mode!=='register';
  $('#gameAuthMessage').textContent='';$('#gameLoginDialog').showModal();
 }
 async function refreshGameAccount(){
@@ -581,11 +582,12 @@ $('#chatInput').addEventListener('focus',()=>{if(!gameSignedIn)requireGameMember
  $('#gameLoginButton').addEventListener('click',()=>openGameAuth('login'));
 $('#gameRegisterButton').addEventListener('click',()=>openGameAuth('register'));
 $('#gameAuthClose').addEventListener('click',()=>$('#gameLoginDialog').close());
-$('#gameAuthSwitch').addEventListener('click',()=>openGameAuth(gameAuthMode==='login'?'register':'login'));
+$('#gameAuthSwitch').addEventListener('click',()=>openGameAuth('register'));
+$('#gameAuthLoginSwitch').addEventListener('click',()=>openGameAuth('login'));
 $('#gameAuthForm').addEventListener('submit',async e=>{
  e.preventDefault();const submit=$('#gameAuthSubmit');submit.disabled=true;$('#gameAuthMessage').textContent='İşleniyor…';
  const payload=gameAuthMode==='register'
-  ?{username:$('#gameAuthIdentifier').value.trim(),email:$('#gameAuthEmail').value.trim(),password:$('#gameAuthPassword').value}
+  ?{username:$('#gameAuthIdentifier').value.trim(),email:$('#gameAuthEmail').value.trim(),password:$('#gameAuthPassword').value,country:$('#gameAuthCountry').value,gender:$('#gameAuthGender').value}
   :{username:$('#gameAuthIdentifier').value.trim(),password:$('#gameAuthPassword').value};
  try{
   const r=await fetch('/api/auth/'+gameAuthMode,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
