@@ -2062,3 +2062,9 @@ nav.lobby-tabs>.lobby-tab:first-child{
  body.game-page .online-panel .side-heading {padding:6px 4px!important}
  body.game-page .online-panel .side-heading h2 {font-size:9px!important}
 }
+
+/* Registration profile controls */
+#gameAuthProfileFields{display:grid;gap:10px}
+#gameAuthProfileFields[hidden]{display:none!important}
+.game-auth-dialog select{width:100%;height:42px;padding:0 11px;border:1px solid var(--line);border-radius:9px;background:#09140d;color:#fff;color-scheme:dark}
+.game-auth-dialog select option{background:#09140d;color:#fff}
