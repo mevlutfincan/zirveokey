@@ -511,8 +511,8 @@ app.use(express.static(publicDir, {
   setHeaders(res, filePath) { if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); }
 }));
 app.get('*', (_req, res) => res.sendFile(path.join(publicDir, 'index.html')));
-app.use((error, _req, res, _next) => {
-  console.error('Request failed:', error.message);
+app.use((error, req, res, _next) => {
+  console.error('Request failed:', JSON.stringify({ path: req.originalUrl, method: req.method, code: error.code || null, message: error.message }));
   res.status(500).json({ error: 'İşlem sırasında beklenmeyen bir sunucu hatası oluştu.' });
 });
 
