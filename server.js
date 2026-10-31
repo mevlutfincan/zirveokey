@@ -439,7 +439,7 @@ app.put('/api/notifications/preferences', dbRequired, asyncRoute(async(req,res)=
 }));
 app.post('/api/notifications/:id/read', dbRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
-  if(!/^[1-9]\\d*$/.test(req.params.id))return res.status(400).json({error:'Geçersiz bildirim.'});
+  if(!/^[1-9]\d*$/.test(req.params.id))return res.status(400).json({error:'Geçersiz bildirim.'});
   const id=Number(req.params.id);
   if(!Number.isSafeInteger(id))return res.status(400).json({error:'Geçersiz bildirim.'});
   const result=await pool.query('UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE id=$1 AND user_id=$2 RETURNING id',[id,req.session.user.id]);
@@ -453,7 +453,7 @@ app.post('/api/notifications/read-all', dbRequired, asyncRoute(async (req,res) =
 }));
 app.delete('/api/notifications/:id', dbRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
-  if(!/^[1-9]\\d*$/.test(req.params.id))return res.status(400).json({error:'Geçersiz bildirim.'});
+  if(!/^[1-9]\d*$/.test(req.params.id))return res.status(400).json({error:'Geçersiz bildirim.'});
   const id=Number(req.params.id);
   if(!Number.isSafeInteger(id))return res.status(400).json({error:'Geçersiz bildirim.'});
   const result=await pool.query('DELETE FROM user_notifications WHERE id=$1 AND user_id=$2 RETURNING id',[id,req.session.user.id]);
