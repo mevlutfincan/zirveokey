@@ -260,6 +260,7 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
 }));
 
 app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
     SELECT u.id,u.username
     FROM user_presence p JOIN users u ON u.id=p.user_id
@@ -364,6 +365,7 @@ app.put('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
 }));
 
 app.get('/api/lobby/chat-styles', dbRequired, asyncRoute(async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
     SELECT u.id,u.username,u.chat_name_color,u.chat_text_color
     FROM users u
@@ -375,6 +377,7 @@ app.get('/api/lobby/chat-styles', dbRequired, asyncRoute(async (_req, res) => {
 }));
 
 app.get('/api/lobby/messages', dbRequired, asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   const afterId = Math.max(0, Number.parseInt(req.query.after || '0', 10) || 0);
   const result = afterId
     ? await pool.query('SELECT m.id,m.user_id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id>$1 ORDER BY m.id ASC LIMIT 100', [afterId])
