@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const $=s=>document.querySelector(s);
-const $=s=>Array.from(document.querySelectorAll(s));
+const $$=s=>Array.from(document.querySelectorAll(s));
 const toast=$('#gameToast');let toastTimer;
 function notify(message){toast.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2600)}
 let tables=[],activeTable=null,selectedTile=null,idleTimer=null;
