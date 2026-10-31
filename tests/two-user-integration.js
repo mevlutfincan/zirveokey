@@ -149,6 +149,34 @@ async function main() {
   const notificationsB = await (await request('/api/notifications', { cookie: cookieB })).json();
   assert.ok(notificationsB.notifications.some(item => item.category === 'system'), 'A kullanıcısının bildirim işlemi B hesabını etkiledi.');
 
+
+  const userC = { username: 'TestC_' + suffix, email: 'testc-' + suffix + '@example.invalid', password: 'ZirveTest!2026C', country: 'Türkiye', gender: 'Belirtmek istemiyorum' };
+  const registerC = await request('/api/auth/register', { method: 'POST', body: userC });
+  assert.equal(registerC.status, 201, 'Üçüncü bildirim test hesabı oluşturulamadı: ' + await registerC.text());
+  let cookieC = cookieFrom(registerC);
+  const initialCNotifications = await (await request('/api/notifications', { cookie: cookieC })).json();
+  assert.equal(initialCNotifications.notifications.filter(item => item.category === 'system').length, 1, 'C hesabında yalnızca kayıt bildirimi bekleniyordu.');
+  const disableSystemC = await request('/api/account/preferences', {
+    method: 'PUT', cookie: cookieC, body: { preferences: { settingNotifySystem: false } }
+  });
+  assert.equal(disableSystemC.status, 200, 'C sistem bildirimi kategorisini kapatamadı.');
+  const logoutC = await request('/api/auth/logout', { method: 'POST', cookie: cookieC });
+  assert.equal(logoutC.status, 200, 'C test oturumu kapatılamadı.');
+  const loginC = await request('/api/auth/login', { method: 'POST', body: { username: userC.username, password: userC.password } });
+  assert.equal(loginC.status, 200, 'C yeniden giriş yapamadı.');
+  cookieC = cookieFrom(loginC);
+  const afterDisabledSystemLogin = await (await request('/api/notifications', { cookie: cookieC })).json();
+  assert.equal(afterDisabledSystemLogin.notifications.filter(item => item.category === 'system').length, 1, 'Sistem kategorisi kapalıyken yeni giriş bildirimi üretildi.');
+  const disableAllC = await request('/api/notifications/preferences', { method: 'PUT', cookie: cookieC, body: { enabled: false } });
+  assert.equal(disableAllC.status, 200, 'C genel bildirimleri kapatamadı.');
+  const logoutCAgain = await request('/api/auth/logout', { method: 'POST', cookie: cookieC });
+  assert.equal(logoutCAgain.status, 200, 'C ikinci test oturumu kapatılamadı.');
+  const loginCAgain = await request('/api/auth/login', { method: 'POST', body: { username: userC.username, password: userC.password } });
+  assert.equal(loginCAgain.status, 200, 'C genel bildirimler kapalıyken yeniden giriş yapamadı.');
+  cookieC = cookieFrom(loginCAgain);
+  const afterGlobalOffLogin = await (await request('/api/notifications', { cookie: cookieC })).json();
+  assert.equal(afterGlobalOffLogin.notifications.filter(item => item.category === 'system').length, 1, 'Genel bildirimler kapalıyken yeni sistem bildirimi üretildi.');
+
   const anonymousStyle = await request('/api/account/chat-style');
   assert.equal(anonymousStyle.status, 401, 'Oturumsuz kullanıcının renk tercihleri okunabildi.');
   const defaultStyleResponse = await request('/api/account/chat-style', { cookie: cookieA });
