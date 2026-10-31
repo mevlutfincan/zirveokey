@@ -726,23 +726,32 @@ function openGameAuth(mode='login'){
  $('#gameLoginDialog').showModal();
 }
 async function refreshGameAccount(){
+ let data;
  try{
   const r=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
   if(!r.ok)throw new Error('Oturum servisi kullanılamıyor');
-  const data=await r.json(),signed=!!data.authenticated;
-  gameSignedIn=signed;
-  chatDisplayEnabled=signed;
-  if(!signed){chatMessagesBox.replaceChildren();renderedChatMessageIds.clear();}
-  $('#gameUsername').textContent=signed?data.user.username:'Misafir Oyuncu';
-  $('#gameAccountState').textContent=signed?'Üye hesabı':'Giriş yapılmadı';
-  $('#gameUserAvatar').textContent=signed?data.user.username.slice(0,1).toLocaleUpperCase('tr-TR'):'M';
-  $('#gameAuthActions').hidden=signed;$('#gameLogoutButton').hidden=!signed;
-  $('#chatInput').disabled=false;$('#chatInput').placeholder=signed?'Mesajını yaz...':'Mesaj göndermek için üye ol';
-  $('#chatForm button[type="submit"]').disabled=false;
-  applyChatTextPreferences();
-  await loadChatStyle(signed,signed?data.user.id:null);
-  await loadMemberSettings();
- }catch(error){gameSignedIn=false;chatDisplayEnabled=false;$('#gameUsername').textContent='Misafir Oyuncu';$('#gameAccountState').textContent='Oturum doğrulanamadı';$('#gameAuthActions').hidden=false;$('#gameLogoutButton').hidden=true;$('#chatInput').placeholder='Oturum doğrulanamadı';$('#chatForm button[type="submit"]').disabled=true;console.error('Oyun hesabı doğrulama hatası:',error);}
+  data=await r.json();
+  if(data.authenticated===true&&!data.user)throw new Error('Oturum yanıtında kullanıcı bilgisi bulunamadı.');
+ }catch(error){
+  gameSignedIn=false;chatDisplayEnabled=false;
+  $('#gameUsername').textContent='Misafir Oyuncu';$('#gameAccountState').textContent='Oturum doğrulanamadı';
+  $('#gameAuthActions').hidden=false;$('#gameLogoutButton').hidden=true;
+  $('#chatInput').placeholder='Oturum doğrulanamadı';$('#chatForm button[type="submit"]').disabled=true;
+  console.error('Oyun hesabı doğrulama hatası:',error);return;
+ }
+ const signed=data.authenticated===true;
+ gameSignedIn=signed;chatDisplayEnabled=signed;
+ if(!signed){chatMessagesBox.replaceChildren();renderedChatMessageIds.clear();}
+ $('#gameUsername').textContent=signed?data.user.username:'Misafir Oyuncu';
+ $('#gameAccountState').textContent=signed?'Üye hesabı':'Giriş yapılmadı';
+ $('#gameUserAvatar').textContent=signed?data.user.username.slice(0,1).toLocaleUpperCase('tr-TR'):'M';
+ $('#gameAuthActions').hidden=signed;$('#gameLogoutButton').hidden=!signed;
+ $('#chatInput').disabled=false;$('#chatInput').placeholder=signed?'Mesajını yaz...':'Mesaj göndermek için üye ol';
+ $('#chatForm button[type="submit"]').disabled=false;
+ applyChatTextPreferences();
+ // Profil/tercih uçları başarısız olsa bile doğrulanmış oturumu misafire düşürme.
+ try{await loadChatStyle(signed,signed?data.user.id:null);}catch(error){console.error('Sohbet görünüm tercihleri yüklenemedi:',error);}
+ try{await loadMemberSettings();}catch(error){console.error('Üye ayarları yüklenemedi:',error);}
 }
 $('#chatInput').addEventListener('focus',()=>{if(!gameSignedIn)requireGameMembership('Sohbete yazmak',()=>$('#chatInput').focus())});
  $('#chatInput').addEventListener('click',()=>{if(!gameSignedIn)requireGameMembership('Sohbete yazmak',()=>$('#chatInput').focus())});
