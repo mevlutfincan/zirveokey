@@ -107,6 +107,13 @@ const resetLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Çok fazla istek yapıldı. Daha sonra tekrar deneyin.' }
 });
+const lobbyMessageLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Çok sık mesaj gönderiyorsunuz. Lütfen biraz bekleyin.' }
+});
 const asyncRoute = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 const dbRequired = (_req, res, next) => {
   if (!pool || !sessionSecret) return res.status(503).json({ error: 'Hesap sistemi sunucu yapılandırması bekliyor.' });
@@ -371,7 +378,7 @@ app.get('/api/lobby/messages', dbRequired, asyncRoute(async (req, res) => {
   res.json({ messages: result.rows });
 }));
 
-app.post('/api/lobby/messages', dbRequired, authLimiter, asyncRoute(async (req, res) => {
+app.post('/api/lobby/messages', dbRequired, lobbyMessageLimiter, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Sohbete yazmak için önce giriş yapmalısınız.' });
   const message = String(req.body.message || '').trim();
   if (!message || message.length > 300) return res.status(400).json({ error: 'Mesaj 1-300 karakter arasında olmalı.' });
