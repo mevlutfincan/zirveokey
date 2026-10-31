@@ -439,9 +439,11 @@ app.put('/api/notifications/preferences', dbRequired, asyncRoute(async(req,res)=
 }));
 app.post('/api/notifications/:id/read', dbRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
-  const id=Number.parseInt(req.params.id,10);
-  if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({error:'Geçersiz bildirim.'});
-  await pool.query('UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE id=$1 AND user_id=$2',[id,req.session.user.id]);
+  if(!/^[1-9]\\d*$/.test(req.params.id))return res.status(400).json({error:'Geçersiz bildirim.'});
+  const id=Number(req.params.id);
+  if(!Number.isSafeInteger(id))return res.status(400).json({error:'Geçersiz bildirim.'});
+  const result=await pool.query('UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE id=$1 AND user_id=$2 RETURNING id',[id,req.session.user.id]);
+  if(!result.rowCount)return res.status(404).json({error:'Bildirim bulunamadı.'});
   res.json({ok:true});
 }));
 app.post('/api/notifications/read-all', dbRequired, asyncRoute(async (req,res) => {
@@ -451,9 +453,11 @@ app.post('/api/notifications/read-all', dbRequired, asyncRoute(async (req,res) =
 }));
 app.delete('/api/notifications/:id', dbRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
-  const id=Number.parseInt(req.params.id,10);
-  if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({error:'Geçersiz bildirim.'});
-  await pool.query('DELETE FROM user_notifications WHERE id=$1 AND user_id=$2',[id,req.session.user.id]);
+  if(!/^[1-9]\\d*$/.test(req.params.id))return res.status(400).json({error:'Geçersiz bildirim.'});
+  const id=Number(req.params.id);
+  if(!Number.isSafeInteger(id))return res.status(400).json({error:'Geçersiz bildirim.'});
+  const result=await pool.query('DELETE FROM user_notifications WHERE id=$1 AND user_id=$2 RETURNING id',[id,req.session.user.id]);
+  if(!result.rowCount)return res.status(404).json({error:'Bildirim bulunamadı.'});
   res.json({ok:true});
 }));
 app.delete('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
