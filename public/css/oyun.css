@@ -2445,13 +2445,24 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .notification-badge{position:absolute;right:-6px;top:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:20px;background:#a4f45e;color:#09200c;font-size:10px;font-weight:900;display:grid;place-items:center;border:2px solid #09140d;box-shadow:0 0 12px #8df04c99}
 .notification-badge[hidden]{display:none}
 #notificationsButton.has-notifications{border-color:#9bf15c;box-shadow:0 0 14px #82e84c55}
-.notification-panel{position:fixed;z-index:2147482500;top:0;left:0;width:min(470px,calc(100vw - 24px));max-height:min(680px,calc(100vh - 100px));display:flex;flex-direction:column;overflow:hidden;border:1px solid #72d94a88;border-radius:18px;background:linear-gradient(155deg,#101e14 0%,#08120c 100%);color:#eaf5e7;box-shadow:0 24px 70px #000b,0 0 28px #75df4322;backdrop-filter:blur(18px)}
+.notification-anchor{position:relative;display:inline-flex;align-items:center;z-index:2147482500;overflow:visible}.notification-panel{position:absolute;z-index:2147482500;top:calc(100% + 10px);left:0;width:min(470px,calc(100vw - 24px));max-height:min(680px,calc(100vh - 100px));display:flex;flex-direction:column;overflow:hidden;border:1px solid #72d94a88;border-radius:18px;background:linear-gradient(155deg,#101e14 0%,#08120c 100%);color:#eaf5e7;box-shadow:0 24px 70px #000b,0 0 28px #75df4322;backdrop-filter:blur(18px)}
 .notification-panel[hidden]{display:none}
+.notification-preferences{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 18px;border-bottom:1px solid #ffffff14;background:#8be9570b}
+.notification-preferences span{display:flex;flex-direction:column;gap:3px}
+.notification-preferences span b{font-size:12px;color:#e9f8e4}
+.notification-preferences span small{font-size:10px;color:#91a88d}
+.notification-switch{display:inline-flex;align-items:center;gap:8px;border:1px solid #ffffff24;border-radius:20px;padding:5px 10px;background:#ffffff0b;color:#aebda9;font-size:11px;font-weight:800;cursor:pointer}
+.notification-switch>span{width:28px;height:16px;border-radius:20px;background:#526052;position:relative;transition:.2s}
+.notification-switch>span:after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#dce6d9;transition:.2s}
+.notification-switch.enabled{border-color:#83df4d88;color:#c7ffab;background:#6ed83b18}
+.notification-switch.enabled>span{background:#69c93d;box-shadow:0 0 10px #75e34655}
+.notification-switch.enabled>span:after{left:14px;background:#fff}
+.notification-switch:disabled{opacity:.55;cursor:wait}
 .notification-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px 15px;border-bottom:1px solid #ffffff14}
 .notification-head strong{display:block;font-size:17px;letter-spacing:.2px}
 .notification-head small{display:block;margin-top:5px;color:#9db29b;font-size:12px}
 .notification-text-action{border:0;background:transparent;color:#a7f36a;font-size:11px;font-weight:800;cursor:pointer}
-.notification-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:13px 16px;border-bottom:1px solid #ffffff12}
+.notification-filters{display:none!important}
 .notification-filters button{min-width:0;border:1px solid #ffffff1c;border-radius:20px;padding:8px 7px;background:#ffffff08;color:#b9c9b7;font-size:10px;font-weight:750;cursor:pointer}
 .notification-filters button.active,.notification-filters button:hover{border-color:#8eea55;background:#75d94322;color:#d9ffca;box-shadow:0 0 12px #80e64b20}
 .notification-list{overflow:auto;padding:8px 10px;min-height:130px}
@@ -2474,3 +2485,7 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .notification-text-action.danger{color:#e9a09a}
 @media(max-width:760px){.notification-panel{width:min(450px,calc(100vw - 20px));max-height:calc(100vh - 90px)}.notification-head{padding:15px 16px 13px}.notification-filters{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:11px 12px}.notification-item{padding:11px 7px}}
 @media(max-width:390px){.notification-panel{width:calc(100vw - 16px);max-height:calc(100vh - 82px)}.notification-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.notification-head strong{font-size:16px}}
+
+/* Notification flyout stays attached to the notification control. */
+.game-header,.header-tools,.notification-anchor{overflow:visible!important}
+.notification-anchor .notification-panel{right:auto!important;bottom:auto!important;transform:none!important}
