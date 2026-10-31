@@ -605,7 +605,7 @@ function paintMemberAvatar(value){
  });
 }
 async function loadMemberAvatar(){
- if(!chatStyleAuthenticated){paintMemberAvatar(null);$('#settingAvatarStatus').textContent='Avatar seçmek için giriş yapmalısın.';return;}
+ if(!gameSignedIn){paintMemberAvatar(null);$('#settingAvatarStatus').textContent='Avatar seçmek için giriş yapmalısın.';return;}
  try{const r=await fetch('/api/account/avatar',{credentials:'same-origin',cache:'no-store'});if(!r.ok)throw new Error();const data=await r.json();paintMemberAvatar(data.avatar);$('#settingAvatarStatus').textContent='Avatar hesabına kaydedildi.';}
  catch(_){$('#settingAvatarStatus').textContent='Avatar bilgisi alınamadı.';}
 }
