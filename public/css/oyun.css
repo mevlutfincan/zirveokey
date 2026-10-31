@@ -2343,3 +2343,6 @@ nav.lobby-tabs>.lobby-tab:first-child{
 @media(max-width:480px){
  .game-auth-dialog{width:calc(100vw - 28px)!important;max-height:calc(100dvh - 24px)!important;padding:25px 21px!important;overflow-y:auto!important}
 }
+
+/* Hidden auth inputs must remain hidden after the modal input styling rules. */
+.game-auth-dialog form>input[hidden]{display:none!important}
