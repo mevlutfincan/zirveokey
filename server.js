@@ -240,11 +240,13 @@ app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
 }));
 app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
-  const showOnline = req.body.showOnline !== false;
+  const requestedShowOnline = req.body.showOnline !== false;
   await pool.query(`
-    INSERT INTO user_presence(user_id,last_seen_at,show_online) VALUES($1,NOW(),$2)
+    INSERT INTO user_presence(user_id,last_seen_at,show_online)
+    SELECT u.id,NOW(),$2 AND COALESCE(u.member_preferences->>'settingShowOnline','true') <> 'false'
+    FROM users u WHERE u.id=$1 AND u.is_active=TRUE
     ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=EXCLUDED.show_online
-  `, [req.session.user.id, showOnline]);
+  `, [req.session.user.id, requestedShowOnline]);
   res.status(204).end();
 }));
 
