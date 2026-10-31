@@ -619,7 +619,10 @@ function applyMemberSettings(values){
  document.body.classList.toggle('member-reduce-motion',!values.settingAnimations);
  document.body.classList.toggle('member-light-theme',!values.settingDarkMode);
  document.body.classList.toggle('member-compact-ui',!!values.settingCompactUI);
- $('#notificationsButton').hidden=!values.settingNotifications;
+ notificationsEnabled=values.settingNotifications!==false;
+ $('#notificationsButton').hidden=!notificationsEnabled;
+ renderNotificationPreference();
+ updateNotificationBadge(notificationUnreadCount);
  $('.user-online-count').hidden=!values.settingShowOnline;
 }
 let preferenceSaveQueue=Promise.resolve();
