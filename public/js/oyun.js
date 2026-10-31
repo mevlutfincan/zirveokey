@@ -783,6 +783,8 @@ async function refreshGameAccount(){
  $('#gameUsername').textContent=signed?data.user.username:'Misafir Oyuncu';
  $('#gameAccountState').textContent=signed?'Üye hesabı':'Giriş yapılmadı';
  $('#gameUserAvatar').textContent=signed?data.user.username.slice(0,1).toLocaleUpperCase('tr-TR'):'M';
+ if(signed){try{await loadMemberAvatar();}catch(error){console.error('Profil avatarı yüklenemedi:',error);}}
+ else paintMemberAvatar(null);
  $('#gameAuthActions').hidden=signed;$('#gameLogoutButton').hidden=!signed;
  $('#chatInput').disabled=false;$('#chatInput').placeholder=signed?'Mesajını yaz...':'Mesaj göndermek için üye ol';
  $('#chatForm button[type="submit"]').disabled=false;
