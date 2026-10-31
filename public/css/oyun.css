@@ -2435,3 +2435,7 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .header-user .user-meta b{font-size:13px!important}
 @media(max-width:1100px){.game-header{gap:12px!important;padding-left:14px!important;padding-right:14px!important}.header-tools{gap:6px!important}.header-tools .header-center{padding:8px 9px!important}.header-tools .header-action{padding:0 9px!important}.header-tools .header-action small{font-size:10px!important}}
 @media(max-width:760px){.game-header{min-height:54px!important;height:auto!important;padding:6px 9px!important;gap:8px!important;flex-wrap:nowrap!important}.header-tools .header-action{width:32px!important;min-width:32px!important;height:32px!important;padding:0!important}.header-tools .header-action small{display:none!important}}
+
+/* Header cleanup: remove the two decorative labels; preserve status node for JS. */
+.game-brand > small{display:none!important}
+.header-tools .header-center{display:none!important}
