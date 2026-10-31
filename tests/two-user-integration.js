@@ -275,6 +275,7 @@ async function main() {
   assert.equal(sentData.message.chat_row_color, '#dbeafe', 'Gönderilen mesajda satır rengi bulunmuyor.');
 
   const received = await request('/api/lobby/messages?after=' + (messageId - 1), { cookie: cookieB });
+  assert.equal(received.headers.get('cache-control'), 'no-store', 'Lobi mesajları yanıtı önbelleğe açık.');
   assert.equal(received.status, 200, 'B kullanıcısı sohbeti okuyamadı.');
   const receivedData = await received.json();
   const receivedMessage = receivedData.messages.find(message => message.id === messageId && message.username === users[0].username && message.message === 'TWO-USER-' + suffix);
@@ -298,6 +299,7 @@ async function main() {
   });
   assert.equal(styleUpdate.status, 200, 'A renk değişikliğini kaydedemedi.');
   const liveStylesResponse = await request('/api/lobby/chat-styles', { cookie: cookieB });
+  assert.equal(liveStylesResponse.headers.get('cache-control'), 'no-store', 'Canlı sohbet stil listesi yanıtı önbelleğe açık.');
   assert.equal(liveStylesResponse.status, 200, 'B canlı sohbet renklerini alamadı.');
   const liveStyles = (await liveStylesResponse.json()).members;
   const liveStyleA = liveStyles.find(member => member.username === users[0].username);
@@ -312,6 +314,7 @@ async function main() {
   assert.equal(liveStyleA.chat_text_color, '#663399', 'B A kullanıcısının yeni mesaj rengini anlık renk akışında göremedi.');
 
   let onlineResponse = await request('/api/presence/online');
+  assert.equal(onlineResponse.headers.get('cache-control'), 'no-store', 'Çevrimiçi üye listesi yanıtı önbelleğe açık.');
   let online = await onlineResponse.json();
   assert.ok(online.members.some(member => member.username === users[0].username), 'A çevrimiçi listede görünmüyor.');
   assert.ok(online.members.some(member => member.username === users[1].username), 'B çevrimiçi listede görünmüyor.');
