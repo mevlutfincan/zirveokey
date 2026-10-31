@@ -260,6 +260,12 @@ async function main() {
   assert.equal(receivedMessage.chat_text_color, '#1e3a8a', 'B kullanıcısı A seçtiği mesaj rengini göremedi.');
   assert.equal(receivedMessage.chat_row_color, '#dbeafe', 'B kullanıcısı A seçtiği satır rengini göremedi.');
 
+  const hiddenBySavedPreference = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: { showOnline: true } });
+  assert.equal(hiddenBySavedPreference.status, 204, 'A kayıtlı gizlilik tercihiyle heartbeat gönderemedi.');
+  let savedPreferenceOnline = await (await request('/api/presence/online')).json();
+  assert.ok(!savedPreferenceOnline.members.some(member => member.username === users[0].username), 'Veritabanında çevrimiçi görünme kapalıyken istemcinin true isteği kullanıcıyı görünür yaptı.');
+  const enableOnlinePreference = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingShowOnline: true } } });
+  assert.equal(enableOnlinePreference.status, 200, 'A çevrimiçi görünürlük tercihini tekrar açamadı.');
   const heartbeatA = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: { showOnline: true } });
   const heartbeatB = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
   assert.equal(heartbeatA.status, 204, 'A çevrimiçi heartbeat başarısız.');
