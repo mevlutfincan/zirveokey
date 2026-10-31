@@ -179,7 +179,7 @@ if(resetToken){
   password.hidden=false;password.required=true;password.value='';
   password.setAttribute('autocomplete','new-password');
   password.placeholder='Yeni şifre (en az 10 karakter)';
-  loginOptions.hidden=true;
+  loginOptions.hidden=true;$('#registerProfileFields').hidden=true;$('#registerCountry').required=false;$('#registerGender').required=false;$('#authModeSwitch').hidden=true;
   $('#authSubmit').textContent='Şifreyi Güncelle';
   $('#modalNote').textContent='Sıfırlama bağlantısı 30 dakika geçerlidir.';
   backdrop.hidden=false;
