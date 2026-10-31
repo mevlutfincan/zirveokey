@@ -666,37 +666,7 @@ $('#saveMemberSettings').addEventListener('click',async()=>{
  catch(error){$('#memberColorStatus').textContent=error.message;notify(error.message);}
  finally{button.disabled=false;button.textContent='Renkleri kaydet';}
 });
-loadMemberSettings();loadMemberAvatar();settingsDialog.showModal()});
-function updateMemberColorPreview(){
- const name=$('#settingNickColor').value,text=$('#settingMessageColor').value;
- $('#memberColorPreviewName').style.color=name;
- $('#memberColorPreviewText').style.color=text;
-}
-$('#settingNickColor').addEventListener('input',updateMemberColorPreview);
-$('#settingMessageColor').addEventListener('input',updateMemberColorPreview);
-$('#memberSettingsForm').addEventListener('submit',async e=>{
- e.preventDefault();
- const values={};settingsKeys.forEach(id=>values[id]=$('#'+id).checked);
- const nameColor=$('#settingNickColor').value,textColor=$('#settingMessageColor').value;
- if(!chatStyleAuthenticated){$('#memberColorStatus').textContent='Renk tercihlerini kaydetmek için giriş yapmalısın.';notify('Renk ayarları için giriş yapmalısın.');return;}
- const saveButton=$('#saveMemberSettings');saveButton.disabled=true;saveButton.textContent='Kaydediliyor…';
- try{
-  const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor,textColor,rowColor:'#e8efe8'})});
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw new Error(data.error||'Renk tercihleri kaydedilemedi.');
-  try{localStorage.setItem('zirveMemberSettings',JSON.stringify(values));}catch{}
-  applyMemberSettings(values);
-  const saved=data.chatStyle||{nameColor,textColor};
-  setChatColorInputs(saved);
-  if(chatStyleAccountId)applyLobbyChatStyles([{id:chatStyleAccountId,chat_name_color:saved.nameColor,chat_text_color:saved.textColor}]);
-  $('#memberColorStatus').textContent='Nick ve sohbet yazı renklerin kaydedildi.';
-  chatLastId=0;renderedChatMessageIds.clear();chatMessagesBox.replaceChildren();await loadLobbyMessages(true);
-  settingsDialog.close();sendPresenceHeartbeat();loadOnlineMembers();notify('Üye ayarların kaydedildi.');
- }catch(error){$('#memberColorStatus').textContent=error.message;notify(error.message);}
- finally{saveButton.disabled=false;saveButton.textContent='Ayarları kaydet';}
-});
-settingsDialog.addEventListener('click',e=>{if(e.target===settingsDialog)settingsDialog.close()});
-loadMemberSettings();
+
 
 const fullscreenButton=$('#fullscreenButton');
 fullscreenButton.addEventListener('click',async()=>{
