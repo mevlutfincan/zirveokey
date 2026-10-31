@@ -98,6 +98,7 @@ async function main() {
   for (const [label, cookie, expected] of [['A', cookieA, users[0].username], ['B', cookieB, users[1].username]]) {
     const me = await request('/api/auth/me', { cookie });
     assert.equal(me.status, 200, label + ' oturum kontrolü başarısız.');
+    assert.equal(me.headers.get('cache-control'), 'no-store', label + ' oturum yanıtı önbelleğe açık.');
     const data = await me.json();
     assert.equal(data.authenticated, true, label + ' oturumu doğrulanmadı.');
     assert.equal(data.user.username, expected, label + ' yanlış kullanıcıya bağlandı.');
@@ -110,6 +111,7 @@ async function main() {
   const savePreferencesA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingDarkMode: false, settingShowOnline: false, settingAutoArrange: true } } });
   assert.equal(savePreferencesA.status, 200, 'A kendi ayarlarını kaydedemedi.');
   const readPreferencesA = await request('/api/account/preferences', { cookie: cookieA });
+  assert.equal(readPreferencesA.headers.get('cache-control'), 'no-store', 'Hesap tercihleri yanıtı önbelleğe açık.');
   const prefsA = (await readPreferencesA.json()).preferences;
   assert.equal(prefsA.settingDarkMode, false, 'A tema tercihi kalıcı değil.');
   assert.equal(prefsA.settingShowOnline, false, 'A gizlilik tercihi kalıcı değil.');
@@ -125,6 +127,7 @@ async function main() {
   assert.equal(saveAvatarA.status, 200, 'A avatarını kaydedemedi.');
   assert.equal((await saveAvatarA.json()).avatar, avatarData, 'Avatar kaydetme yanıtı farklı veri döndürdü.');
   const savedAvatarA = await request('/api/account/avatar', { cookie: cookieA });
+  assert.equal(savedAvatarA.headers.get('cache-control'), 'no-store', 'Avatar yanıtı önbelleğe açık.');
   assert.equal((await savedAvatarA.json()).avatar, avatarData, 'Avatar oturum sonrası kalıcı değil.');
   const avatarB = await request('/api/account/avatar', { cookie: cookieB });
   assert.equal((await avatarB.json()).avatar, null, 'A kullanıcısının avatarı B hesabına sızdı.');
@@ -230,6 +233,7 @@ async function main() {
   const anonymousStyle = await request('/api/account/chat-style');
   assert.equal(anonymousStyle.status, 401, 'Oturumsuz kullanıcının renk tercihleri okunabildi.');
   const defaultStyleResponse = await request('/api/account/chat-style', { cookie: cookieA });
+  assert.equal(defaultStyleResponse.headers.get('cache-control'), 'no-store', 'Sohbet görünüm ayarları yanıtı önbelleğe açık.');
   assert.equal(defaultStyleResponse.status, 200, 'A varsayılan sohbet renklerini alamadı.');
   const defaultStyle = (await defaultStyleResponse.json()).chatStyle;
   assert.equal(defaultStyle.nameColor, '#111111', 'Varsayılan isim rengi beklenenden farklı.');
