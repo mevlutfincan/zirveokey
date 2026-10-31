@@ -6,7 +6,7 @@ const port = Number(process.env.TEST_PORT || 3101);
 const baseUrl = 'http://127.0.0.1:' + port;
 const child = spawn(process.execPath, ['server.js'], {
   cwd: process.cwd(),
-  env: { ...process.env, PORT: String(port), NODE_ENV: 'test' },
+  env: { ...process.env, PORT: String(port), NODE_ENV: 'test', RESEND_API_KEY: '', MAIL_FROM: '', APP_URL: '' },
   stdio: ['ignore', 'pipe', 'pipe']
 });
 let serverOutput = '';
@@ -69,6 +69,12 @@ async function main() {
   const registerB = await request('/api/auth/register', { method: 'POST', body: users[1] });
   assert.equal(registerB.status, 201, 'İkinci kullanıcı kaydı başarısız: ' + await registerB.text());
   const cookieB = cookieFrom(registerB);
+
+  const resetKnownEmail = await request('/api/auth/forgot-password', { method: 'POST', body: { email: users[0].email } });
+  const resetUnknownEmail = await request('/api/auth/forgot-password', { method: 'POST', body: { email: 'not-registered-' + suffix + '@example.invalid' } });
+  assert.equal(resetKnownEmail.status, 503, 'E-posta hizmeti yapılandırılmadığında kayıtlı adres için beklenen yapılandırma hatası dönmedi.');
+  assert.equal(resetUnknownEmail.status, resetKnownEmail.status, 'E-posta hizmeti kapalıyken kayıtlı olmayan adres farklı HTTP durumu döndürdü.');
+  assert.deepEqual(await resetKnownEmail.json(), await resetUnknownEmail.json(), 'E-posta hizmeti kapalıyken yanıt içeriği e-posta kaydını açığa çıkardı.');
 
   for (const [label, cookie, expected] of [['A', cookieA, users[0].username], ['B', cookieB, users[1].username]]) {
     const me = await request('/api/auth/me', { cookie });
