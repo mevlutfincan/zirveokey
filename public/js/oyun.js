@@ -618,13 +618,10 @@ $('#removeSettingAvatar').addEventListener('click',async()=>{
  try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:null})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaldırılamadı.');paintMemberAvatar(null);$('#settingAvatarFile').value='';$('#settingAvatarStatus').textContent='Avatar kaldırıldı.';notify('Avatar kaldırıldı.');}
  catch(error){$('#settingAvatarStatus').textContent=error.message;}
 });
-const settingsKeys=['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingShowOnline','settingFriendRequests','settingCompactUI'];
+const settingsKeys=['settingNotifications','settingNotificationSound','settingShowOnline','settingFriendRequests'];
 let memberPreferences={};
-const preferenceDefaults={settingAnimations:true,settingDarkMode:true,settingNotifications:true,settingNotificationSound:false,settingShowOnline:true,settingFriendRequests:true,settingCompactUI:false};
+const preferenceDefaults={settingNotifications:true,settingNotificationSound:false,settingShowOnline:true,settingFriendRequests:true};
 function applyMemberSettings(values){
- document.body.classList.toggle('member-reduce-motion',!values.settingAnimations);
- document.body.classList.toggle('member-light-theme',!values.settingDarkMode);
- document.body.classList.toggle('member-compact-ui',!!values.settingCompactUI);
  notificationsEnabled=values.settingNotifications!==false;
  $('#notificationsButton').hidden=!notificationsEnabled;
  renderNotificationPreference();
