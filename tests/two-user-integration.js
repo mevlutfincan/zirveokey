@@ -70,6 +70,25 @@ async function main() {
   assert.equal(registerB.status, 201, 'İkinci kullanıcı kaydı başarısız: ' + await registerB.text());
   const cookieB = cookieFrom(registerB);
 
+  const newMembersResponse = await request('/api/public/new-members');
+  assert.equal(newMembersResponse.status, 200, 'Anasayfa yeni üyeler listesi alınamadı.');
+  const newMembers = (await newMembersResponse.json()).members;
+  assert.ok(newMembers.some(member => member.username === users[0].username), 'A yeni üyeler listesinde görünmüyor.');
+  assert.ok(newMembers.some(member => member.username === users[1].username), 'B yeni üyeler listesinde görünmüyor.');
+  assert.equal(newMembers.find(member => member.username === users[0].username).email, undefined, 'Yeni üyeler API e-posta adresini herkese açık döndürdü.');
+  const anonymousActivity = await request('/api/activity/heartbeat', { method: 'POST' });
+  assert.equal(anonymousActivity.status, 401, 'Oturumsuz aktivite heartbeat kabul edildi.');
+  const activityA = await request('/api/activity/heartbeat', { method: 'POST', cookie: cookieA });
+  const activityB = await request('/api/activity/heartbeat', { method: 'POST', cookie: cookieB });
+  assert.equal(activityA.status, 204, 'A anasayfa aktivite kaydı oluşturamadı.');
+  assert.equal(activityB.status, 204, 'B anasayfa aktivite kaydı oluşturamadı.');
+  const activeMembersResponse = await request('/api/public/active-members');
+  assert.equal(activeMembersResponse.status, 200, 'Anasayfa aktif üyeler listesi alınamadı.');
+  const activeMembers = (await activeMembersResponse.json()).members;
+  assert.ok(activeMembers.some(member => member.username === users[0].username), 'A aktif üyeler listesinde görünmüyor.');
+  assert.ok(activeMembers.some(member => member.username === users[1].username), 'B aktif üyeler listesinde görünmüyor.');
+  assert.ok(activeMembers.every(member => Number.isFinite(Number(member.active_seconds))), 'Aktiflik süresi sayısal değil.');
+
   const resetKnownEmail = await request('/api/auth/forgot-password', { method: 'POST', body: { email: users[0].email } });
   const resetUnknownEmail = await request('/api/auth/forgot-password', { method: 'POST', body: { email: 'not-registered-' + suffix + '@example.invalid' } });
   assert.equal(resetKnownEmail.status, 503, 'E-posta hizmeti yapılandırılmadığında kayıtlı adres için beklenen yapılandırma hatası dönmedi.');
