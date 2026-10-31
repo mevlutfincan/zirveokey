@@ -2439,3 +2439,37 @@ nav.lobby-tabs>.lobby-tab:first-child{
 /* Header cleanup: remove the two decorative labels; preserve status node for JS. */
 .game-brand > small{display:none!important}
 .header-tools .header-center{display:none!important}
+
+/* Premium Neon notification center */
+#notificationsButton{position:relative}
+.notification-badge{position:absolute;right:-6px;top:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:20px;background:#a4f45e;color:#09200c;font-size:10px;font-weight:900;display:grid;place-items:center;border:2px solid #09140d;box-shadow:0 0 12px #8df04c99}
+.notification-badge[hidden]{display:none}
+#notificationsButton.has-notifications{border-color:#9bf15c;box-shadow:0 0 14px #82e84c55}
+.notification-panel{position:fixed;z-index:2147482500;top:86px;right:24px;width:min(430px,calc(100vw - 28px));max-height:min(680px,calc(100vh - 110px));display:flex;flex-direction:column;overflow:hidden;border:1px solid #72d94a88;border-radius:18px;background:linear-gradient(155deg,#101e14 0%,#08120c 100%);color:#eaf5e7;box-shadow:0 24px 70px #000b,0 0 28px #75df4322;backdrop-filter:blur(18px)}
+.notification-panel[hidden]{display:none}
+.notification-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 18px 13px;border-bottom:1px solid #ffffff14}
+.notification-head strong{display:block;font-size:16px;letter-spacing:.2px}
+.notification-head small{display:block;margin-top:4px;color:#9db29b;font-size:11px}
+.notification-text-action{border:0;background:transparent;color:#a7f36a;font-size:11px;font-weight:800;cursor:pointer}
+.notification-filters{display:flex;gap:6px;padding:11px 14px;overflow-x:auto;border-bottom:1px solid #ffffff12;scrollbar-width:thin}
+.notification-filters button{flex:0 0 auto;border:1px solid #ffffff1c;border-radius:20px;padding:7px 10px;background:#ffffff08;color:#b9c9b7;font-size:10px;font-weight:750;cursor:pointer}
+.notification-filters button.active,.notification-filters button:hover{border-color:#8eea55;background:#75d94322;color:#d9ffca;box-shadow:0 0 12px #80e64b20}
+.notification-list{overflow:auto;padding:8px 10px;min-height:130px}
+.notification-item{position:relative;display:flex;align-items:flex-start;gap:11px;padding:13px 10px;border-bottom:1px solid #ffffff0d;border-radius:10px}
+.notification-item.unread{background:linear-gradient(90deg,#75db431b,transparent 85%)}
+.notification-item.unread:before{content:"";position:absolute;left:2px;top:19px;width:6px;height:6px;border-radius:50%;background:#a4f45e;box-shadow:0 0 9px #a4f45e}
+.notification-icon{flex:0 0 34px;width:34px;height:34px;display:grid;place-items:center;border:1px solid #8eea5540;border-radius:11px;background:#76db4218;color:#b7ff8d;font-size:17px}
+.notification-copy{min-width:0;flex:1}
+.notification-copy strong{display:block;font-size:12px;color:#f0f8ed}
+.notification-copy p{margin:5px 0;color:#b4c4b1;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.notification-copy time{color:#81957e;font-size:10px}
+.notification-item-actions{display:flex;align-items:center;gap:5px}
+.notification-item-actions button{border:1px solid #ffffff1b;border-radius:7px;padding:4px 7px;background:#ffffff08;color:#a9ef78;font-size:10px;cursor:pointer}
+.notification-item-actions button:last-child{font-size:16px;line-height:1}
+.notification-item.actionable{cursor:pointer}
+.notification-empty{min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;color:#8fa18d;font-size:11px;padding:20px}
+.notification-empty b{color:#e2f0de;font-size:13px}
+.notification-empty button{border:1px solid #8be95788;border-radius:9px;padding:8px 16px;background:linear-gradient(135deg,#86e64d,#4caa2e);color:#09200b;font-weight:900;cursor:pointer}
+.notification-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #ffffff14;color:#8fa18d;font-size:10px}
+.notification-text-action.danger{color:#e9a09a}
+@media(max-width:760px){.notification-panel{top:72px;right:12px;width:min(430px,calc(100vw - 24px));max-height:calc(100vh - 88px)}.notification-head{padding:14px}.notification-item{padding:11px 7px}}
