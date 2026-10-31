@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
 <link rel="stylesheet" href="/css/oyun.css?v=auth-fix-10">
-<script defer src="/js/oyun.js?v=account-preferences-sync-20261031"></script>
+<script defer src="/js/oyun.js?v=settings-form-submit-guard-20261031"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
@@ -102,7 +102,7 @@
    <small class="settings-save-state" id="settingsSaveState" aria-live="polite">Ayarlar hesabına kaydedilir.</small>
   </aside>
   <main class="settings-content">
-   <form method="dialog" id="memberSettingsForm">
+   <form id="memberSettingsForm" novalidate>
     <section class="settings-page active" data-settings-page="account"><span class="eyebrow">HESAP</span><h3>Hesap ve Profil Ayarları</h3><p>Hesap bilgilerin ve profil tercihlerin.</p><div class="settings-account-summary"><b id="settingsAccountName">Üye hesabı</b><small>Bu alandaki hesap bilgileri yalnızca sana aittir.</small></div></section>
     <section class="settings-page" data-settings-page="notifications" hidden><span class="eyebrow">BİLDİRİMLER</span><h3>Bildirim Tercihleri</h3>
      <label class="setting-row"><span><b>Bildirimleri göster</b><small>Yeni sistem bildirimlerini görüntüle</small></span><input type="checkbox" id="settingNotifications"></label>
