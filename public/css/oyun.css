@@ -2150,3 +2150,196 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .game-auth-dialog .game-auth-switch{width:100%;min-height:0;padding:4px 0;border:0;background:none;color:#9af16f;font-size:13px;font-weight:700}
 .game-auth-dialog .game-auth-switch:hover{color:#c7ffad;text-decoration:underline}
 .game-auth-dialog #gameAuthMessage{min-height:18px;margin:0;color:#ffb3a9;font-size:12px;line-height:1.45}
+
+
+/* Auth modal: match the homepage's approved login and registration design. */
+.game-auth-dialog{
+ width:min(420px,calc(100vw - 32px))!important;
+ max-width:420px!important;
+ padding:30px!important;
+ border:1px solid rgba(112,237,53,.72)!important;
+ border-radius:20px!important;
+ background:rgba(5,17,10,.96)!important;
+ color:#f4f7f3!important;
+ box-shadow:0 20px 70px rgba(0,0,0,.72)!important;
+ backdrop-filter:blur(22px)!important;
+}
+.game-auth-dialog form{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr)!important;
+ gap:12px!important;
+ margin:20px 0 0!important;
+ padding:0!important;
+}
+.game-auth-dialog .dialog-heading{
+ display:block!important;
+ position:relative!important;
+ margin:0!important;
+ padding:0 34px 0 0!important;
+ text-align:left!important;
+}
+.game-auth-dialog .dialog-heading .modal-brand{
+ display:block!important;
+ margin:0!important;
+ color:#70ed35!important;
+ font-size:24px!important;
+ line-height:1.2!important;
+ font-weight:800!important;
+}
+.game-auth-dialog .dialog-heading .modal-brand b{color:#70ed35!important}
+.game-auth-dialog .dialog-heading h2{
+ display:block!important;
+ margin:18px 0 5px!important;
+ color:#f4f7f3!important;
+ font-size:24px!important;
+ line-height:1.2!important;
+ font-weight:800!important;
+}
+.game-auth-dialog .dialog-heading p{
+ display:block!important;
+ margin:0!important;
+ color:#c9d2cc!important;
+ font-size:13px!important;
+ line-height:1.5!important;
+}
+.game-auth-dialog #gameAuthClose{
+ position:absolute!important;
+ top:-13px!important;
+ right:-14px!important;
+ width:32px!important;
+ height:32px!important;
+ padding:0!important;
+ border:0!important;
+ background:transparent!important;
+ color:#fff!important;
+ font-size:25px!important;
+}
+.game-auth-dialog form>input:not([type="checkbox"]){
+ display:block!important;
+ width:100%!important;
+ height:48px!important;
+ min-width:0!important;
+ margin:0!important;
+ padding:0 13px!important;
+ border:1px solid #42634a!important;
+ border-radius:9px!important;
+ background:rgba(255,255,255,.07)!important;
+ color:#fff!important;
+ font:inherit!important;
+ font-size:16px!important;
+}
+.game-auth-dialog form>input::placeholder{color:rgba(235,240,235,.48)!important}
+.game-auth-dialog form>input:focus,
+.game-auth-dialog .auth-field-label select:focus{
+ border-color:#70ed35!important;
+ outline:0!important;
+ box-shadow:0 0 0 3px rgba(112,237,53,.13)!important;
+}
+.game-auth-dialog #gameAuthProfileFields{
+ display:grid!important;
+ gap:12px!important;
+}
+.game-auth-dialog #gameAuthProfileFields[hidden]{display:none!important}
+.game-auth-dialog .auth-field-label{
+ display:grid!important;
+ gap:6px!important;
+ margin:0!important;
+ color:#dce8df!important;
+ font-size:12px!important;
+ font-weight:700!important;
+}
+.game-auth-dialog .auth-field-label select{
+ width:100%!important;
+ height:46px!important;
+ margin:0!important;
+ padding:0 12px!important;
+ border:1px solid #42634a!important;
+ border-radius:9px!important;
+ background:#142319!important;
+ color:#fff!important;
+ font-size:14px!important;
+}
+.game-auth-dialog .auth-options{
+ display:flex!important;
+ align-items:center!important;
+ justify-content:space-between!important;
+ gap:12px!important;
+ margin:0 0 2px!important;
+}
+.game-auth-dialog .auth-options[hidden]{display:none!important}
+.game-auth-dialog .remember-option{
+ display:inline-flex!important;
+ grid-template-columns:none!important;
+ align-items:center!important;
+ gap:8px!important;
+ margin:0!important;
+ color:#dce8df!important;
+ font-size:13px!important;
+ font-weight:500!important;
+}
+.game-auth-dialog .remember-option input,
+.game-auth-dialog #gameRememberMe{
+ appearance:auto!important;
+ -webkit-appearance:checkbox!important;
+ display:inline-block!important;
+ flex:0 0 16px!important;
+ width:16px!important;
+ min-width:16px!important;
+ height:16px!important;
+ min-height:16px!important;
+ margin:0!important;
+ padding:0!important;
+ border:0!important;
+ border-radius:3px!important;
+ background:transparent!important;
+ accent-color:#70ed35!important;
+ box-shadow:none!important;
+}
+.game-auth-dialog .text-link{
+ border:0!important;
+ padding:4px 0!important;
+ background:none!important;
+ color:#9af16f!important;
+ font-size:13px!important;
+ font-weight:700!important;
+ cursor:pointer!important;
+}
+.game-auth-dialog .text-link:hover{color:#c7ffad!important;text-decoration:underline!important}
+.game-auth-dialog #gameAuthSubmit{
+ display:block!important;
+ width:100%!important;
+ min-height:64px!important;
+ margin:0!important;
+ padding:0 18px!important;
+ border:1px solid rgba(162,246,91,.35)!important;
+ border-radius:12px!important;
+ background:linear-gradient(135deg,#a2f65b,#39d72a)!important;
+ color:#071006!important;
+ font-size:16px!important;
+ font-weight:800!important;
+ box-shadow:0 5px 22px rgba(54,219,45,.25)!important;
+}
+.game-auth-dialog .game-auth-switch{
+ display:block!important;
+ width:100%!important;
+ min-height:0!important;
+ margin:0!important;
+ padding:4px 0!important;
+ border:0!important;
+ background:none!important;
+ color:#9af16f!important;
+ text-align:center!important;
+ font-size:13px!important;
+ font-weight:700!important;
+}
+.game-auth-dialog .game-auth-switch[hidden]{display:none!important}
+.game-auth-dialog #gameAuthMessage{
+ min-height:0!important;
+ margin:0!important;
+ color:#ffb3a9!important;
+ font-size:12px!important;
+ line-height:1.45!important;
+}
+@media(max-width:480px){
+ .game-auth-dialog{width:calc(100vw - 28px)!important;max-height:calc(100dvh - 24px)!important;padding:25px 21px!important;overflow-y:auto!important}
+}
