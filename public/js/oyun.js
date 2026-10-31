@@ -669,6 +669,11 @@ Array.from(document.querySelectorAll('[data-settings-open]')).forEach(button=>bu
 Array.from(document.querySelectorAll('.password-visibility-toggle')).forEach(button=>button.addEventListener('click',()=>{const input=$('#'+button.dataset.passwordTarget);if(!input)return;const reveal=input.type==='password';input.type=reveal?'text':'password';button.textContent=reveal?'Gizle':'Göster';button.setAttribute('aria-label',reveal?'Şifreyi gizle':'Şifreyi göster');}));
 $('#closeMemberSettings').addEventListener('click',()=>settingsDialog.close());
 settingsDialog.addEventListener('click',e=>{if(e.target===settingsDialog)settingsDialog.close()});
+settingsDialog.addEventListener('close',()=>{
+ ['currentPassword','newPassword','confirmNewPassword'].forEach(id=>{const input=$('#'+id);if(input){input.value='';input.type='password';}});
+ Array.from(document.querySelectorAll('.password-visibility-toggle')).forEach(button=>{button.textContent='Göster';button.setAttribute('aria-label','Şifreyi göster');});
+ $('#passwordChangeStatus').textContent='Şifren en az 10 karakter olmalıdır.';
+});
 settingsKeys.forEach(id=>{const control=$('#'+id);if(!control)return;control.addEventListener('change',async()=>{
  const value=$('#'+id).checked;if(id==='settingNotificationSound'&&value)prepareNotificationAudio();$('#settingsSaveState').textContent='Kaydediliyor…';
  applyMemberSettings({...memberPreferences,[id]:value});
@@ -691,8 +696,9 @@ $('#settingMessageColor').addEventListener('input',updateMemberColorPreview);
 $('#changeAccountPassword').addEventListener('click',async()=>{
  const currentPassword=$('#currentPassword').value,newPassword=$('#newPassword').value,confirmPassword=$('#confirmNewPassword').value,status=$('#passwordChangeStatus'),button=$('#changeAccountPassword');
  if(!chatStyleAuthenticated){status.textContent='Şifre değiştirmek için giriş yapmalısın.';notify(status.textContent);return;}
- if(!currentPassword){status.textContent='Mevcut şifreni girmelisin.';return;}
+ if(currentPassword.length<10||currentPassword.length>72){status.textContent='Mevcut şifren 10-72 karakter arasında olmalı.';return;}
  if(newPassword.length<10||newPassword.length>72){status.textContent='Yeni şifre 10-72 karakter arasında olmalı.';return;}
+ if(newPassword===currentPassword){status.textContent='Yeni şifren mevcut şifrenle aynı olamaz.';return;}
  if(newPassword!==confirmPassword){status.textContent='Yeni şifreler eşleşmiyor.';return;}
  button.disabled=true;button.textContent='Güncelleniyor…';status.textContent='Şifre kontrol ediliyor…';
  try{const response=await fetch('/api/account/password',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({currentPassword,newPassword})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Şifre değiştirilemedi.');$('#currentPassword').value='';$('#newPassword').value='';$('#confirmNewPassword').value='';status.textContent=data.message||'Şifren güncellendi.';notify(status.textContent);}
