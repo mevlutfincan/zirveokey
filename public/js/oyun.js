@@ -658,6 +658,16 @@ $('#settingsButton').addEventListener('click',async()=>{showSettingsCategory('ac
 function updateMemberColorPreview(){const name=$('#settingNickColor').value,text=$('#settingMessageColor').value;$('#memberColorPreviewName').style.color=name;$('#memberColorPreviewText').style.color=text;}
 $('#settingNickColor').addEventListener('input',updateMemberColorPreview);
 $('#settingMessageColor').addEventListener('input',updateMemberColorPreview);
+$('#changeAccountPassword').addEventListener('click',async()=>{
+ const currentPassword=$('#currentPassword').value,newPassword=$('#newPassword').value,confirmPassword=$('#confirmNewPassword').value,status=$('#passwordChangeStatus'),button=$('#changeAccountPassword');
+ if(!chatStyleAuthenticated){status.textContent='Şifre değiştirmek için giriş yapmalısın.';notify(status.textContent);return;}
+ if(newPassword.length<10||newPassword.length>72){status.textContent='Yeni şifre 10-72 karakter arasında olmalı.';return;}
+ if(newPassword!==confirmPassword){status.textContent='Yeni şifreler eşleşmiyor.';return;}
+ button.disabled=true;button.textContent='Güncelleniyor…';status.textContent='Şifre kontrol ediliyor…';
+ try{const response=await fetch('/api/account/password',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({currentPassword,newPassword})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Şifre değiştirilemedi.');$('#currentPassword').value='';$('#newPassword').value='';$('#confirmNewPassword').value='';status.textContent=data.message||'Şifren güncellendi.';notify(status.textContent);}
+ catch(error){status.textContent=error.message;notify(error.message);}
+ finally{button.disabled=false;button.textContent='Şifreyi güncelle';}
+});
 $('#saveMemberSettings').addEventListener('click',async()=>{
  const nameColor=$('#settingNickColor').value,textColor=$('#settingMessageColor').value;
  if(!chatStyleAuthenticated){$('#memberColorStatus').textContent='Renk tercihlerini kaydetmek için giriş yapmalısın.';notify('Renk ayarları için giriş yapmalısın.');return;}
