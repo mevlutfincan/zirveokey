@@ -27,7 +27,7 @@ async function refreshAuthState(){
     const data=await response.json();
     const signedIn=data.authenticated===true;
     homeSignedIn=signedIn;
-    if(signedIn){homePreferencesLoaded=await loadHomeAccountPreferences();if(homePreferencesLoaded)sendHomePresenceHeartbeat();}else{homePreferencesLoaded=false;}
+    if(signedIn){homePreferencesLoaded=await loadHomeAccountPreferences();if(homePreferencesLoaded){sendHomePresenceHeartbeat();sendActivityHeartbeat();}}else{homePreferencesLoaded=false;}
     authButtons.forEach(button=>button.hidden=signedIn);
     ['logoutButton','mobileLogoutButton'].forEach(id=>{const button=document.getElementById(id);if(button)button.hidden=!signedIn;});
     ['accountGreeting','mobileAccountGreeting'].forEach(id=>{const el=document.getElementById(id);if(el){el.hidden=!signedIn;el.textContent=signedIn?'Merhaba, '+data.user.username:'';}});
@@ -97,7 +97,7 @@ async function sendHomePresenceHeartbeat(){
   catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
 }
 async function sendActivityHeartbeat(){
-  if(activityHeartbeatBusy||document.visibilityState!=='visible')return;
+  if(!homeSignedIn||activityHeartbeatBusy||document.visibilityState!=='visible')return;
   activityHeartbeatBusy=true;
   try{await fetch('/api/activity/heartbeat',{method:'POST',credentials:'same-origin'});}
   catch(error){console.warn('Aktivite kaydı gönderilemedi.');}
