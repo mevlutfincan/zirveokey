@@ -158,6 +158,7 @@ app.get('/health', asyncRoute(async (_req, res) => {
 }));
 
 app.get('/api/auth/me', dbRequired, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   const hasSessionCookie = String(req.headers.cookie || '').split(';').some(part => part.trim().startsWith('zirve.sid='));
   const authenticated = Boolean(req.session?.user?.id);
   console.info('[auth-session-check]', JSON.stringify({
@@ -298,6 +299,7 @@ app.put('/api/account/password', dbRequired, authLimiter, asyncRoute(async (req,
 }));
 
 app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarlar için giriş yapmalısınız.' });
   const result = await pool.query('SELECT member_preferences FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
@@ -323,6 +325,7 @@ app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
 }));
 
 app.get('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   if (!req.session.user?.id) return res.status(401).json({ error: 'Avatar için giriş yapmalısınız.' });
   const result = await pool.query('SELECT avatar_data FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
@@ -341,6 +344,7 @@ app.put('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
 }));
 
 app.get('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   if (!req.session.user?.id) return res.status(401).json({ error: 'Renk tercihleri için giriş yapmalısınız.' });
   const result = await pool.query('SELECT chat_name_color,chat_text_color,chat_row_color FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!result.rows[0]) return res.status(401).json({ error: 'Hesap bulunamadı.' });
