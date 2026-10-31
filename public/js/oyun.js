@@ -780,7 +780,7 @@ $('#gameLogoutButton').addEventListener('click',async()=>{
  catch(error){notify(error.message);}
 });
 
-refreshGameAccount().then(()=>loadLobbyMessages(true));loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();
+refreshGameAccount().then(async()=>{await loadMemberSettings();await loadLobbyMessages(true);await loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();}).catch(error=>console.error('Hesap başlangıcı:',error));loadLobbyChatStyles();
 window.setInterval(()=>{loadLobbyMessages(false);loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();},25000);
 window.setInterval(loadLobbyChatStyles,1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){loadLobbyMessages(false);loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();}});
