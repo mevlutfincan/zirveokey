@@ -1489,3 +1489,189 @@ nav.lobby-tabs>.lobby-tab:first-child{
  body.game-page #notificationsButton[hidden],
  body.game-page .user-online-count[hidden]{display:none!important}
 }
+
+
+
+/* Reference-based compact mobile game layout: lobby left, online list right, chat below lobby. */
+@media (max-width:760px) {
+ html,body.game-page{width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
+ body.game-page{min-height:100dvh!important}
+ .game-header{
+  width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important;
+  padding:3px 5px!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  gap:3px!important;overflow:visible!important;position:relative!important;z-index:50!important
+ }
+ .game-brand,.header-center{display:none!important}
+ .header-user{
+  width:100%!important;min-width:0!important;min-height:34px!important;margin:0!important;
+  display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;
+  gap:3px!important
+ }
+ .user-meta{display:none!important}
+ .user-avatar{display:grid!important;order:-10!important;flex:0 0 32px!important;width:32px!important;height:32px!important}
+ .header-user .header-action{
+  display:grid!important;place-items:center!important;flex:0 0 32px!important;width:32px!important;height:32px!important;
+  min-width:32px!important;padding:0!important;border-radius:6px!important;font-size:18px!important
+ }
+ #settingsButton{order:-8!important}
+ #notificationsButton{order:-7!important}
+ #fullscreenButton{order:-6!important}
+ .user-online-count{order:5!important;flex:0 0 34px!important;justify-content:center!important;padding:5px!important}
+ .game-auth-actions{order:4!important;display:flex!important;flex:0 1 auto!important;gap:2px!important;min-width:0!important}
+ .game-auth-actions .icon-button,.header-user>#gameLogoutButton{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  flex:0 1 auto!important;width:auto!important;min-width:0!important;height:30px!important;
+  padding:0 5px!important;font-size:9px!important;white-space:nowrap!important
+ }
+ body.game-page [hidden]{display:none!important}
+ .lobby-tabs{
+  width:100%!important;min-width:0!important;height:29px!important;min-height:29px!important;
+  padding:0 3px!important;display:flex!important;align-items:stretch!important;gap:2px!important;
+  overflow:hidden!important;border-bottom:1px solid var(--line)!important
+ }
+ .lobby-tab{
+  flex:0 0 54px!important;min-width:54px!important;height:29px!important;min-height:29px!important;
+  justify-content:center!important;gap:3px!important;padding:0 4px!important;font-size:10px!important
+ }
+ .lobby-tab .tab-symbol{font-size:13px!important}
+ .lobby-tab .tab-live{width:4px!important;height:4px!important}
+ .tab-divider{display:none!important}
+ .open-table-tabs{
+  flex:1 1 0!important;min-width:0!important;height:29px!important;display:flex!important;
+  align-items:stretch!important;gap:2px!important;overflow-x:auto!important;overflow-y:hidden!important;
+  scrollbar-width:none!important
+ }
+ .open-table-tabs::-webkit-scrollbar{display:none!important}
+ .empty-tabs{font-size:9px!important;padding:0 3px!important}
+ .table-tab{flex:0 0 auto!important;min-width:62px!important;height:29px!important;gap:3px!important;padding:0 5px!important;font-size:9px!important}
+ .table-tab .close-tab{width:18px!important;height:22px!important;font-size:13px!important}
+ .tab-add{
+  flex:0 0 25px!important;width:25px!important;min-width:25px!important;height:25px!important;min-height:25px!important;
+  margin:2px 0!important;padding:0!important;display:grid!important;place-items:center!important;
+  border-radius:5px!important;font-size:0!important
+ }
+ .tab-add span{font-size:17px!important}
+ .game-layout{
+  width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important;
+  padding:2px 2px 12px!important;display:grid!important;
+  grid-template-columns:minmax(0,2.25fr) minmax(102px,.95fr)!important;
+  grid-template-rows:auto!important;column-gap:3px!important;row-gap:0!important;
+  align-items:start!important;overflow:visible!important
+ }
+ .main-column{
+  grid-column:1!important;grid-row:1!important;display:flex!important;flex-direction:column!important;
+  min-width:0!important;width:100%!important;gap:2px!important
+ }
+ .right-column{
+  grid-column:2!important;grid-row:1!important;display:flex!important;flex-direction:column!important;
+  min-width:0!important;width:100%!important;gap:3px!important
+ }
+ .lobby-view,.table-view{width:100%!important;min-width:0!important}
+ .lobby-empty{
+  width:100%!important;min-width:0!important;height:290px!important;min-height:290px!important;
+  padding:4px!important;border-radius:10px!important
+ }
+ .lobby-table-grid{
+  width:100%!important;min-width:0!important;grid-template-columns:minmax(0,1fr)!important;
+  gap:3px!important;margin:2px 0 0!important
+ }
+ .lobby-table-card{width:100%!important;min-width:0!important;height:112px!important;min-height:112px!important;padding:7px!important}
+ .lobby-table-card b{font-size:10px!important}
+ .lobby-table-card p{font-size:8px!important}
+ .online-panel{
+  width:100%!important;min-width:0!important;min-height:0!important;height:345px!important;
+  border-radius:8px!important;overflow:hidden!important
+ }
+ .online-panel .side-heading{
+  min-width:0!important;padding:6px 4px!important;display:flex!important;flex-direction:column!important;
+  align-items:flex-start!important;gap:3px!important
+ }
+ .online-panel .side-heading .eyebrow{display:none!important}
+ .online-panel .side-heading h2{font-size:9px!important;line-height:1.15!important;overflow-wrap:anywhere!important}
+ .online-panel .online-badge{font-size:8px!important;padding:2px 5px!important}
+ .online-list{
+  display:block!important;width:100%!important;min-width:0!important;height:calc(100% - 42px)!important;
+  max-height:none!important;overflow-x:hidden!important;overflow-y:auto!important
+ }
+ .online-member{
+  min-width:0!important;min-height:31px!important;height:auto!important;padding:4px 3px!important;
+  display:flex!important;align-items:center!important;gap:3px!important;font-size:8px!important;
+  overflow:hidden!important;border-bottom:1px solid #ffffff18!important
+ }
+ .online-member-dot{flex:0 0 6px!important;width:6px!important;height:6px!important}
+ .online-member b{min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:8px!important}
+ .online-list .side-empty{min-height:90px!important;padding:5px!important}
+ .online-list .side-empty>span{font-size:17px!important;margin-bottom:4px!important}
+ .online-list .side-empty b,.online-list .side-empty small{font-size:8px!important}
+ .chat-panel{
+  width:100%!important;min-width:0!important;height:232px!important;min-height:232px!important;
+  margin:2px 0 0!important;display:flex!important;flex-direction:column!important;
+  border-radius:8px!important;overflow:hidden!important
+ }
+ .chat-panel .side-heading{
+  width:100%!important;min-width:0!important;min-height:28px!important;padding:4px 5px!important;
+  display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;
+  gap:3px!important;border:0!important;border-bottom:1px solid var(--line)!important
+ }
+ .chat-heading-brand{width:auto!important;min-width:0!important;display:flex!important;flex-wrap:nowrap!important;gap:4px!important}
+ .chat-heading-brand h2{font-size:9px!important;white-space:nowrap!important}
+ .chat-heading-brand .chat-radio{height:21px!important;padding:0 4px!important;font-size:8px!important}
+ .radio-live-status{display:none!important}
+ .chat-view-tools{width:auto!important;min-width:0!important;display:flex!important;flex-wrap:nowrap!important;gap:2px!important;overflow-x:auto!important}
+ .chat-view-tools .chat-control{flex:0 0 auto!important;min-width:22px!important;width:auto!important;height:22px!important;min-height:22px!important;padding:0 4px!important;font-size:0!important}
+ .chat-view-tools .chat-control .chat-control-icon{font-size:12px!important}
+ .chat-text-settings-menu{left:auto!important;right:0!important;min-width:165px!important}
+ .chat-messages{
+  width:100%!important;min-width:0!important;flex:1 1 auto!important;height:auto!important;min-height:0!important;
+  max-height:none!important;padding:4px!important;gap:2px!important;overflow-x:hidden!important;overflow-y:auto!important
+ }
+ .chat-messages .chat-message{font-size:10px!important;line-height:1.25!important;padding:1px 0!important;gap:2px!important;overflow-wrap:anywhere!important}
+ .chat-messages .chat-message-time{font-size:7px!important}
+ .chat-form{
+  width:100%!important;min-width:0!important;flex:0 0 31px!important;height:31px!important;
+  display:flex!important;flex-wrap:nowrap!important;gap:2px!important;padding:2px!important;
+  border-top:1px solid var(--line)!important
+ }
+ .chat-form input{flex:1 1 0!important;width:1%!important;min-width:0!important;height:26px!important;padding:0 5px!important;font-size:9px!important}
+ .chat-smile-button{flex:0 0 25px!important;width:25px!important;height:26px!important;padding:0!important}
+ .chat-form button[type="submit"]{flex:0 0 28px!important;width:28px!important;height:26px!important;font-size:13px!important}
+ .chat-footnote{display:none!important}
+ .table-topline{margin-bottom:7px!important;gap:4px!important;flex-wrap:wrap!important}
+ .table-topline h1{font-size:15px!important}
+ .table-topline .eyebrow{font-size:7px!important;margin-bottom:3px!important}
+ .table-tools{gap:3px!important;flex-wrap:wrap!important}
+ .table-number{font-size:7px!important}
+ .table-tools .subtle-button{min-height:25px!important;padding:0 5px!important;font-size:8px!important}
+ .felt-stage{width:100%!important;min-width:0!important;padding:13px 3px!important;border-radius:8px!important}
+ .felt-table{width:100%!important;height:210px!important;border-width:6px!important}
+ .seat{min-width:48px!important;max-width:68px!important;padding:3px!important;gap:2px!important}
+ .seat-avatar{width:20px!important;height:20px!important;font-size:9px!important}
+ .seat b{font-size:7px!important;max-width:60px!important;overflow-wrap:anywhere!important;text-align:center!important}
+ .seat small{font-size:6px!important}
+ .seat-left{left:-10px!important}.seat-right{right:-10px!important}
+ .center-brand{font-size:11px!important}.round-status,.table-hint{font-size:7px!important}
+ .indicator-tiles .tile.mini{width:15px!important;height:21px!important;font-size:9px!important}
+ .rack-toolbar{margin:7px 0 4px!important;gap:4px!important;flex-wrap:wrap!important}
+ .rack-toolbar b{font-size:9px!important}.rack-toolbar span{font-size:7px!important}
+ .rack-actions{display:flex!important;flex-direction:row!important;gap:3px!important}
+ .rack-actions .subtle-button{min-height:24px!important;padding:0 5px!important;font-size:8px!important}
+ .rack-row{width:100%!important;min-width:0!important;gap:3px!important}
+ .tile-rack{min-width:0!important;min-height:50px!important;padding:3px!important;gap:2px!important;justify-content:flex-start!important;overflow-x:auto!important}
+ .rack-tile{flex:0 0 22px!important;width:22px!important;height:35px!important;font-size:13px!important}
+ .discard-tray{width:34px!important;flex:0 0 34px!important;gap:3px!important}
+ .discard-tray>small{font-size:5px!important}
+ .discarded-tile{width:22px!important;height:30px!important;font-size:12px!important}
+ .table-bottom-actions{margin-top:5px!important;gap:3px!important;flex-wrap:wrap!important}
+ .table-bottom-actions button{min-height:27px!important;padding:0 6px!important;font-size:8px!important}
+ .demo-note{width:100%!important;margin:0!important;font-size:7px!important}
+ .create-dialog,.settings-dialog,.game-auth-dialog{width:calc(100vw - 16px)!important;max-width:calc(100vw - 16px)!important;max-height:calc(100dvh - 18px)!important;overflow:auto!important}
+ .header-popover{position:absolute!important;z-index:100!important;top:42px!important;right:3px!important;max-width:190px!important}
+}
+@media(max-width:390px){
+ .game-layout{grid-template-columns:minmax(0,2.2fr) minmax(96px,.95fr)!important;column-gap:2px!important;padding-left:1px!important;padding-right:1px!important}
+ .lobby-empty{height:285px!important;min-height:285px!important}
+ .online-panel{height:340px!important}
+ .chat-panel{height:232px!important}
+ .header-user .header-action{flex-basis:30px!important;width:30px!important;min-width:30px!important}
+ .user-avatar{flex-basis:30px!important;width:30px!important;height:30px!important}
+}
