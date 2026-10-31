@@ -149,6 +149,16 @@ async function main() {
   const notificationsB = await (await request('/api/notifications', { cookie: cookieB })).json();
   assert.ok(notificationsB.notifications.some(item => item.category === 'system'), 'A kullanıcısının bildirim işlemi B hesabını etkiledi.');
 
+  const notificationBId = notificationsB.notifications.find(item => item.category === 'system').id;
+  const crossUserRead = await request('/api/notifications/' + notificationBId + '/read', { method: 'POST', cookie: cookieA });
+  assert.equal(crossUserRead.status, 404, 'A kullanıcısı B kullanıcısının bildirimini okundu yapabildi.');
+  const crossUserDelete = await request('/api/notifications/' + notificationBId, { method: 'DELETE', cookie: cookieA });
+  assert.equal(crossUserDelete.status, 404, 'A kullanıcısı B kullanıcısının bildirimini silebildi.');
+  const malformedNotificationId = await request('/api/notifications/' + notificationBId + 'abc', { method: 'DELETE', cookie: cookieA });
+  assert.equal(malformedNotificationId.status, 400, 'Geçersiz bildirim kimliği kabul edildi.');
+  const notificationsBAfterIsolation = await (await request('/api/notifications', { cookie: cookieB })).json();
+  assert.ok(notificationsBAfterIsolation.notifications.some(item => item.id === notificationBId && !item.read_at), 'Yetkisiz işlem B kullanıcısının bildirimini değiştirdi.');
+
 
   const userC = { username: 'TestC_' + suffix, email: 'testc-' + suffix + '@example.invalid', password: 'ZirveTest!2026C', country: 'Türkiye', gender: 'Belirtmek istemiyorum' };
   const registerC = await request('/api/auth/register', { method: 'POST', body: userC });
