@@ -151,7 +151,7 @@ $('#forgotPassword').addEventListener('click',()=>{
   password.hidden=true;password.required=false;
   loginOptions.hidden=true;$('#registerProfileFields').hidden=true;$('#registerCountry').required=false;$('#registerGender').required=false;$('#authModeSwitch').hidden=true;
   $('#authSubmit').textContent='Sıfırlama Bağlantısı Gönder';
-  $('#modalNote').textContent='Şifre sıfırlama bağlantısı kayıtlı e-posta adresine gönderilir.';
+  $('#modalNote').textContent='Adres kayıtlıysa şifre sıfırlama bağlantısı gönderilir.';
   email.focus();
 });
 function closeModal(){
