@@ -1330,3 +1330,153 @@ nav.lobby-tabs>.lobby-tab:first-child{
 /* Mobile keeps the desktop two-column lobby; the page pans horizontally instead of stacking panels. */
 @media(max-width:760px){body.game-page{min-width:760px!important;overflow-x:auto!important}.game-header{min-width:760px!important;height:82px!important;padding:0 28px!important}.header-center{display:flex!important}.header-user{gap:10px!important}.user-meta,.header-user>.icon-button{display:flex!important}.lobby-tabs{min-width:760px!important;height:62px!important;min-height:62px!important;padding:0 28px!important;gap:12px!important;overflow:visible!important}.lobby-tab{min-width:0!important;min-height:0!important;padding:0 18px!important}.tab-divider{display:block!important}.open-table-tabs{overflow-x:auto!important}.tab-add{flex:0 0 auto!important;width:auto!important;min-width:0!important;min-height:38px!important;margin-left:auto!important;padding:0 16px!important;display:flex!important;font-size:12px!important}.tab-add span{font-size:20px!important}.game-layout{width:calc(100% - 36px)!important;min-width:724px!important;margin:0 18px!important;padding:27px 0 40px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 270px!important;grid-template-rows:auto auto!important;column-gap:14px!important;row-gap:20px!important;align-items:start!important}.main-column{grid-column:1!important;grid-row:1!important;min-width:0!important}.right-column{grid-column:2!important;grid-row:1!important;display:flex!important;flex-direction:column!important;gap:16px!important;min-width:0!important}.online-panel{min-height:250px!important}.chat-panel{grid-column:1/-1!important;grid-row:2!important;min-width:0!important;min-height:170px!important;display:grid!important;grid-template-columns:180px minmax(0,1fr) 220px!important;grid-template-rows:1fr auto!important;align-items:stretch!important;overflow:hidden!important}.chat-panel .side-heading{grid-column:1!important;grid-row:1/3!important;border:0!important;border-right:1px solid var(--line)!important;border-bottom:0!important;padding:16px!important;align-items:center!important;flex-wrap:nowrap!important}.chat-heading-brand{width:auto!important;flex-wrap:wrap!important}.chat-messages{grid-column:2!important;grid-row:1/3!important;min-height:100px!important;max-height:150px!important}.chat-form{grid-column:3!important;grid-row:1!important;align-self:center!important;padding:12px!important;border:0!important}.chat-footnote{grid-column:3!important;grid-row:2!important;padding:0 12px 12px!important}.chat-view-tools{width:auto!important;flex-wrap:wrap!important;justify-content:flex-start!important}.chat-view-tools .chat-control{flex:0 0 auto!important;min-height:32px!important;padding:0 9px!important}.chat-view-tools .chat-control.chat-grow,.chat-view-tools .chat-control.chat-center,.chat-view-tools .chat-control.chat-shrink{flex:0 0 auto!important;min-width:0!important}}
 @media(max-width:430px){body.game-page{min-width:760px!important}.game-layout{min-width:724px!important}}
+
+
+
+/* True mobile reflow: no desktop-width canvas and no horizontal page scrolling. */
+@media (max-width: 760px) {
+ html, body.game-page {
+  width:100%!important; min-width:0!important; max-width:100%!important;
+  overflow-x:hidden!important;
+ }
+ body.game-page { min-height:100dvh!important; }
+ .game-header {
+  width:100%!important; min-width:0!important; height:auto!important;
+  min-height:64px!important; padding:10px 12px!important;
+  display:flex!important; flex-wrap:wrap!important; align-items:center!important;
+  justify-content:space-between!important; gap:9px!important;
+ }
+ .game-brand { flex:0 0 auto!important; font-size:21px!important; }
+ .game-brand small { display:none!important; }
+ .header-center { display:none!important; }
+ .header-user {
+  flex:1 1 auto!important; min-width:0!important; margin:0!important;
+  display:flex!important; flex-wrap:wrap!important; justify-content:flex-end!important;
+  align-items:center!important; gap:6px!important;
+ }
+ .user-online-count { order:0!important; }
+ .header-user .header-action { display:grid!important; width:34px!important; height:34px!important; }
+ .user-avatar { width:32px!important; height:32px!important; }
+ .user-meta { display:none!important; }
+ .game-auth-actions { display:flex!important; flex:0 0 auto!important; gap:4px!important; }
+ .game-auth-actions .icon-button,.header-user>#gameLogoutButton {
+  display:inline-flex!important; align-items:center!important; justify-content:center!important;
+  width:auto!important; min-width:0!important; height:34px!important;
+  padding:0 9px!important; font-size:10px!important; white-space:nowrap!important;
+ }
+ .lobby-tabs {
+  width:100%!important; min-width:0!important; height:54px!important; min-height:54px!important;
+  padding:0 8px!important; display:flex!important; align-items:stretch!important;
+  gap:5px!important; overflow:hidden!important;
+ }
+ .lobby-tab { flex:0 0 auto!important; min-width:62px!important; min-height:48px!important; padding:0 9px!important; }
+ .tab-divider { display:none!important; }
+ .open-table-tabs {
+  flex:1 1 0!important; min-width:0!important; max-width:100%!important;
+  display:flex!important; overflow-x:auto!important; overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+ }
+ .table-tab { flex:0 0 auto!important; min-width:88px!important; }
+ .tab-add {
+  flex:0 0 40px!important; width:40px!important; min-width:40px!important;
+  min-height:46px!important; margin:0!important; padding:0!important;
+  display:grid!important; place-items:center!important; font-size:0!important;
+ }
+ .tab-add span { font-size:21px!important; }
+ .game-layout {
+  width:100%!important; min-width:0!important; max-width:100%!important;
+  margin:0!important; padding:14px 12px 26px!important;
+  display:grid!important; grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:auto auto auto!important; gap:13px!important;
+  overflow:visible!important;
+ }
+ .main-column,.right-column { display:contents!important; }
+ .lobby-view { grid-column:1!important; grid-row:1!important; min-width:0!important; }
+ .table-view { grid-column:1!important; grid-row:1!important; min-width:0!important; }
+ .online-panel { grid-column:1!important; grid-row:2!important; min-width:0!important; min-height:0!important; }
+ .chat-panel {
+  grid-column:1!important; grid-row:3!important; width:100%!important; min-width:0!important;
+  min-height:250px!important; display:flex!important; flex-direction:column!important;
+  overflow:visible!important;
+ }
+ .lobby-empty {
+  min-height:145px!important; padding:18px!important; border-radius:14px!important;
+ }
+ .lobby-table-grid {
+  width:100%!important; grid-template-columns:minmax(0,1fr)!important;
+  gap:9px!important; margin-top:10px!important;
+ }
+ .lobby-table-card { width:100%!important; min-width:0!important; }
+ .side-heading {
+  min-width:0!important; padding:13px!important; flex-wrap:wrap!important; gap:8px!important;
+ }
+ .side-heading h2 { font-size:13px!important; }
+ .online-list { max-height:230px!important; overflow-y:auto!important; }
+ .side-empty { min-height:105px!important; padding:12px!important; }
+ .chat-panel .side-heading {
+  width:100%!important; min-width:0!important; padding:12px!important;
+  display:flex!important; flex-direction:column!important; align-items:stretch!important;
+  gap:10px!important; border:0!important; border-bottom:1px solid var(--line)!important;
+ }
+ .chat-heading-brand {
+  width:100%!important; min-width:0!important; display:flex!important;
+  flex-wrap:wrap!important; align-items:center!important; gap:7px!important;
+ }
+ .chat-heading-brand h2 { font-size:14px!important; }
+ .radio-live-status { max-width:100%!important; white-space:normal!important; }
+ .chat-view-tools {
+  width:100%!important; min-width:0!important; display:flex!important;
+  flex-wrap:wrap!important; justify-content:flex-start!important; gap:6px!important;
+ }
+ .chat-view-tools .chat-control {
+  flex:0 1 auto!important; min-width:0!important; min-height:38px!important;
+  padding:0 9px!important; font-size:10px!important;
+ }
+ .chat-messages {
+  width:100%!important; min-width:0!important; min-height:130px!important;
+  max-height:240px!important; padding:12px!important; overflow-x:hidden!important;
+  overflow-y:auto!important;
+ }
+ .chat-form {
+  width:100%!important; min-width:0!important; display:flex!important;
+  flex-wrap:nowrap!important; gap:6px!important; padding:10px!important;
+ }
+ .chat-form input { flex:1 1 0!important; width:1%!important; min-width:0!important; }
+ .chat-smile-button { flex:0 0 36px!important; }
+ .chat-form button[type="submit"] { flex:0 0 40px!important; width:40px!important; }
+ .chat-footnote { padding:0 12px 11px!important; }
+ .table-topline { align-items:flex-start!important; gap:10px!important; flex-wrap:wrap!important; }
+ .table-topline h1 { font-size:22px!important; }
+ .table-tools { flex-wrap:wrap!important; }
+ .felt-stage { width:100%!important; min-width:0!important; padding:20px 8px!important; }
+ .felt-table { width:100%!important; height:clamp(230px,65vw,310px)!important; }
+ .seat { min-width:74px!important; max-width:105px!important; padding:5px 6px!important; }
+ .seat-left { left:-10px!important; }
+ .seat-right { right:-10px!important; }
+ .rack-toolbar { flex-wrap:wrap!important; align-items:flex-start!important; gap:9px!important; }
+ .rack-actions { flex-direction:row!important; flex-wrap:wrap!important; }
+ .rack-row { width:100%!important; min-width:0!important; gap:6px!important; }
+ .tile-rack { flex:1 1 0!important; min-width:0!important; justify-content:flex-start!important; overflow-x:auto!important; }
+ .discard-tray { flex:0 0 58px!important; width:58px!important; }
+ .table-bottom-actions { flex-wrap:wrap!important; }
+ .demo-note { width:100%!important; margin:0!important; }
+ .create-dialog { max-width:calc(100vw - 20px)!important; max-height:calc(100dvh - 24px)!important; overflow-y:auto!important; }
+}
+@media (max-width: 430px) {
+ .game-header { padding:9px 8px!important; gap:6px!important; }
+ .game-brand { font-size:19px!important; }
+ .header-user { gap:4px!important; }
+ .header-user .header-action { width:31px!important; height:31px!important; }
+ .user-online-count { padding:4px 6px!important; }
+ .game-auth-actions .icon-button,.header-user>#gameLogoutButton { height:31px!important; padding:0 7px!important; font-size:9px!important; }
+ .lobby-tabs { padding:0 5px!important; gap:3px!important; }
+ .lobby-tab { min-width:54px!important; padding:0 6px!important; font-size:10px!important; }
+ .tab-add { flex-basis:35px!important; width:35px!important; min-width:35px!important; }
+ .game-layout { padding:11px 8px 22px!important; gap:10px!important; }
+ .chat-view-tools .chat-control { min-height:36px!important; }
+ .chat-panel { min-height:235px!important; }
+ .seat { min-width:66px!important; }
+ .seat b { max-width:90px!important; overflow-wrap:anywhere!important; text-align:center!important; }
+ .rack-tile { flex-basis:29px!important; height:43px!important; font-size:17px!important; }
+ .dialog-grid { grid-template-columns:minmax(0,1fr)!important; }
+}
