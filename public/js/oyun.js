@@ -635,7 +635,8 @@ let memberPreferences={};
 const preferenceDefaults={settingNotifications:true,settingNotificationSound:false,settingShowOnline:true,settingFriendRequests:true,settingNotifyPlayers:true,settingNotifyGame:true,settingNotifySystem:true,settingNotifyManagement:true,settingNotifyRewards:true};
 function applyMemberSettings(values){
  notificationsEnabled=values.settingNotifications!==false;
- $('#notificationsButton').hidden=!notificationsEnabled;
+ // Bildirim merkezi, bildirimler kapalıyken de ayarları yeniden açabilmek için erişilebilir kalır.
+ $('#notificationsButton').hidden=false;
  renderNotificationPreference();
  updateNotificationBadge(visibleUnreadCount({unreadByCategory:notificationUnreadByCategory}));
  $('.user-online-count').hidden=!values.settingShowOnline;
