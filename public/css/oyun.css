@@ -1675,3 +1675,147 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .header-user .header-action{flex-basis:30px!important;width:30px!important;min-width:30px!important}
  .user-avatar{flex-basis:30px!important;width:30px!important;height:30px!important}
 }
+
+
+/* Mobile completion: online roster stretches alongside the full left workspace. */
+@media (max-width:760px) {
+ body.game-page .game-layout {
+  grid-template-columns:minmax(0,2.25fr) minmax(102px,.95fr)!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  align-items:stretch!important;
+ }
+ body.game-page .main-column {
+  align-self:stretch!important;
+  min-height:0!important;
+ }
+ body.game-page .right-column {
+  align-self:stretch!important;
+  height:100%!important;
+  min-height:100%!important;
+ }
+ body.game-page .online-panel {
+  display:flex!important;
+  flex:1 1 auto!important;
+  flex-direction:column!important;
+  height:100%!important;
+  min-height:100%!important;
+  align-self:stretch!important;
+ }
+ body.game-page .online-panel .online-list {
+  flex:1 1 auto!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+ }
+ body.game-page .online-member b {
+  overflow-wrap:anywhere!important;
+ }
+ /* Chat controls and its internal Yazı Boyutu / Renk Ayarları tabs. */
+ body.game-page .chat-panel {
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+ }
+ body.game-page .chat-heading-brand,
+ body.game-page .chat-view-tools {
+  min-width:0!important;
+  max-width:100%!important;
+ }
+ body.game-page .chat-view-tools {
+  flex-wrap:wrap!important;
+  align-items:center!important;
+ }
+ body.game-page .chat-text-settings {
+  position:relative!important;
+  min-width:0!important;
+ }
+ body.game-page .chat-text-settings-menu {
+  position:absolute!important;
+  z-index:80!important;
+  top:calc(100% + 5px)!important;
+  right:0!important;
+  left:auto!important;
+  width:min(250px,calc(100vw - 24px))!important;
+  min-width:0!important;
+  max-width:calc(100vw - 24px)!important;
+  max-height:min(65dvh,420px)!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+ }
+ body.game-page .chat-settings-tabs {
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  width:100%!important;
+  min-width:0!important;
+  gap:4px!important;
+ }
+ body.game-page .chat-settings-tab {
+  min-width:0!important;
+  width:100%!important;
+  min-height:36px!important;
+  padding:5px 6px!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+ }
+ body.game-page .chat-settings-pane,
+ body.game-page .chat-colors-pane {
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+ }
+ body.game-page .chat-color-field {
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:6px!important;
+ }
+ body.game-page .chat-color-field input {
+  max-width:100%!important;
+ }
+ /* Open table view: keep the felt, seats, rack and actions inside the mobile column. */
+ body.game-page .table-view {
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow:hidden!important;
+ }
+ body.game-page .table-topline,
+ body.game-page .felt-stage,
+ body.game-page .rack-toolbar,
+ body.game-page .rack-row,
+ body.game-page .table-bottom-actions {
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+ }
+ body.game-page .felt-table {
+  max-width:100%!important;
+ }
+ body.game-page .rack-row,
+ body.game-page .tile-rack {
+  overflow-x:auto!important;
+  overscroll-behavior-x:contain;
+ }
+ body.game-page .table-bottom-actions button {
+  max-width:100%!important;
+  white-space:normal!important;
+ }
+}
+@media (max-width:390px) {
+ body.game-page .game-layout {
+  grid-template-columns:minmax(0,2.2fr) minmax(96px,.95fr)!important;
+ }
+ body.game-page .chat-settings-tab {
+  font-size:9px!important;
+  padding:5px 4px!important;
+ }
+ body.game-page .chat-view-tools .chat-control {
+  max-width:100%!important;
+ }
+}
