@@ -235,16 +235,38 @@ authForm.addEventListener('submit',async e=>{
 });
 
 const panel=$('#radioPanel'),expand=$('#radioExpand'),radio=$('#radio'),audio=$('#radioAudio'),play=$('#radioPlay'),status=$('#radioStatus'),volume=$('#volume');
-let streamUrl='',previousVolume=.7;
+let streamUrl='',previousVolume=.7,radioStatusLoaded=false;
+async function loadRadioStatus(){
+  radioStatusLoaded=false;
+  try{
+    const response=await fetch('/api/radio/status',{cache:'no-store'});
+    if(!response.ok)throw new Error('Radyo durumu alınamadı.');
+    const data=await response.json();
+    streamUrl=data.isLive&&data.configured?String(data.streamUrl||''):'';
+    if(streamUrl){
+      audio.src=streamUrl;
+      $('#trackName').textContent=data.djName?data.djName+' · ZirveFm':'ZirveFm Canlı Yayın';
+      status.textContent='Canlı yayın hazır.';
+    }else{
+      audio.removeAttribute('src');
+      audio.load();
+      status.textContent=data.configured?'Radyo şu anda yayında değil.':'ZirveFm yayın adresi henüz eklenmedi.';
+    }
+  }catch{
+    streamUrl='';
+    status.textContent='Radyo yayın durumu şu anda alınamıyor.';
+  }finally{radioStatusLoaded=true;}
+}
 function expanded(open){
   radio.classList.toggle('is-open',open);
   expand.setAttribute('aria-expanded',String(open));
   panel.setAttribute('aria-hidden',String(!open));
   panel.inert=!open;
-  if(open)$('#radioClose').focus({preventScroll:true});
+  if(open){$('#radioClose').focus({preventScroll:true});loadRadioStatus();}
   else expand.focus({preventScroll:true});
 }
 expanded(false);
+loadRadioStatus();
 expand.addEventListener('click',()=>expanded(!radio.classList.contains('is-open')));
 $('#radioClose').addEventListener('click',()=>expanded(false));
 function playing(value){
@@ -254,7 +276,8 @@ function playing(value){
   document.querySelector('.bars')?.classList.toggle('is-playing',value);
 }
 play.addEventListener('click',async()=>{
-  if(!streamUrl){status.textContent='ZirveFm yayın adresi henüz eklenmedi. Yayın bağlantısı son aşamada eklenecek.';return;}
+  if(!radioStatusLoaded){status.textContent='Radyo yayın durumu kontrol ediliyor.';return;}
+  if(!streamUrl){if(!status.textContent)status.textContent='ZirveFm şu anda yayında değil.';return;}
   if(audio.paused){
     try{await audio.play();playing(true);status.textContent='Canlı yayın oynatılıyor.';}
     catch{status.textContent='Yayın başlatılamadı; yayın adresini kontrol edin.';}
