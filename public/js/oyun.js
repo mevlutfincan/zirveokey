@@ -740,6 +740,7 @@ async function refreshGameAccount(){
   $('#chatForm button[type="submit"]').disabled=false;
   applyChatTextPreferences();
   await loadChatStyle(signed,signed?data.user.id:null);
+  await loadMemberSettings();
  }catch(error){$('#gameAccountState').textContent='Hesap bağlantısı yok';}
 }
 $('#chatInput').addEventListener('focus',()=>{if(!gameSignedIn)requireGameMembership('Sohbete yazmak',()=>$('#chatInput').focus())});
