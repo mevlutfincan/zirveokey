@@ -514,6 +514,15 @@ function renderNotificationPreference(){
  notificationPreferenceToggle.querySelector('b').textContent=notificationsEnabled?'Açık':'Kapalı';
  $('#notificationPreferenceHint').textContent=notificationsEnabled?'Yeni bildirimleri alıyorsun.':'Yeni bildirimler gösterilmeyecek.';
 }
+function isNotificationCategoryEnabled(category){
+ const keys={friendship:'settingFriendRequests',players:'settingNotifyPlayers',game:'settingNotifyGame',system:'settingNotifySystem',management:'settingNotifyManagement',rewards:'settingNotifyRewards'};
+ const key=keys[category];return !key||memberPreferences[key]!==false;
+}
+function visibleUnreadCount(data){
+ if(!notificationsEnabled)return 0;
+ const counts=data.unreadByCategory||{};
+ return Object.entries(counts).reduce((total,[category,count])=>total+(isNotificationCategoryEnabled(category)?Math.max(0,Number(count)||0):0),0);
+}
 function notificationTime(value){
  const date=new Date(value);if(Number.isNaN(date.getTime()))return '';
  return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(date);
@@ -524,8 +533,8 @@ async function loadNotifications(){
   const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});
   if(!response.ok)throw new Error(response.status===401?'Oturumun sona ermiş.':'Bildirimler yüklenemedi.');
   const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();
-  const visibleNotifications=(data.notifications||[]).filter(item=>!(item.category==='friendship'&&memberPreferences.settingFriendRequests===false));
-  updateNotificationBadge(data.unreadCount);
+  const visibleNotifications=(data.notifications||[]).filter(item=>isNotificationCategoryEnabled(item.category));
+  updateNotificationBadge(visibleUnreadCount(data));
   notificationStatus.textContent=visibleNotifications.length+' bildirim';
   if(!notificationsEnabled){notificationList.innerHTML='<div class="notification-empty"><b>Bildirimler kapalı</b><span>Yeni bildirim almak için yukarıdaki düğmeyi açabilirsin.</span></div>';return;}
   if(!visibleNotifications.length){notificationList.innerHTML='<div class="notification-empty"><b>Gösterilecek bildirim yok</b><span>Yeni bildirimlerin burada görünecek veya tercihlerin nedeniyle gizleniyor.</span></div>';return;}
@@ -566,7 +575,7 @@ notificationPreferenceToggle.addEventListener('click',async()=>{
  try{
   const response=await fetch('/api/notifications/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:next})});
   if(!response.ok)throw new Error('Bildirim tercihi kaydedilemedi.');
-  const data=await response.json();notificationsEnabled=data.enabled;renderNotificationPreference();await loadNotifications();
+  const data=await response.json();notificationsEnabled=data.enabled;memberPreferences={...memberPreferences,settingNotifications:data.enabled};if($('#settingNotifications'))$('#settingNotifications').checked=data.enabled;renderNotificationPreference();updateNotificationBadge(notificationUnreadCount);await loadNotifications();
  }catch(error){notify(error.message);}
  finally{notificationPreferenceToggle.disabled=false;}
 });
@@ -575,7 +584,7 @@ document.addEventListener('click',e=>{
 });
 async function pollNotificationCount(){
  if(!gameSignedIn){updateNotificationBadge(0);return;}
- try{const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();const unread=Math.max(0,Number(data.unreadCount)||0);if(lastNotificationUnreadCount!==null&&unread>lastNotificationUnreadCount)playNotificationSound();lastNotificationUnreadCount=unread;updateNotificationBadge(unread);if(!notificationsPopover.hidden)loadNotifications();}}
+ try{const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();const unread=visibleUnreadCount(data);if(lastNotificationUnreadCount!==null&&unread>lastNotificationUnreadCount)playNotificationSound();lastNotificationUnreadCount=unread;updateNotificationBadge(unread);if(!notificationsPopover.hidden)loadNotifications();}}
  catch(_){}
 }
 pollNotificationCount();notificationPollTimer=setInterval(pollNotificationCount,30000);
@@ -618,9 +627,9 @@ $('#removeSettingAvatar').addEventListener('click',async()=>{
  try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:null})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaldırılamadı.');paintMemberAvatar(null);$('#settingAvatarFile').value='';$('#settingAvatarStatus').textContent='Avatar kaldırıldı.';notify('Avatar kaldırıldı.');}
  catch(error){$('#settingAvatarStatus').textContent=error.message;}
 });
-const settingsKeys=['settingNotifications','settingNotificationSound','settingShowOnline','settingFriendRequests'];
+const settingsKeys=['settingNotifications','settingNotificationSound','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingShowOnline'];
 let memberPreferences={};
-const preferenceDefaults={settingNotifications:true,settingNotificationSound:false,settingShowOnline:true,settingFriendRequests:true};
+const preferenceDefaults={settingNotifications:true,settingNotificationSound:false,settingShowOnline:true,settingFriendRequests:true,settingNotifyPlayers:true,settingNotifyGame:true,settingNotifySystem:true,settingNotifyManagement:true,settingNotifyRewards:true};
 function applyMemberSettings(values){
  notificationsEnabled=values.settingNotifications!==false;
  $('#notificationsButton').hidden=!notificationsEnabled;
