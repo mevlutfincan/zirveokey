@@ -1480,3 +1480,12 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .rack-tile { flex-basis:29px!important; height:43px!important; font-size:17px!important; }
  .dialog-grid { grid-template-columns:minmax(0,1fr)!important; }
 }
+
+/* Preserve semantic hidden states after responsive display overrides. */
+@media(max-width:760px){
+ body.game-page [hidden],
+ body.game-page .game-auth-actions[hidden],
+ body.game-page #gameLogoutButton[hidden],
+ body.game-page #notificationsButton[hidden],
+ body.game-page .user-online-count[hidden]{display:none!important}
+}
