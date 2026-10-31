@@ -654,12 +654,12 @@ async function loadMemberSettings(){
  $('#settingsAccountName').textContent=$('#gameUsername')?.textContent||'Üye hesabı';
 }
 function showSettingsCategory(category){
- $$('.settings-category').forEach(button=>button.classList.toggle('active',button.dataset.settingsCategory===category));
+ $Array.from(document.querySelectorAll('.settings-category')).forEach(button=>button.classList.toggle('active',button.dataset.settingsCategory===category));
  $$('.settings-page').forEach(page=>{const active=page.dataset.settingsPage===category;page.hidden=!active;page.classList.toggle('active',active);});
 }
-$('.settings-category').forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsCategory)));
-$('[data-settings-open]').forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsOpen)));
-$('.password-visibility-toggle').forEach(button=>button.addEventListener('click',()=>{const input=$('#'+button.dataset.passwordTarget);if(!input)return;const reveal=input.type==='password';input.type=reveal?'text':'password';button.textContent=reveal?'Gizle':'Göster';button.setAttribute('aria-label',reveal?'Şifreyi gizle':'Şifreyi göster');}));
+Array.from(document.querySelectorAll('.settings-category')).forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsCategory)));
+Array.from(document.querySelectorAll('[data-settings-open]')).forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsOpen)));
+Array.from(document.querySelectorAll('.password-visibility-toggle')).forEach(button=>button.addEventListener('click',()=>{const input=$('#'+button.dataset.passwordTarget);if(!input)return;const reveal=input.type==='password';input.type=reveal?'text':'password';button.textContent=reveal?'Gizle':'Göster';button.setAttribute('aria-label',reveal?'Şifreyi gizle':'Şifreyi göster');}));
 $('#closeMemberSettings').addEventListener('click',()=>settingsDialog.close());
 settingsDialog.addEventListener('click',e=>{if(e.target===settingsDialog)settingsDialog.close()});
 settingsKeys.forEach(id=>{const control=$('#'+id);if(!control)return;control.addEventListener('change',async()=>{
