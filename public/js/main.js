@@ -211,8 +211,14 @@ authForm.addEventListener('submit',async e=>{
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'İşlem tamamlanamadı. Lütfen tekrar deneyin.');
     if(authMode==='login'||authMode==='register'){
-      $('#modalNote').textContent='Hoş geldin, '+data.user.username+'. Hesabına başarıyla giriş yaptın.';
+      const verify=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
+      const verified=await verify.json().catch(()=>({}));
+      if(!verify.ok||verified.authenticated!==true||String(verified.user?.id)!==String(data.user?.id)){
+        throw new Error('Giriş yanıtı alındı ancak oturum doğrulanamadı. Anasayfa ve oyun oturumu eşleşmiyor.');
+      }
       await refreshAuthState();
+      if(!homeSignedIn)throw new Error('Hesap oturumu anasayfada doğrulanamadı.');
+      $('#modalNote').textContent='Hoş geldin, '+verified.user.username+'. Hesabına başarıyla giriş yaptın.';
       setTimeout(()=>{backdrop.hidden=true;},900);
     }else if(authMode==='forgot'){
       $('#modalNote').textContent=data.message||'Adres kayıtlıysa sıfırlama bağlantısı gönderilecektir.';
