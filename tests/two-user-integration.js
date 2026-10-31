@@ -80,6 +80,20 @@ async function main() {
     assert.equal(data.user.gender, label === 'A' ? 'Kadın' : 'Erkek', label + ' cinsiyet bilgisi saklanmadı.');
   }
 
+  const anonymousPreferences = await request('/api/account/preferences');
+  assert.equal(anonymousPreferences.status, 401, 'Oturumsuz kullanıcı hesap tercihlerini okuyabildi.');
+  const savePreferencesA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingDarkMode: false, settingShowOnline: false, settingAutoArrange: true } } });
+  assert.equal(savePreferencesA.status, 200, 'A kendi ayarlarını kaydedemedi.');
+  const readPreferencesA = await request('/api/account/preferences', { cookie: cookieA });
+  const prefsA = (await readPreferencesA.json()).preferences;
+  assert.equal(prefsA.settingDarkMode, false, 'A tema tercihi kalıcı değil.');
+  assert.equal(prefsA.settingShowOnline, false, 'A gizlilik tercihi kalıcı değil.');
+  assert.equal(prefsA.settingAutoArrange, true, 'A oyun tercihi kalıcı değil.');
+  const prefsB = (await (await request('/api/account/preferences', { cookie: cookieB })).json()).preferences;
+  assert.equal(prefsB.settingDarkMode, undefined, 'A kullanıcısının ayarı B hesabına sızdı.');
+  const invalidPreferences = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { isAdmin: true } } });
+  assert.equal(invalidPreferences.status, 400, 'İzin verilmeyen hesap tercihi kabul edildi.');
+
   const anonymousStyle = await request('/api/account/chat-style');
   assert.equal(anonymousStyle.status, 401, 'Oturumsuz kullanıcının renk tercihleri okunabildi.');
   const defaultStyleResponse = await request('/api/account/chat-style', { cookie: cookieA });
