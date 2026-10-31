@@ -117,9 +117,10 @@ if (pool && sessionSecret) {
     store: new PgSession({ pool, tableName: 'user_sessions', createTableIfMissing: true, pruneSessionInterval: 900 }),
     name: 'zirve.sid',
     secret: sessionSecret,
+    proxy: true,
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' }
+    cookie: { path: '/', httpOnly: true, secure: 'auto', sameSite: 'lax' }
   }));
 }
 
@@ -149,7 +150,17 @@ app.get('/health', asyncRoute(async (_req, res) => {
 }));
 
 app.get('/api/auth/me', dbRequired, (req, res) => {
-  if (!req.session.user) return res.json({ authenticated: false });
+  const hasSessionCookie = String(req.headers.cookie || '').split(';').some(part => part.trim().startsWith('zirve.sid='));
+  const authenticated = Boolean(req.session?.user?.id);
+  console.info('[auth-session-check]', JSON.stringify({
+    path: req.path,
+    host: req.get('host'),
+    secure: req.secure,
+    hasSessionCookie,
+    sessionLoaded: Boolean(req.session),
+    authenticated
+  }));
+  if (!authenticated) return res.json({ authenticated: false });
   res.json({ authenticated: true, user: req.session.user });
 });
 
@@ -474,6 +485,10 @@ app.get('/api/public/active-members', asyncRoute(async (_req, res) => {
   res.json({ members: result.rows });
 }));
 
+app.get(['/oyun', '/oyun/'], (_req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(publicDir, 'oyun.html'));
+});
 app.use(express.static(publicDir, {
   extensions: ['html'],
   etag: true,
