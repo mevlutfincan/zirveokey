@@ -700,6 +700,7 @@ settingsKeys.forEach(id=>{const control=$('#'+id);if(!control)return;control.add
  }
 });});
 $('#settingsButton').addEventListener('click',async()=>{showSettingsCategory('account');await loadMemberSettings();loadMemberAvatar();settingsDialog.showModal();});
+$('#openNotificationSettings').addEventListener('click',async()=>{notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');await loadMemberSettings();showSettingsCategory('notifications');settingsDialog.showModal();});
 function updateMemberColorPreview(){const name=$('#settingNickColor').value,text=$('#settingMessageColor').value;$('#memberColorPreviewName').style.color=name;$('#memberColorPreviewText').style.color=text;}
 $('#settingNickColor').addEventListener('input',updateMemberColorPreview);
 $('#settingMessageColor').addEventListener('input',updateMemberColorPreview);
