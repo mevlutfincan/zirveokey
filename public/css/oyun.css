@@ -2096,3 +2096,42 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .game-auth-dialog #gameAuthEmailRow[hidden]{display:none!important}
 .game-auth-dialog .primary-button,.game-auth-dialog .game-auth-switch{width:100%;min-height:44px}
 @keyframes gameAuthModalIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+
+
+/* Shared homepage/game authentication modal: same visual system and field rhythm. */
+.game-auth-dialog{
+ width:min(420px,calc(100vw - 28px));
+ max-width:420px;
+ max-height:calc(100dvh - 32px);
+ padding:0;
+ overflow:auto;
+ border:1px solid rgba(125,238,59,.68);
+ border-radius:20px;
+ background:rgba(5,17,10,.96);
+ color:#f8faf8;
+ box-shadow:0 20px 70px #000b;
+ backdrop-filter:blur(22px);
+}
+.game-auth-dialog::backdrop{background:#000b;backdrop-filter:blur(9px)}
+.game-auth-dialog form{padding:30px;display:grid;gap:12px;margin:0}
+.game-auth-dialog .dialog-heading{position:relative;display:block;margin:0 0 4px;padding:0 34px 0 0}
+.game-auth-dialog .dialog-heading .modal-brand{font-size:24px;line-height:1.2;color:#70ed35}
+.game-auth-dialog .dialog-heading .modal-brand b{color:#70ed35}
+.game-auth-dialog .dialog-heading h2{margin:18px 0 5px;font-size:24px;line-height:1.2}
+.game-auth-dialog .dialog-heading p{margin:0;color:#c9d2cc;font-size:13px;line-height:1.5}
+.game-auth-dialog #gameAuthClose{position:absolute;right:-14px;top:-13px;width:32px;height:32px;border:0;background:transparent;color:#fff;font-size:24px}
+.game-auth-dialog label{display:grid;gap:6px;color:#dce8df;font-size:12px;font-weight:700}
+.game-auth-dialog input,.game-auth-dialog select{width:100%;height:48px;border:1px solid #42634a;border-radius:9px;padding:0 13px;background:rgba(255,255,255,.07);color:#fff;outline:none}
+.game-auth-dialog input:focus,.game-auth-dialog select:focus{border-color:#70ed35;box-shadow:0 0 0 3px #70ed3520}
+.game-auth-dialog select{color-scheme:dark}
+.game-auth-dialog select option{background:#142319;color:#fff}
+.game-auth-dialog #gameAuthProfileFields{display:grid;gap:12px}
+.game-auth-dialog #gameAuthProfileFields[hidden],.game-auth-dialog #gameAuthEmailRow[hidden],.game-auth-dialog #gameAuthIdentifierLabel[hidden],.game-auth-dialog #gameAuthPasswordRow[hidden],.game-auth-dialog .auth-options[hidden],.game-auth-dialog .game-auth-switch[hidden]{display:none!important}
+.game-auth-dialog .auth-options{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 2px}
+.game-auth-dialog .remember-option{display:inline-flex;align-items:center;gap:8px;color:#dce8df;font-size:13px;font-weight:500;cursor:pointer}
+.game-auth-dialog .remember-option input{width:16px;height:16px;margin:0;padding:0;accent-color:#70ed35}
+.game-auth-dialog .text-link,.game-auth-dialog .game-auth-switch{border:0;padding:4px 0;background:none;color:#9af16f;font-size:13px;font-weight:700;cursor:pointer}
+.game-auth-dialog .text-link:hover,.game-auth-dialog .game-auth-switch:hover{color:#c7ffad;text-decoration:underline}
+.game-auth-dialog .primary-button,.game-auth-dialog .game-auth-switch{width:100%;min-height:44px}
+.game-auth-dialog .game-auth-error{min-height:18px;margin:0;color:#ffb3a9;font-size:12px;line-height:1.45}
+@media(max-width:480px){.game-auth-dialog form{padding:25px 21px}.game-auth-dialog{width:calc(100vw - 28px);max-height:calc(100dvh - 24px)}}
