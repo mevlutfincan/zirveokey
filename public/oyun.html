@@ -4,8 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
-<link rel="stylesheet" href="/css/oyun.css?v=avatar-settings-20261031-07">
-<script defer src="/js/oyun.js?v=avatar-settings-20261031-07"></script>
+<link rel="stylesheet" href="/css/oyun.css?v=category-settings-20261031-08">
+<script defer src="/js/oyun.js?v=category-settings-20261031-08"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
@@ -85,34 +85,55 @@
 </main>
 
 <dialog class="create-dialog" id="createDialog"><form method="dialog" id="createTableForm"><div class="dialog-heading"><div><span class="eyebrow">YENİ OYUN</span><h2>Masa oluştur</h2></div><button class="icon-button" value="cancel" aria-label="Kapat">×</button></div><label>Masa adı<input id="newTableName" maxlength="22" value="Klasik Okey" required></label><div class="dialog-grid"><label>Oyun türü<select id="gameType"><option>Klasik Okey</option></select></label><label>Masa düzeni<select id="tablePrivacy"><option>Açık masa</option><option>Şifreli masa</option></select></label><label class="full-field">Masa görünümü<select id="tableStyle"><option value="Standart">Standart</option><option value="Renkli">Renkli</option></select></label></div><div class="dialog-actions"><button class="subtle-button" value="cancel">Vazgeç</button><button class="primary-button" id="confirmCreateTable" value="default">Masayı oluştur</button></div><p class="dialog-note">Bu aşamada masa oluşturma yalnızca arayüz önizlemesidir; diğer oyunculara açılmaz.</p></form></dialog>
-<dialog class="settings-dialog" id="memberSettingsDialog">
- <form method="dialog" id="memberSettingsForm">
-  <div class="dialog-heading"><div><span class="eyebrow">ÜYE TERCİHLERİ</span><h2>Ayarlar</h2></div><button class="icon-button" value="cancel" aria-label="Kapat">×</button></div>
-  <section class="settings-group"><h3>Görünüm</h3>
-   <label class="setting-row"><span><b>Arayüz animasyonları</b><small>Geçiş ve hareket efektlerini göster</small></span><input type="checkbox" id="settingAnimations" checked></label>
-   <label class="setting-row"><span><b>Koyu görünüm</b><small>Oyun alanının koyu temasını kullan</small></span><input type="checkbox" id="settingDarkMode" checked></label>
-  </section>
-  <section class="settings-group"><h3>Avatar Ayarları</h3>
-   <div class="avatar-setting-row"><span class="user-avatar" id="settingsAvatarPreview">M</span><div><label class="primary-button" for="settingAvatarFile">Avatar seç</label><input type="file" id="settingAvatarFile" accept="image/png,image/jpeg,image/webp" hidden><small>PNG, JPG veya WebP · En fazla 1 MB</small></div></div>
-   <button type="button" class="subtle-button" id="removeSettingAvatar">Avatarı kaldır</button>
-   <small id="settingAvatarStatus" class="chat-color-status" aria-live="polite">Avatarın profilinde ve oyun alanında kullanılacak.</small>
-  </section>
-  <section class="settings-group"><h3>Kullanıcı Renk Ayarları</h3>
-   <label class="setting-row"><span><b>Nick Rengi</b><small>Lobi, sohbet ve oyun masasında kullanıcı adının rengi</small></span><input type="color" id="settingNickColor" value="#111111"></label>
-   <label class="setting-row"><span><b>Sohbet Yazı Rengi</b><small>Lobi sohbetinde gönderdiğin mesajların rengi</small></span><input type="color" id="settingMessageColor" value="#111111"></label>
-   <div class="chat-color-preview" id="memberColorPreview"><b id="memberColorPreviewName">KullanıcıAdı</b><span id="memberColorPreviewText">Mesajın böyle görünür.</span></div>
-   <small id="memberColorStatus" class="chat-color-status" aria-live="polite">Renk tercihleri hesabına kaydedilir ve sohbet alanına yansıtılır.</small>
-  </section>
-  <section class="settings-group"><h3>Bildirimler</h3>
-   <label class="setting-row"><span><b>Bildirimleri göster</b><small>Yeni sistem bildirimlerini görüntüle</small></span><input type="checkbox" id="settingNotifications" checked></label>
-   <label class="setting-row"><span><b>Bildirim sesi</b><small>Desteklendiğinde bildirim sesi çal</small></span><input type="checkbox" id="settingNotificationSound"></label>
-  </section>
-  <section class="settings-group"><h3>Gizlilik</h3>
-   <label class="setting-row"><span><b>Çevrimiçi durumumu göster</b><small>Diğer üyeler çevrimiçi olduğunu görebilsin</small></span><input type="checkbox" id="settingShowOnline" checked></label>
-  </section>
-  <div class="dialog-actions"><button class="subtle-button" value="cancel">Vazgeç</button><button class="primary-button" id="saveMemberSettings" value="default">Ayarları kaydet</button></div>
- </form>
-</dialog>
-<dialog class="game-auth-dialog" id="gameLoginDialog"><form id="gameAuthForm"><div class="dialog-heading"><div class="modal-brand">♛ <b>ZirveOkey</b></div><h2 id="gameAuthTitle">Giriş Yap</h2><p id="gameAuthDesc">Hesabına giriş yap ve oyuna katıl.</p><button class="icon-button" id="gameAuthClose" type="button" aria-label="Kapat">×</button></div><input id="gameAuthEmail" type="email" placeholder="E-posta adresi" aria-label="E-posta adresi" autocomplete="email" hidden><input id="gameAuthIdentifier" type="text" placeholder="Kullanıcı adı" aria-label="Kullanıcı adı" autocomplete="username" required maxlength="24"><input id="gameAuthPassword" type="password" placeholder="Şifre" aria-label="Şifre" autocomplete="current-password" minlength="10" maxlength="72" required><div id="gameAuthProfileFields" hidden><label class="auth-field-label" for="gameAuthGender">Cinsiyet<select id="gameAuthGender"><option value="">Cinsiyet seçin</option><option value="Kadın">Kadın</option><option value="Erkek">Erkek</option><option value="Belirtmek istemiyorum">Belirtmek istemiyorum</option></select></label><label class="auth-field-label" for="gameAuthCountry">Ülke<select id="gameAuthCountry"><option value="">Ülke seçin</option><option value="Türkiye">Türkiye</option><option value="Almanya">Almanya</option><option value="Azerbaycan">Azerbaycan</option><option value="Belçika">Belçika</option><option value="Birleşik Krallık">Birleşik Krallık</option><option value="Fransa">Fransa</option><option value="Hollanda">Hollanda</option><option value="Kıbrıs">Kıbrıs</option><option value="ABD">ABD</option><option value="Avusturya">Avusturya</option><option value="Diğer">Diğer</option></select></label></div><div class="auth-options" id="gameAuthLoginOptions"><label class="remember-option"><input id="gameRememberMe" type="checkbox"><span>Beni Hatırla</span></label><button class="text-link" id="gameAuthForgotPassword" type="button">Şifremi Unuttum?</button></div><p class="game-auth-error" id="gameAuthMessage" role="status" aria-live="polite"></p><button class="primary-button" id="gameAuthSubmit" type="submit">Giriş Yap</button><button class="text-link game-auth-switch" id="gameAuthSwitch" type="button">Hesabınız yoksa Üye Ol</button><button class="text-link game-auth-switch" id="gameAuthLoginSwitch" type="button" hidden>Hesabınız varsa Giriş yap</button></form></dialog>
+<dialog class="settings-dialog categorized-settings-dialog" id="memberSettingsDialog">
+ <div class="settings-shell">
+  <aside class="settings-sidebar">
+   <div class="dialog-heading"><div><span class="eyebrow">ÜYE TERCİHLERİ</span><h2>Ayarlar</h2></div><button class="icon-button" id="closeMemberSettings" aria-label="Kapat">×</button></div>
+   <nav class="settings-category-nav" aria-label="Ayar kategorileri">
+    <button type="button" class="settings-category active" data-settings-category="account">Hesap ve Profil</button>
+    <button type="button" class="settings-category" data-settings-category="notifications">Bildirim Tercihleri</button>
+    <button type="button" class="settings-category" data-settings-category="privacy">Sohbet ve Gizlilik</button>
+    <button type="button" class="settings-category" data-settings-category="game">Oyun Tercihleri</button>
+    <button type="button" class="settings-category" data-settings-category="appearance">Görünüm ve Tema</button>
+    <button type="button" class="settings-category" data-settings-category="avatar">Avatar Ayarları</button>
+    <button type="button" class="settings-category" data-settings-category="colors">Renk Ayarları</button>
+   </nav>
+   <small class="settings-save-state" id="settingsSaveState" aria-live="polite">Ayarlar hesabına kaydedilir.</small>
+  </aside>
+  <main class="settings-content">
+   <form method="dialog" id="memberSettingsForm">
+    <section class="settings-page active" data-settings-page="account"><span class="eyebrow">HESAP</span><h3>Hesap ve Profil Ayarları</h3><p>Hesap bilgilerin ve profil tercihlerin.</p><div class="settings-account-summary"><b id="settingsAccountName">Üye hesabı</b><small>Bu alandaki hesap bilgileri yalnızca sana aittir.</small></div></section>
+    <section class="settings-page" data-settings-page="notifications" hidden><span class="eyebrow">BİLDİRİMLER</span><h3>Bildirim Tercihleri</h3>
+     <label class="setting-row"><span><b>Bildirimleri göster</b><small>Yeni sistem bildirimlerini görüntüle</small></span><input type="checkbox" id="settingNotifications"></label>
+     <label class="setting-row"><span><b>Bildirim sesi</b><small>Desteklendiğinde bildirim sesi çal</small></span><input type="checkbox" id="settingNotificationSound"></label>
+    </section>
+    <section class="settings-page" data-settings-page="privacy" hidden><span class="eyebrow">SOHBET VE GİZLİLİK</span><h3>Sohbet ve Gizlilik Ayarları</h3>
+     <label class="setting-row"><span><b>Çevrimiçi durumumu göster</b><small>Diğer üyeler çevrimiçi olduğunu görebilsin</small></span><input type="checkbox" id="settingShowOnline"></label>
+     <label class="setting-row"><span><b>Özel mesaj bildirimleri</b><small>Özel mesaj geldiğinde uyarı göster</small></span><input type="checkbox" id="settingPrivateMessages"></label>
+     <label class="setting-row"><span><b>Arkadaşlık istekleri</b><small>Arkadaşlık istekleri için bildirim al</small></span><input type="checkbox" id="settingFriendRequests"></label>
+    </section>
+    <section class="settings-page" data-settings-page="game" hidden><span class="eyebrow">OYUN</span><h3>Oyun Tercihleri</h3>
+     <label class="setting-row"><span><b>Taşları otomatik diz</b><small>Oyun başladığında taşlarını düzenle</small></span><input type="checkbox" id="settingAutoArrange"></label>
+     <label class="setting-row"><span><b>Masadan çıkış onayı</b><small>Masadan ayrılırken onay iste</small></span><input type="checkbox" id="settingConfirmExit"></label>
+    </section>
+    <section class="settings-page" data-settings-page="appearance" hidden><span class="eyebrow">GÖRÜNÜM</span><h3>Görünüm ve Tema</h3>
+     <label class="setting-row"><span><b>Arayüz animasyonları</b><small>Geçiş ve hareket efektlerini göster</small></span><input type="checkbox" id="settingAnimations"></label>
+     <label class="setting-row"><span><b>Koyu görünüm</b><small>Oyun alanının koyu temasını kullan</small></span><input type="checkbox" id="settingDarkMode"></label>
+     <label class="setting-row"><span><b>Sade arayüz</b><small>Daha kompakt görünümü kullan</small></span><input type="checkbox" id="settingCompactUI"></label>
+    </section>
+    <section class="settings-page" data-settings-page="avatar" hidden><span class="eyebrow">PROFİL GÖRSELİ</span><h3>Avatar Ayarları</h3>
+     <div class="avatar-setting-row"><span class="user-avatar" id="settingsAvatarPreview">M</span><div><label class="primary-button" for="settingAvatarFile">Avatar seç</label><input type="file" id="settingAvatarFile" accept="image/png,image/jpeg,image/webp" hidden><small>PNG, JPG veya WebP · En fazla 1 MB</small></div></div>
+     <button type="button" class="subtle-button" id="removeSettingAvatar">Avatarı kaldır</button><small id="settingAvatarStatus" class="chat-color-status" aria-live="polite">Avatarın profilinde ve oyun alanında kullanılacak.</small>
+    </section>
+    <section class="settings-page" data-settings-page="colors" hidden><span class="eyebrow">KİŞİSELLEŞTİRME</span><h3>Renk Ayarları</h3>
+     <label class="setting-row"><span><b>Nick Rengi</b><small>Lobi ve sohbet alanındaki kullanıcı adın</small></span><input type="color" id="settingNickColor" value="#111111"></label>
+     <label class="setting-row"><span><b>Sohbet Yazı Rengi</b><small>Lobi sohbetinde mesajlarının rengi</small></span><input type="color" id="settingMessageColor" value="#111111"></label>
+     <div class="chat-color-preview" id="memberColorPreview"><b id="memberColorPreviewName">KullanıcıAdı</b><span id="memberColorPreviewText">Mesajın böyle görünür.</span></div><small id="memberColorStatus" class="chat-color-status" aria-live="polite">Renk tercihleri hesabına kaydedilir.</small>
+    </section>
+    <div class="settings-footer"><small>Değişiklikler otomatik kaydedilir.</small><button type="button" class="subtle-button" id="saveMemberSettings">Renkleri kaydet</button></div>
+   </form>
+  </main>
+ </div>
+</dialog><dialog class="game-auth-dialog" id="gameLoginDialog"><form id="gameAuthForm"><div class="dialog-heading"><div class="modal-brand">♛ <b>ZirveOkey</b></div><h2 id="gameAuthTitle">Giriş Yap</h2><p id="gameAuthDesc">Hesabına giriş yap ve oyuna katıl.</p><button class="icon-button" id="gameAuthClose" type="button" aria-label="Kapat">×</button></div><input id="gameAuthEmail" type="email" placeholder="E-posta adresi" aria-label="E-posta adresi" autocomplete="email" hidden><input id="gameAuthIdentifier" type="text" placeholder="Kullanıcı adı" aria-label="Kullanıcı adı" autocomplete="username" required maxlength="24"><input id="gameAuthPassword" type="password" placeholder="Şifre" aria-label="Şifre" autocomplete="current-password" minlength="10" maxlength="72" required><div id="gameAuthProfileFields" hidden><label class="auth-field-label" for="gameAuthGender">Cinsiyet<select id="gameAuthGender"><option value="">Cinsiyet seçin</option><option value="Kadın">Kadın</option><option value="Erkek">Erkek</option><option value="Belirtmek istemiyorum">Belirtmek istemiyorum</option></select></label><label class="auth-field-label" for="gameAuthCountry">Ülke<select id="gameAuthCountry"><option value="">Ülke seçin</option><option value="Türkiye">Türkiye</option><option value="Almanya">Almanya</option><option value="Azerbaycan">Azerbaycan</option><option value="Belçika">Belçika</option><option value="Birleşik Krallık">Birleşik Krallık</option><option value="Fransa">Fransa</option><option value="Hollanda">Hollanda</option><option value="Kıbrıs">Kıbrıs</option><option value="ABD">ABD</option><option value="Avusturya">Avusturya</option><option value="Diğer">Diğer</option></select></label></div><div class="auth-options" id="gameAuthLoginOptions"><label class="remember-option"><input id="gameRememberMe" type="checkbox"><span>Beni Hatırla</span></label><button class="text-link" id="gameAuthForgotPassword" type="button">Şifremi Unuttum?</button></div><p class="game-auth-error" id="gameAuthMessage" role="status" aria-live="polite"></p><button class="primary-button" id="gameAuthSubmit" type="submit">Giriş Yap</button><button class="text-link game-auth-switch" id="gameAuthSwitch" type="button">Hesabınız yoksa Üye Ol</button><button class="text-link game-auth-switch" id="gameAuthLoginSwitch" type="button" hidden>Hesabınız varsa Giriş yap</button></form></dialog>
 <div class="toast" id="gameToast" role="status" aria-live="polite"></div>
 </body></html>
