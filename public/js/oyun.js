@@ -741,7 +741,7 @@ async function refreshGameAccount(){
   applyChatTextPreferences();
   await loadChatStyle(signed,signed?data.user.id:null);
   await loadMemberSettings();
- }catch(error){$('#gameAccountState').textContent='Hesap bağlantısı yok';}
+ }catch(error){gameSignedIn=false;chatDisplayEnabled=false;$('#gameUsername').textContent='Misafir Oyuncu';$('#gameAccountState').textContent='Oturum doğrulanamadı';$('#gameAuthActions').hidden=false;$('#gameLogoutButton').hidden=true;$('#chatInput').placeholder='Oturum doğrulanamadı';$('#chatForm button[type="submit"]').disabled=true;console.error('Oyun hesabı doğrulama hatası:',error);}
 }
 $('#chatInput').addEventListener('focus',()=>{if(!gameSignedIn)requireGameMembership('Sohbete yazmak',()=>$('#chatInput').focus())});
  $('#chatInput').addEventListener('click',()=>{if(!gameSignedIn)requireGameMembership('Sohbete yazmak',()=>$('#chatInput').focus())});
@@ -769,7 +769,10 @@ $('#gameAuthForm').addEventListener('submit',async e=>{
   if(mode==='forgot'){
    $('#gameAuthMessage').textContent=data.message||'Adres kayıtlıysa sıfırlama bağlantısı gönderilecektir.';
   }else{
-   gameSignedIn=true;$('#gameLoginDialog').close();await refreshGameAccount();await loadLobbyMessages(true);await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
+   const verify=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});const verified=await verify.json().catch(()=>({}));
+   if(!verify.ok||verified.authenticated!==true||String(verified.user?.id)!==String(data.user?.id))throw new Error('Giriş yanıtı alındı ancak oturum doğrulanamadı.');
+   $('#gameLoginDialog').close();await refreshGameAccount();if(!gameSignedIn)throw new Error('Oturum oyun alanında doğrulanamadı.');
+   await loadLobbyMessages(true);await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+verified.user.username+'.');loadOnlineMembers();
    if(pendingMembershipAction){const resume=pendingMembershipAction;pendingMembershipAction=null;resume();}
   }
  }catch(error){$('#gameAuthMessage').textContent=error.message;}
