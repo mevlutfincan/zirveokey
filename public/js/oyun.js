@@ -538,11 +538,22 @@ async function notificationAction(url,method='POST'){
 }
 async function markNotificationRead(id){try{await notificationAction('/api/notifications/'+id+'/read');}catch(e){notify(e.message);}}
 async function deleteNotification(id){try{await notificationAction('/api/notifications/'+id,'DELETE');}catch(e){notify(e.message);}}
+function positionNotificationPanel(){
+ if(notificationsPopover.hidden)return;
+ const rect=notificationsButton.getBoundingClientRect();
+ const width=Math.min(470,window.innerWidth-24);
+ const left=Math.max(12,Math.min(rect.left,window.innerWidth-width-12));
+ const top=Math.min(rect.bottom+9,Math.max(12,window.innerHeight-180));
+ notificationsPopover.style.left=left+'px';
+ notificationsPopover.style.top=top+'px';
+}
 notificationsButton.addEventListener('click',()=>{
  const opening=notificationsPopover.hidden;notificationsPopover.hidden=!opening;
  notificationsButton.setAttribute('aria-expanded',String(opening));
- if(opening)loadNotifications();
+ if(opening){positionNotificationPanel();loadNotifications();}
 });
+window.addEventListener('resize',positionNotificationPanel);
+window.addEventListener('scroll',positionNotificationPanel,true);
 notificationList.addEventListener('click',e=>{if(e.target.id==='notificationLogin')openGameAuth('login');});
 $('#notificationReadAll').addEventListener('click',async()=>{try{await notificationAction('/api/notifications/read-all');}catch(e){notify(e.message);}});
 $('#notificationClearAll').addEventListener('click',async()=>{if(!confirm('Tüm bildirimlerini silmek istediğinden emin misin?'))return;try{await notificationAction('/api/notifications','DELETE');}catch(e){notify(e.message);}});
