@@ -2135,3 +2135,18 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .game-auth-dialog .primary-button,.game-auth-dialog .game-auth-switch{width:100%;min-height:44px}
 .game-auth-dialog .game-auth-error{min-height:18px;margin:0;color:#ffb3a9;font-size:12px;line-height:1.45}
 @media(max-width:480px){.game-auth-dialog form{padding:25px 21px}.game-auth-dialog{width:calc(100vw - 28px);max-height:calc(100dvh - 24px)}}
+
+/* Keep the game authentication form's control layout identical to the homepage modal. */
+.game-auth-dialog form{gap:12px}
+.game-auth-dialog form>input{display:block;height:48px;margin:0}
+.game-auth-dialog form>input[hidden]{display:none!important}
+.game-auth-dialog #gameAuthProfileFields{display:grid;gap:12px}
+.game-auth-dialog #gameAuthProfileFields[hidden]{display:none!important}
+.game-auth-dialog .auth-field-label{display:grid;gap:6px;color:#dce8df;font-size:12px;font-weight:700}
+.game-auth-dialog .auth-field-label select{height:46px;border:1px solid #42634a;border-radius:9px;padding:0 12px;background:#142319;color:#fff}
+.game-auth-dialog .auth-field-label select:focus{border-color:#70ed35;box-shadow:0 0 0 3px #70ed3520}
+.game-auth-dialog .auth-options{margin:0 0 2px}
+.game-auth-dialog .primary-button{width:100%;min-height:46px;border:1px solid #d3f1b080;border-radius:12px;background:linear-gradient(115deg,#b9ed98,#80cf72 55%,#a9df8a);color:#102014;font-size:12px;font-weight:850;letter-spacing:.1px;box-shadow:0 8px 24px #83c96b25,inset 0 1px #ffffffa6}
+.game-auth-dialog .game-auth-switch{width:100%;min-height:0;padding:4px 0;border:0;background:none;color:#9af16f;font-size:13px;font-weight:700}
+.game-auth-dialog .game-auth-switch:hover{color:#c7ffad;text-decoration:underline}
+.game-auth-dialog #gameAuthMessage{min-height:18px;margin:0;color:#ffb3a9;font-size:12px;line-height:1.45}
