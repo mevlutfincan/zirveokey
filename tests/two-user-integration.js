@@ -297,6 +297,7 @@ async function main() {
   assert.equal(liveStylesResponse.status, 200, 'B canlı sohbet renklerini alamadı.');
   const liveStyles = (await liveStylesResponse.json()).members;
   const liveStyleA = liveStyles.find(member => member.username === users[0].username);
+  assert.ok(!liveStyles.some(member => member.username === users[1].username), 'Çevrimiçi görünürlüğünü kapatan B, sohbet stil listesinde ifşa edildi.');
   assert.ok(liveStyleA, 'B çevrimiçi A kullanıcısının renk bilgisini alamadı.');
   assert.equal(liveStyleA.chat_name_color, '#008000', 'B A kullanıcısının yeni isim rengini anlık renk akışında göremedi.');
   assert.equal(liveStyleA.chat_text_color, '#663399', 'B A kullanıcısının yeni mesaj rengini anlık renk akışında göremedi.');
