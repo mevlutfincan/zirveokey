@@ -189,7 +189,7 @@ document.addEventListener('click',e=>{
   chatPicker.hidden=true;chatPicker.setAttribute('aria-hidden','true');chatPicker.style.display='none';smileButton.setAttribute('aria-expanded','false');
  }
 });
-let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=false,chatStyleAccountId=null;
+let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=false,chatStyleAccountId=null,chatDisplayEnabled=false;
  const defaultChatStyle={nameColor:'#111111',textColor:'#111111'};
  const fixedChatRowColor='rgba(232,239,232,.92)';
  function validChatHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
@@ -422,12 +422,19 @@ $('#chatTextGrow').addEventListener('click',()=>{
   finally{chatStyleSyncBusy=false;}
  }
  async function loadLobbyMessages(initial=false){
- if(chatBusy)return;chatBusy=true;
+ if(!chatDisplayEnabled||chatBusy)return;chatBusy=true;
  try{
   const url=initial?'/api/lobby/messages':'/api/lobby/messages?after='+chatLastId;
   const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});
   if(!r.ok)throw new Error('Sohbet alınamadı');
-  const data=await r.json();(data.messages||[]).forEach(appendLobbyMessage);
+  const data=await r.json();
+  if(initial){
+   const messages=data.messages||[];
+   const latestId=messages.reduce((max,message)=>Math.max(max,Number(message.id)||0),chatLastId);
+   chatLastId=latestId;
+   const prefs=readChatPreferences();prefs.clearBeforeId=Math.max(Number(prefs.clearBeforeId)||0,latestId);saveChatPreferences(prefs);
+   chatMessagesBox.replaceChildren();renderedChatMessageIds.clear();
+  }else (data.messages||[]).forEach(appendLobbyMessage);
  }catch(e){console.warn('Lobi sohbeti bağlantısı kurulamadı.');}
  finally{chatBusy=false;}
 }
@@ -551,6 +558,8 @@ async function refreshGameAccount(){
   const r=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
   if(!r.ok)throw new Error('Oturum servisi kullanılamıyor');
   const data=await r.json(),signed=!!data.authenticated;
+  chatDisplayEnabled=signed;
+  if(!signed){chatMessagesBox.replaceChildren();renderedChatMessageIds.clear();}
   $('#gameUsername').textContent=signed?data.user.username:'Misafir Oyuncu';
   $('#gameAccountState').textContent=signed?'Üye hesabı':'Giriş yapılmadı';
   $('#gameUserAvatar').textContent=signed?data.user.username.slice(0,1).toLocaleUpperCase('tr-TR'):'M';
@@ -573,16 +582,16 @@ $('#gameAuthForm').addEventListener('submit',async e=>{
  try{
   const r=await fetch('/api/auth/'+gameAuthMode,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Üyelik işlemi tamamlanamadı.');
-  $('#gameLoginDialog').close();await refreshGameAccount();await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
+  $('#gameLoginDialog').close();await refreshGameAccount();await loadLobbyMessages(true);await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
  }catch(error){$('#gameAuthMessage').textContent=error.message;}
  finally{submit.disabled=false;}
 });
 $('#gameLogoutButton').addEventListener('click',async()=>{
- try{const r=await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'});if(!r.ok)throw new Error('Çıkış yapılamadı.');await refreshGameAccount();loadOnlineMembers();notify('Oturum kapatıldı.');}
+ try{const r=await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'});if(!r.ok)throw new Error('Çıkış yapılamadı.');await refreshGameAccount();chatMessagesBox.replaceChildren();renderedChatMessageIds.clear();chatLastId=0;loadOnlineMembers();notify('Oturum kapatıldı.');}
  catch(error){notify(error.message);}
 });
 
-refreshGameAccount();loadLobbyMessages(true);loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();
+refreshGameAccount().then(()=>loadLobbyMessages(true));loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();
 window.setInterval(()=>{loadLobbyMessages(false);loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();},25000);
 window.setInterval(loadLobbyChatStyles,1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){loadLobbyMessages(false);loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();}});
