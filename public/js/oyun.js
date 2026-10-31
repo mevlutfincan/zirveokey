@@ -479,7 +479,7 @@ async function loadOnlineMembers(){
  }catch(error){console.warn('Çevrimiçi üye listesi yüklenemedi.');}
 }
 async function sendPresenceHeartbeat(){
- try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:readMemberSettings().settingShowOnline!==false})});}
+ try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:memberPreferences.settingShowOnline!==false})});}
  catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
 }
 async function sendActivityHeartbeat(){
@@ -627,6 +627,7 @@ async function saveMemberPreferences(patch){
  memberPreferences={...preferenceDefaults,...data.preferences};
  settingsKeys.forEach(id=>{if($('#'+id))$('#'+id).checked=!!memberPreferences[id]});
  applyMemberSettings(memberPreferences);
+ if(Object.prototype.hasOwnProperty.call(patch,'settingShowOnline')){sendPresenceHeartbeat();loadOnlineMembers();}
  $('#settingsSaveState').textContent='Değişiklikler hesabına kaydedildi.';
 }
 async function loadMemberSettings(){
