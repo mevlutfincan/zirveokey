@@ -661,7 +661,7 @@ async function loadMemberSettings(){
  $('#settingsAccountStatus').textContent=chatStyleAuthenticated?'Oturum açık · Ayarların hesabına kaydedilir.':'Misafir oturumu · Değişiklikleri kaydetmek için giriş yap.';
 }
 function showSettingsCategory(category){
- $Array.from(document.querySelectorAll('.settings-category')).forEach(button=>button.classList.toggle('active',button.dataset.settingsCategory===category));
+ Array.from(document.querySelectorAll('.settings-category')).forEach(button=>button.classList.toggle('active',button.dataset.settingsCategory===category));
  $$('.settings-page').forEach(page=>{const active=page.dataset.settingsPage===category;page.hidden=!active;page.classList.toggle('active',active);});
 }
 Array.from(document.querySelectorAll('.settings-category')).forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsCategory)));
