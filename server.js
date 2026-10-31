@@ -357,7 +357,7 @@ app.get('/api/lobby/chat-styles', dbRequired, asyncRoute(async (_req, res) => {
     SELECT u.id,u.username,u.chat_name_color,u.chat_text_color
     FROM users u
     JOIN user_presence p ON p.user_id=u.id
-    WHERE u.is_active=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
+    WHERE u.is_active=TRUE AND p.show_online=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
     ORDER BY u.id ASC
   `);
   res.json({ members: result.rows });
