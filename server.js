@@ -51,6 +51,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(80);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(40);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_data TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_preferences JSONB NOT NULL DEFAULT '{}'::jsonb;
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -244,6 +245,24 @@ app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
     ORDER BY u.username_normalized ASC LIMIT 100
   `);
   res.json({ members: result.rows, count: result.rows.length });
+}));
+
+app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
+  if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarlar için giriş yapmalısınız.' });
+  const result = await pool.query('SELECT member_preferences FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
+  if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
+  res.json({ preferences: result.rows[0].member_preferences || {} });
+}));
+app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
+  if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarları kaydetmek için giriş yapmalısınız.' });
+  const allowed = ['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingShowOnline','settingPrivateMessages','settingFriendRequests','settingAutoArrange','settingConfirmExit','settingCompactUI'];
+  const input = req.body?.preferences;
+  if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(key => !allowed.includes(key)) || Object.values(input).some(value => typeof value !== 'boolean')) {
+    return res.status(400).json({ error: 'Geçersiz ayar verisi.' });
+  }
+  const result = await pool.query('UPDATE users SET member_preferences=member_preferences || $1::jsonb WHERE id=$2 AND is_active=TRUE RETURNING member_preferences', [JSON.stringify(input), req.session.user.id]);
+  if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
+  res.json({ ok: true, preferences: result.rows[0].member_preferences });
 }));
 
 app.get('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
