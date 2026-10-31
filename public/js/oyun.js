@@ -596,14 +596,15 @@ async function loadMemberAvatar(){
 $('#settingAvatarFile').addEventListener('change',async e=>{
  const file=e.target.files?.[0];if(!file)return;
  if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>1024*1024){$('#settingAvatarStatus').textContent='PNG, JPG veya WebP formatında en fazla 1 MB görsel seç.';e.target.value='';return;}
- if(!chatStyleAuthenticated){$('#settingAvatarStatus').textContent='Avatar yüklemek için giriş yapmalısın.';return;}
+ if(!chatStyleAuthenticated){$('#settingAvatarStatus').textContent='Avatar yüklemek için giriş yapmalısın.';e.target.value='';return;}
  const reader=new FileReader();
  reader.onload=async()=>{
   const avatar=String(reader.result||'');$('#settingAvatarStatus').textContent='Avatar kaydediliyor…';
   try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaydedilemedi.');paintMemberAvatar(data.avatar);$('#settingAvatarStatus').textContent='Avatarın kaydedildi.';notify('Avatarın güncellendi.');}
   catch(error){$('#settingAvatarStatus').textContent=error.message;}
+  finally{$('#settingAvatarFile').value='';}
  };
- reader.onerror=()=>$('#settingAvatarStatus').textContent='Görsel okunamadı.';
+ reader.onerror=()=>{$('#settingAvatarStatus').textContent='Görsel okunamadı.';$('#settingAvatarFile').value='';};
  reader.readAsDataURL(file);
 });
 $('#removeSettingAvatar').addEventListener('click',async()=>{
@@ -621,16 +622,22 @@ function applyMemberSettings(values){
  $('#notificationsButton').hidden=!values.settingNotifications;
  $('.user-online-count').hidden=!values.settingShowOnline;
 }
+let preferenceSaveQueue=Promise.resolve();
 async function saveMemberPreferences(patch){
  if(!chatStyleAuthenticated)throw new Error('Ayarları kaydetmek için giriş yapmalısın.');
- const response=await fetch('/api/account/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:patch})});
- const data=await response.json().catch(()=>({}));
- if(!response.ok)throw new Error(data.error||'Ayarlar kaydedilemedi.');
- memberPreferences={...preferenceDefaults,...data.preferences};
- settingsKeys.forEach(id=>{if($('#'+id))$('#'+id).checked=!!memberPreferences[id]});
- applyMemberSettings(memberPreferences);
- if(Object.prototype.hasOwnProperty.call(patch,'settingShowOnline')){sendPresenceHeartbeat();loadOnlineMembers();}
- $('#settingsSaveState').textContent='Değişiklikler hesabına kaydedildi.';
+ const save=async()=>{
+  const response=await fetch('/api/account/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:patch})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||'Ayarlar kaydedilemedi.');
+  memberPreferences={...preferenceDefaults,...data.preferences};
+  settingsKeys.forEach(id=>{if($('#'+id))$('#'+id).checked=!!memberPreferences[id]});
+  applyMemberSettings(memberPreferences);
+  if(Object.prototype.hasOwnProperty.call(patch,'settingShowOnline')){sendPresenceHeartbeat();loadOnlineMembers();}
+  $('#settingsSaveState').textContent='Değişiklikler hesabına kaydedildi.';
+ };
+ const pending=preferenceSaveQueue.then(save,save);
+ preferenceSaveQueue=pending.catch(()=>{});
+ return pending;
 }
 async function loadMemberSettings(){
  const saveState=$('#settingsSaveState');
