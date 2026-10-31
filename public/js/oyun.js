@@ -515,7 +515,7 @@ function renderNotificationPreference(){
  $('#notificationPreferenceHint').textContent=notificationsEnabled?'Yeni bildirimleri alıyorsun.':'Yeni bildirimler gösterilmeyecek.';
 }
 function syncNotificationCategoryControls(){
- settingsKeys.forEach(id=>{const control=$('#'+id);if(control)control.checked=!!memberPreferences[id];});
+ ['settingNotifications','settingNotificationSound','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards'].forEach(id=>{const control=$('#'+id);if(control&&document.activeElement!==control)control.checked=memberPreferences[id]!==false;});
 }
 function isNotificationCategoryEnabled(category){
  const keys={friendship:'settingFriendRequests',players:'settingNotifyPlayers',game:'settingNotifyGame',system:'settingNotifySystem',management:'settingNotifyManagement',rewards:'settingNotifyRewards'};
