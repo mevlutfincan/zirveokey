@@ -59,8 +59,8 @@ async function main() {
   assert.equal(typeof radioStatus.streamUrl, 'string', 'Radyo yayın adresi metin olmalı.');
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
   const users = [
-    { username: 'TestA_' + suffix, email: 'testa-' + suffix + '@example.invalid', password: 'ZirveTest!2026A' },
-    { username: 'TestB_' + suffix, email: 'testb-' + suffix + '@example.invalid', password: 'ZirveTest!2026B' }
+    { username: 'TestA_' + suffix, email: 'testa-' + suffix + '@example.invalid', password: 'ZirveTest!2026A', country: 'Türkiye', gender: 'Kadın' },
+    { username: 'TestB_' + suffix, email: 'testb-' + suffix + '@example.invalid', password: 'ZirveTest!2026B', country: 'Almanya', gender: 'Erkek' }
   ];
 
   const registerA = await request('/api/auth/register', { method: 'POST', body: users[0] });
@@ -76,6 +76,8 @@ async function main() {
     const data = await me.json();
     assert.equal(data.authenticated, true, label + ' oturumu doğrulanmadı.');
     assert.equal(data.user.username, expected, label + ' yanlış kullanıcıya bağlandı.');
+    assert.equal(data.user.country, label === 'A' ? 'Türkiye' : 'Almanya', label + ' ülke bilgisi saklanmadı.');
+    assert.equal(data.user.gender, label === 'A' ? 'Kadın' : 'Erkek', label + ' cinsiyet bilgisi saklanmadı.');
   }
 
   const anonymousStyle = await request('/api/account/chat-style');
