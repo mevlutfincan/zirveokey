@@ -545,7 +545,9 @@ function openGameAuth(mode='login'){
  gameAuthMode=mode;
  $('#gameAuthTitle').textContent=mode==='register'?'Üye Ol':'Giriş Yap';
  $('#gameAuthSubmit').textContent=mode==='register'?'Üye Ol':'Giriş Yap';
- $('#gameAuthIdentifier').placeholder=mode==='register'?'Kullanıcı adı':'E-posta veya kullanıcı adı';
+ $('#gameAuthIdentifierLabel').firstChild.textContent=mode==='register'?'Kullanıcı adı':'Kullanıcı adı';
+ $('#gameAuthIdentifier').placeholder='Kullanıcı adını gir';
+ $('#gameAuthIdentifier').maxLength=24;
  $('#gameAuthIdentifier').value='';
  $('#gameAuthEmailRow').hidden=mode!=='register';
  $('#gameAuthEmail').required=mode==='register';$('#gameAuthEmail').value='';
