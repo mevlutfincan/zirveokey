@@ -430,7 +430,7 @@ app.put('/api/notifications/preferences', dbRequired, asyncRoute(async(req,res)=
   const result=await pool.query(
     `UPDATE users
      SET notifications_enabled=$1,
-         member_preferences=member_preferences || jsonb_build_object('settingNotifications',$1)
+         member_preferences=member_preferences || jsonb_build_object('settingNotifications',$1::boolean)
      WHERE id=$2
      RETURNING notifications_enabled`,
     [req.body.enabled,req.session.user.id]
