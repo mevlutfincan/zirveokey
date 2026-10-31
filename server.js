@@ -247,6 +247,20 @@ app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
   res.json({ members: result.rows, count: result.rows.length });
 }));
 
+app.put('/api/account/password', dbRequired, authLimiter, asyncRoute(async (req, res) => {
+  if (!req.session.user?.id) return res.status(401).json({ error: 'Şifre değiştirmek için giriş yapmalısınız.' });
+  const currentPassword = String(req.body.currentPassword || '');
+  const newPassword = String(req.body.newPassword || '');
+  if (currentPassword.length < 10 || currentPassword.length > 72) return res.status(400).json({ error: 'Mevcut şifren geçersiz.' });
+  if (newPassword.length < 10 || newPassword.length > 72) return res.status(400).json({ error: 'Yeni şifre 10-72 karakter arasında olmalı.' });
+  if (currentPassword === newPassword) return res.status(400).json({ error: 'Yeni şifren mevcut şifrenle aynı olamaz.' });
+  const found = await pool.query('SELECT password_hash FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
+  if (!found.rows[0] || !(await bcrypt.compare(currentPassword, found.rows[0].password_hash))) return res.status(400).json({ error: 'Mevcut şifren doğru değil.' });
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await pool.query('UPDATE users SET password_hash=$1 WHERE id=$2', [passwordHash, req.session.user.id]);
+  res.json({ ok: true, message: 'Şifren başarıyla güncellendi.' });
+}));
+
 app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarlar için giriş yapmalısınız.' });
   const result = await pool.query('SELECT member_preferences FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
