@@ -94,6 +94,61 @@ async function main() {
   const invalidPreferences = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { isAdmin: true } } });
   assert.equal(invalidPreferences.status, 400, 'İzin verilmeyen hesap tercihi kabul edildi.');
 
+  const anonymousNotifications = await request('/api/notifications');
+  assert.equal(anonymousNotifications.status, 401, 'Oturumsuz kullanıcı bildirimleri okuyabildi.');
+  const notificationsAResponse = await request('/api/notifications', { cookie: cookieA });
+  assert.equal(notificationsAResponse.status, 200, 'A bildirim merkezini açamadı.');
+  const notificationsA = await notificationsAResponse.json();
+  assert.equal(notificationsA.enabled, true, 'Yeni hesapta bildirimler varsayılan olarak açık olmalı.');
+  assert.ok(notificationsA.notifications.some(item => item.category === 'system'), 'Kayıt karşılama sistem bildirimi oluşturulmadı.');
+  assert.ok((notificationsA.unreadByCategory.system || 0) >= 1, 'Sistem bildirimi okunmamış sayacına eklenmedi.');
+  assert.equal(notificationsA.preferences.settingNotifySystem, undefined, 'Varsayılan sistem tercihi gereksiz yere false olarak saklandı.');
+  const notificationId = notificationsA.notifications.find(item => item.category === 'system').id;
+
+  const saveNotificationCategories = await request('/api/account/preferences', {
+    method: 'PUT', cookie: cookieA,
+    body: { preferences: { settingFriendRequests: false, settingNotifyPlayers: false, settingNotifyGame: true, settingNotifySystem: false, settingNotifyManagement: false, settingNotifyRewards: true } }
+  });
+  assert.equal(saveNotificationCategories.status, 200, 'A bildirim kategori tercihlerini kaydedemedi.');
+  const storedNotificationCategories = (await (await request('/api/account/preferences', { cookie: cookieA })).json()).preferences;
+  assert.equal(storedNotificationCategories.settingFriendRequests, false, 'Arkadaşlık bildirimi tercihi kalıcı değil.');
+  assert.equal(storedNotificationCategories.settingNotifyPlayers, false, 'Oyuncu bildirimi tercihi kalıcı değil.');
+  assert.equal(storedNotificationCategories.settingNotifyGame, true, 'Oyun bildirimi tercihi kalıcı değil.');
+  assert.equal(storedNotificationCategories.settingNotifySystem, false, 'Sistem bildirimi tercihi kalıcı değil.');
+  assert.equal(storedNotificationCategories.settingNotifyManagement, false, 'Yönetim bildirimi tercihi kalıcı değil.');
+  assert.equal(storedNotificationCategories.settingNotifyRewards, true, 'Ödül bildirimi tercihi kalıcı değil.');
+  const notificationsAfterCategorySave = await (await request('/api/notifications', { cookie: cookieA })).json();
+  assert.equal(notificationsAfterCategorySave.preferences.settingNotifySystem, false, 'Bildirim API kategori tercihlerini güncel döndürmüyor.');
+  assert.ok(notificationsAfterCategorySave.notifications.some(item => item.id === notificationId), 'Kategori tercihi geçmiş bildirimi silmemeli.');
+
+  const toggleNotificationsOff = await request('/api/notifications/preferences', {
+    method: 'PUT', cookie: cookieA, body: { enabled: false }
+  });
+  assert.equal(toggleNotificationsOff.status, 200, 'Genel bildirim anahtarı kapatılamadı.');
+  assert.equal((await toggleNotificationsOff.json()).enabled, false, 'Genel bildirim anahtarı kapalı dönmedi.');
+  const notificationsOffState = await (await request('/api/notifications', { cookie: cookieA })).json();
+  assert.equal(notificationsOffState.enabled, false, 'Genel bildirim durumu API üzerinde kalıcı değil.');
+  assert.equal(notificationsOffState.preferences.settingNotifications, false, 'Genel bildirim tercihi ayarlarla eşitlenmedi.');
+  const toggleNotificationsOn = await request('/api/notifications/preferences', {
+    method: 'PUT', cookie: cookieA, body: { enabled: true }
+  });
+  assert.equal(toggleNotificationsOn.status, 200, 'Genel bildirim anahtarı açılamadı.');
+  const notificationsOnState = await (await request('/api/notifications', { cookie: cookieA })).json();
+  assert.equal(notificationsOnState.enabled, true, 'Genel bildirim anahtarı tekrar açılmadı.');
+
+  const markNotification = await request('/api/notifications/' + notificationId + '/read', { method: 'POST', cookie: cookieA });
+  assert.equal(markNotification.status, 200, 'Tek bildirim okundu yapılamadı.');
+  const readNotification = (await (await request('/api/notifications', { cookie: cookieA })).json()).notifications.find(item => item.id === notificationId);
+  assert.ok(readNotification?.read_at, 'Okundu bilgisi veritabanına kaydedilmedi.');
+  const markAllNotifications = await request('/api/notifications/read-all', { method: 'POST', cookie: cookieA });
+  assert.equal(markAllNotifications.status, 200, 'Tüm bildirimler okundu yapılamadı.');
+  const deleteNotification = await request('/api/notifications/' + notificationId, { method: 'DELETE', cookie: cookieA });
+  assert.equal(deleteNotification.status, 200, 'Tek bildirim silinemedi.');
+  const remainingNotifications = await (await request('/api/notifications', { cookie: cookieA })).json();
+  assert.ok(!remainingNotifications.notifications.some(item => item.id === notificationId), 'Silinen bildirim listede kaldı.');
+  const notificationsB = await (await request('/api/notifications', { cookie: cookieB })).json();
+  assert.ok(notificationsB.notifications.some(item => item.category === 'system'), 'A kullanıcısının bildirim işlemi B hesabını etkiledi.');
+
   const anonymousStyle = await request('/api/account/chat-style');
   assert.equal(anonymousStyle.status, 401, 'Oturumsuz kullanıcının renk tercihleri okunabildi.');
   const defaultStyleResponse = await request('/api/account/chat-style', { cookie: cookieA });
