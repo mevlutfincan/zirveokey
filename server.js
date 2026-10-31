@@ -47,6 +47,8 @@ CREATE TABLE IF NOT EXISTS users (
 ALTER TABLE users ADD COLUMN IF NOT EXISTS chat_name_color VARCHAR(7) NOT NULL DEFAULT '#111111';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS chat_text_color VARCHAR(7) NOT NULL DEFAULT '#111111';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS chat_row_color VARCHAR(7) NOT NULL DEFAULT '#e8efe8';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(80);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(40);
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -140,20 +142,26 @@ app.post('/api/auth/register', dbRequired, authLimiter, asyncRoute(async (req, r
   const username = String(req.body.username || '').trim();
   const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
+  const country = String(req.body.country || '').trim();
+  const gender = String(req.body.gender || '').trim();
+  const allowedCountries = ['Türkiye','Almanya','Azerbaycan','Belçika','Birleşik Krallık','Fransa','Hollanda','Kıbrıs','ABD','Avusturya','Diğer'];
+  const allowedGenders = ['Kadın','Erkek','Belirtmek istemiyorum'];
+  if (!allowedCountries.includes(country)) return res.status(400).json({ error: 'Lütfen geçerli bir ülke seçin.' });
+  if (!allowedGenders.includes(gender)) return res.status(400).json({ error: 'Lütfen cinsiyet seçimini yapın.' });
   if (!/^[\p{L}\p{N}_]{3,24}$/u.test(username)) return res.status(400).json({ error: 'Kullanıcı adı 3-24 karakter olmalı; harf, rakam ve alt çizgi kullanılabilir.' });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
   if (password.length < 10 || password.length > 72) return res.status(400).json({ error: 'Şifre 10-72 karakter arasında olmalı.' });
   const hash = await bcrypt.hash(password, 12);
   try {
     const result = await pool.query(
-      'INSERT INTO users (username, username_normalized, email, email_normalized, password_hash) VALUES ($1,$2,$3,$4,$5) RETURNING id, username, email',
-      [username, username.toLocaleLowerCase('tr-TR'), email, email, hash]
+      'INSERT INTO users (username, username_normalized, email, email_normalized, password_hash, country, gender) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, username, email, country, gender',
+      [username, username.toLocaleLowerCase('tr-TR'), email, email, hash, country, gender]
     );
     const user = result.rows[0];
     await new Promise((resolve, reject) => {
       req.session.regenerate(error => error ? reject(error) : resolve());
     });
-    req.session.user = { id: user.id, username: user.username, email: user.email };
+    req.session.user = { id: user.id, username: user.username, email: user.email, country: user.country, gender: user.gender };
     req.session.cookie.maxAge = req.body.rememberMe === true ? 30 * 24 * 60 * 60 * 1000 : null;
     await new Promise((resolve, reject) => {
       req.session.save(error => error ? reject(error) : resolve());
