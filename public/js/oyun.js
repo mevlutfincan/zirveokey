@@ -653,12 +653,11 @@ settingsKeys.forEach(id=>$('#'+id).addEventListener('change',async()=>{
  const value=$('#'+id).checked;$('#settingsSaveState').textContent='Kaydediliyor…';
  applyMemberSettings({...memberPreferences,[id]:value});
  try{
-  if(id==='settingNotifications'){
-   const response=await fetch('/api/notifications/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:value})});
-   const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Bildirim tercihi kaydedilemedi.');
-   notificationsEnabled=data.enabled;renderNotificationPreference();
-  }
   await saveMemberPreferences({[id]:value});
+  if(id==='settingNotifications'){
+   notificationsEnabled=value;
+   renderNotificationPreference();
+  }
  }catch(error){
   $('#'+id).checked=!value;applyMemberSettings(memberPreferences);
   if(id==='settingNotifications'){notificationsEnabled=!value;renderNotificationPreference();}
@@ -795,7 +794,7 @@ $('#gameLogoutButton').addEventListener('click',async()=>{
 
 refreshGameAccount().then(async()=>{await loadMemberSettings();await loadLobbyMessages(true);await loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();}).catch(error=>console.error('Hesap başlangıcı:',error));loadLobbyChatStyles();
 window.setInterval(()=>{loadLobbyMessages(false);loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();},25000);
-window.setInterval(loadLobbyChatStyles,1000);
+window.setInterval(loadLobbyChatStyles,10000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){loadLobbyMessages(false);loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();}});
 renderTabs();renderLobby();renderRack();
 })();
