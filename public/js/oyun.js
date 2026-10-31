@@ -490,17 +490,22 @@ const notificationsPopover=$('#notificationsPopover');
 const notificationList=$('#notificationList');
 const notificationUnreadLabel=$('#notificationUnreadLabel');
 const notificationStatus=$('#notificationStatus');
-let notificationFilter='all',notificationUnreadCount=0,notificationPollTimer=null;
-const notificationCategoryNames={friendship:'Arkadaşlık',players:'Oyuncular',game:'Oyun',system:'Sistem',management:'Yönetim',rewards:'Ödüller'};
-const notificationCategoryIcons={friendship:'user-plus',players:'users',game:'gamepad-2',system:'shield-check',management:'megaphone',rewards:'gift'};
+const notificationPreferenceToggle=$('#notificationPreferenceToggle');
+let notificationUnreadCount=0,notificationPollTimer=null,notificationsEnabled=true;
 function updateNotificationBadge(count){
  notificationUnreadCount=Math.max(0,Number(count)||0);
  let badge=$('#notificationBadge');
  if(!badge){badge=document.createElement('span');badge.id='notificationBadge';badge.className='notification-badge';notificationsButton.append(badge);}
  badge.textContent=notificationUnreadCount>99?'99+':String(notificationUnreadCount);
- badge.hidden=notificationUnreadCount===0;
- notificationsButton.classList.toggle('has-notifications',notificationUnreadCount>0);
- notificationUnreadLabel.textContent=notificationUnreadCount?notificationUnreadCount+' okunmamış bildirim':'Okunmamış bildirim yok';
+ badge.hidden=notificationUnreadCount===0||!notificationsEnabled;
+ notificationsButton.classList.toggle('has-notifications',notificationUnreadCount>0&&notificationsEnabled);
+ notificationUnreadLabel.textContent=notificationsEnabled?(notificationUnreadCount?notificationUnreadCount+' okunmamış bildirim':'Bildirim geçmişin'):'Bildirimler kapalı';
+}
+function renderNotificationPreference(){
+ notificationPreferenceToggle.setAttribute('aria-checked',String(notificationsEnabled));
+ notificationPreferenceToggle.classList.toggle('enabled',notificationsEnabled);
+ notificationPreferenceToggle.querySelector('b').textContent=notificationsEnabled?'Açık':'Kapalı';
+ $('#notificationPreferenceHint').textContent=notificationsEnabled?'Yeni bildirimleri alıyorsun.':'Yeni bildirimler gösterilmeyecek.';
 }
 function notificationTime(value){
  const date=new Date(value);if(Number.isNaN(date.getTime()))return '';
@@ -509,11 +514,12 @@ function notificationTime(value){
 async function loadNotifications(){
  if(!gameSignedIn){notificationList.innerHTML='<div class="notification-empty"><b>Bildirimlerini görmek için giriş yap</b><span>Bildirimlerin hesabına özel olarak saklanır.</span><button type="button" id="notificationLogin">Giriş yap</button></div>';notificationUnreadLabel.textContent='Üye hesabı gerekli';return;}
  try{
-  const response=await fetch('/api/notifications?category='+encodeURIComponent(notificationFilter),{credentials:'same-origin',cache:'no-store'});
+  const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});
   if(!response.ok)throw new Error(response.status===401?'Oturumun sona ermiş.':'Bildirimler yüklenemedi.');
-  const data=await response.json();updateNotificationBadge(data.unreadCount);
+  const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();updateNotificationBadge(data.unreadCount);
   notificationStatus.textContent=data.notifications.length+' bildirim';
-  if(!data.notifications.length){notificationList.innerHTML='<div class="notification-empty"><b>Henüz bildirimin yok</b><span>Yeni etkinlikler burada görünecek.</span></div>';return;}
+  if(!notificationsEnabled){notificationList.innerHTML='<div class="notification-empty"><b>Bildirimler kapalı</b><span>Yeni bildirim almak için yukarıdaki düğmeyi açabilirsin.</span></div>';return;}
+  if(!data.notifications.length){notificationList.innerHTML='<div class="notification-empty"><b>Henüz bildirimin yok</b><span>Yeni bildirimlerin burada görünecek.</span></div>';return;}
   notificationList.replaceChildren();
   data.notifications.forEach(item=>{
    const card=document.createElement('article');card.className='notification-item'+(item.read_at?'':' unread');card.dataset.id=item.id;
@@ -538,36 +544,29 @@ async function notificationAction(url,method='POST'){
 }
 async function markNotificationRead(id){try{await notificationAction('/api/notifications/'+id+'/read');}catch(e){notify(e.message);}}
 async function deleteNotification(id){try{await notificationAction('/api/notifications/'+id,'DELETE');}catch(e){notify(e.message);}}
-function positionNotificationPanel(){
- if(notificationsPopover.hidden)return;
- const rect=notificationsButton.getBoundingClientRect();
- const width=Math.min(470,window.innerWidth-24);
- const left=Math.max(12,Math.min(rect.left,window.innerWidth-width-12));
- const top=Math.min(rect.bottom+9,Math.max(12,window.innerHeight-180));
- notificationsPopover.style.left=left+'px';
- notificationsPopover.style.top=top+'px';
-}
 notificationsButton.addEventListener('click',()=>{
  const opening=notificationsPopover.hidden;notificationsPopover.hidden=!opening;
  notificationsButton.setAttribute('aria-expanded',String(opening));
- if(opening){positionNotificationPanel();loadNotifications();}
+ if(opening)loadNotifications();
 });
-window.addEventListener('resize',positionNotificationPanel);
-window.addEventListener('scroll',positionNotificationPanel,true);
 notificationList.addEventListener('click',e=>{if(e.target.id==='notificationLogin')openGameAuth('login');});
 $('#notificationReadAll').addEventListener('click',async()=>{try{await notificationAction('/api/notifications/read-all');}catch(e){notify(e.message);}});
 $('#notificationClearAll').addEventListener('click',async()=>{if(!confirm('Tüm bildirimlerini silmek istediğinden emin misin?'))return;try{await notificationAction('/api/notifications','DELETE');}catch(e){notify(e.message);}});
-$('.notification-filters').addEventListener('click',e=>{
- const button=e.target.closest('[data-notification-filter]');if(!button)return;
- notificationFilter=button.dataset.notificationFilter;
- $('.notification-filters').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));loadNotifications();
+notificationPreferenceToggle.addEventListener('click',async()=>{
+ const next=!notificationsEnabled;notificationPreferenceToggle.disabled=true;
+ try{
+  const response=await fetch('/api/notifications/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:next})});
+  if(!response.ok)throw new Error('Bildirim tercihi kaydedilemedi.');
+  const data=await response.json();notificationsEnabled=data.enabled;renderNotificationPreference();await loadNotifications();
+ }catch(error){notify(error.message);}
+ finally{notificationPreferenceToggle.disabled=false;}
 });
 document.addEventListener('click',e=>{
  if(!notificationsPopover.hidden&&!notificationsPopover.contains(e.target)&&!notificationsButton.contains(e.target)){notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');}
 });
 async function pollNotificationCount(){
  if(!gameSignedIn){updateNotificationBadge(0);return;}
- try{const response=await fetch('/api/notifications?category=all',{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();updateNotificationBadge(data.unreadCount);if(!notificationsPopover.hidden)loadNotifications();}}
+ try{const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();updateNotificationBadge(data.unreadCount);if(!notificationsPopover.hidden)loadNotifications();}}
  catch(_){}
 }
 pollNotificationCount();notificationPollTimer=setInterval(pollNotificationCount,30000);
