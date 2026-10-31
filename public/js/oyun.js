@@ -550,11 +550,11 @@ function openGameAuth(mode='login'){
  $('#gameAuthTitle').textContent=registering?'Üye Ol':forgot?'Şifremi Unuttum':'Giriş Yap';
  $('#gameAuthDesc').textContent=registering?'ZirveOkey ailesine katıl.':forgot?'Şifre sıfırlama bağlantısı için kayıtlı e-posta adresini gir.':'Hesabına giriş yap ve oyuna katıl.';
  $('#gameAuthSubmit').textContent=registering?'Üye Ol':forgot?'Sıfırlama Bağlantısı Gönder':'Giriş Yap';
- $('#gameAuthEmailRow').hidden=!(registering||forgot);
+ $('#gameAuthEmail').hidden=!(registering||forgot);
  $('#gameAuthEmail').required=registering||forgot;$('#gameAuthEmail').value='';
- $('#gameAuthIdentifierLabel').hidden=forgot;
+ $('#gameAuthIdentifier').hidden=forgot;
  $('#gameAuthIdentifier').required=!forgot;$('#gameAuthIdentifier').value='';$('#gameAuthIdentifier').placeholder='Kullanıcı adını gir';$('#gameAuthIdentifier').maxLength=24;
- $('#gameAuthPasswordRow').hidden=forgot;
+ $('#gameAuthPassword').hidden=forgot;
  $('#gameAuthPassword').required=!forgot;$('#gameAuthPassword').value='';$('#gameAuthPassword').setAttribute('autocomplete',registering?'new-password':'current-password');
  $('#gameAuthProfileFields').hidden=!registering;
  $('#gameAuthCountry').required=registering;$('#gameAuthGender').required=registering;$('#gameAuthCountry').value='';$('#gameAuthGender').value='';
