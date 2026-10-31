@@ -1980,3 +1980,84 @@ nav.lobby-tabs>.lobby-tab:first-child{
   min-width:25px!important;
  }
 }
+
+ 
+/* Mobile layout correction: keep the online roster beside the complete lobby + chat column. */
+@media (max-width:760px) {
+ body.game-page .game-layout {
+  display:grid!important;
+  grid-template-columns:minmax(0,2.25fr) minmax(96px,.95fr)!important;
+  grid-template-rows:auto!important;
+  flex-direction:initial!important;
+  align-items:stretch!important;
+  gap:6px!important;
+  width:calc(100% - 10px)!important;
+  padding:10px 0 18px!important;
+ }
+ body.game-page .main-column {
+  display:flex!important;
+  flex-direction:column!important;
+  grid-column:1!important;
+  grid-row:1!important;
+  width:100%!important;
+  min-width:0!important;
+  gap:7px!important;
+ }
+ body.game-page .lobby-view,
+ body.game-page .table-view {
+  width:100%!important;
+  min-width:0!important;
+ }
+ body.game-page .right-column {
+  display:block!important;
+  grid-column:2!important;
+  grid-row:1!important;
+  width:100%!important;
+  min-width:0!important;
+  height:100%!important;
+  min-height:100%!important;
+  align-self:stretch!important;
+ }
+ body.game-page .online-panel {
+  width:100%!important;
+  height:100%!important;
+  min-height:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+ }
+ body.game-page .online-panel .side-heading {
+  padding:7px 5px!important;
+  align-items:flex-start!important;
+  gap:3px!important;
+ }
+ body.game-page .online-panel .side-heading h2 {
+  font-size:10px!important;
+  line-height:1.25!important;
+  overflow-wrap:anywhere!important;
+ }
+ body.game-page .online-panel .online-badge {
+  padding:3px 5px!important;
+  font-size:9px!important;
+ }
+ body.game-page .online-panel .online-list {
+  flex:1 1 auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow-y:auto!important;
+ }
+ body.game-page .chat-panel {
+  width:100%!important;
+  min-width:0!important;
+  align-self:stretch!important;
+  margin-top:0!important;
+ }
+}
+@media (max-width:390px) {
+ body.game-page .game-layout {
+  grid-template-columns:minmax(0,2.2fr) minmax(94px,.95fr)!important;
+  gap:5px!important;
+  width:calc(100% - 8px)!important;
+ }
+ body.game-page .online-panel .side-heading {padding:6px 4px!important}
+ body.game-page .online-panel .side-heading h2 {font-size:9px!important}
+}
