@@ -29,7 +29,7 @@ app.use((_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   next();
 });
-app.use(express.json({ limit: '20kb' }));
+app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 
 const schema = `
@@ -50,6 +50,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS chat_row_color VARCHAR(7) NOT NULL DE
 ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(80);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(40);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_data TEXT;
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -243,6 +244,24 @@ app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
     ORDER BY u.username_normalized ASC LIMIT 100
   `);
   res.json({ members: result.rows, count: result.rows.length });
+}));
+
+app.get('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
+  if (!req.session.user?.id) return res.status(401).json({ error: 'Avatar için giriş yapmalısınız.' });
+  const result = await pool.query('SELECT avatar_data FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
+  if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
+  res.json({ avatar: result.rows[0].avatar_data || null });
+}));
+
+app.put('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
+  if (!req.session.user?.id) return res.status(401).json({ error: 'Avatar değiştirmek için giriş yapmalısınız.' });
+  const avatar = req.body.avatar === null ? null : String(req.body.avatar || '');
+  if (avatar !== null && (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar) || avatar.length > 1400000)) {
+    return res.status(400).json({ error: 'PNG, JPG veya WebP formatında, en fazla 1 MB bir görsel seçin.' });
+  }
+  const result = await pool.query('UPDATE users SET avatar_data=$1 WHERE id=$2 AND is_active=TRUE RETURNING avatar_data', [avatar, req.session.user.id]);
+  if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
+  res.json({ ok: true, avatar: result.rows[0].avatar_data || null });
 }));
 
 app.get('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
