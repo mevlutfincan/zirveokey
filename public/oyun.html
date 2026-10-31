@@ -10,16 +10,17 @@
 <body class="game-page">
 <header class="game-header">
  <div class="game-brand"><span class="brand-crown">♛</span><span><b>Zirve</b>Okey</span><small>OYUN ALANI</small></div>
- <div class="header-center"><span class="live-dot"></span><span>OYUN LOBİSİ</span><span class="header-divider"></span><span id="connectionState">Arayüz önizlemesi</span></div>
- <div class="header-user">
-  <span class="user-online-count" aria-live="polite"><i></i><b id="headerOnlineCount">0</b><small>Çevrimiçi</small></span>
+ <div class="header-tools" aria-label="Oyun menüleri">
+  <div class="header-center"><span class="live-dot"></span><span>OYUN LOBİSİ</span><span class="header-divider"></span><span id="connectionState">Arayüz önizlemesi</span></div>
+  <span class="user-online-count" aria-live="polite" title="Çevrimiçi oyuncular"><i></i><b id="headerOnlineCount">0</b><small>Çevrimiçi</small></span>
   <button class="icon-button header-action" id="notificationsButton" type="button" aria-label="Bildirimler" aria-expanded="false" title="Bildirimler">♧</button>
   <button class="icon-button header-action" id="settingsButton" type="button" aria-label="Ayarlar" title="Ayarlar">⚙</button>
   <button class="icon-button header-action" id="fullscreenButton" type="button" aria-label="Tam ekran" title="Tam ekran">⛶</button>
+ </div>
+ <div class="header-user">
   <span class="user-avatar" id="gameUserAvatar">M</span><span class="user-meta"><b id="gameUsername">Misafir Oyuncu</b><small id="gameAccountState">Giriş yapılmadı</small></span>
   <div class="game-auth-actions" id="gameAuthActions"><button class="icon-button" id="gameLoginButton" type="button">Giriş</button><button class="icon-button" id="gameRegisterButton" type="button">Üye Ol</button></div>
   <button class="icon-button" id="gameLogoutButton" type="button" hidden>Çıkış</button>
-  
  </div>
 </header>
 
