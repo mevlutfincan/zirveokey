@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
 <link rel="stylesheet" href="/css/oyun.css?v=notification-stack-final-20261031-14">
-<script defer src="/js/oyun.js?v=member-color-settings-20261031-06"></script>
+<script defer src="/js/oyun.js?v=avatar-settings-20261031-07"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
@@ -91,6 +91,11 @@
   <section class="settings-group"><h3>Görünüm</h3>
    <label class="setting-row"><span><b>Arayüz animasyonları</b><small>Geçiş ve hareket efektlerini göster</small></span><input type="checkbox" id="settingAnimations" checked></label>
    <label class="setting-row"><span><b>Koyu görünüm</b><small>Oyun alanının koyu temasını kullan</small></span><input type="checkbox" id="settingDarkMode" checked></label>
+  </section>
+  <section class="settings-group"><h3>Avatar Ayarları</h3>
+   <div class="avatar-setting-row"><span class="user-avatar" id="settingsAvatarPreview">M</span><div><label class="primary-button" for="settingAvatarFile">Avatar seç</label><input type="file" id="settingAvatarFile" accept="image/png,image/jpeg,image/webp" hidden><small>PNG, JPG veya WebP · En fazla 1 MB</small></div></div>
+   <button type="button" class="subtle-button" id="removeSettingAvatar">Avatarı kaldır</button>
+   <small id="settingAvatarStatus" class="chat-color-status" aria-live="polite">Avatarın profilinde ve oyun alanında kullanılacak.</small>
   </section>
   <section class="settings-group"><h3>Kullanıcı Renk Ayarları</h3>
    <label class="setting-row"><span><b>Nick Rengi</b><small>Lobi, sohbet ve oyun masasında kullanıcı adının rengi</small></span><input type="color" id="settingNickColor" value="#111111"></label>
