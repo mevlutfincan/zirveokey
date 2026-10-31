@@ -496,7 +496,9 @@ const notificationList=$('#notificationList');
 const notificationUnreadLabel=$('#notificationUnreadLabel');
 const notificationStatus=$('#notificationStatus');
 const notificationPreferenceToggle=$('#notificationPreferenceToggle');
-let notificationUnreadCount=0,notificationPollTimer=null,notificationsEnabled=true;
+let notificationUnreadCount=0,notificationPollTimer=null,notificationsEnabled=true,lastNotificationUnreadCount=null,notificationAudioContext=null;
+function prepareNotificationAudio(){const AudioContextClass=window.AudioContext||window.webkitAudioContext;if(!AudioContextClass)return;try{if(!notificationAudioContext)notificationAudioContext=new AudioContextClass();if(notificationAudioContext.state==='suspended')notificationAudioContext.resume().catch(()=>{});}catch(_){}}
+function playNotificationSound(){if(!memberPreferences.settingNotificationSound||!notificationsEnabled||!notificationAudioContext||notificationAudioContext.state!=='running')return;try{const oscillator=notificationAudioContext.createOscillator(),gain=notificationAudioContext.createGain(),now=notificationAudioContext.currentTime;oscillator.type='sine';oscillator.frequency.setValueAtTime(880,now);oscillator.frequency.exponentialRampToValueAtTime(660,now+.13);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.12,now+.015);gain.gain.exponentialRampToValueAtTime(.0001,now+.18);oscillator.connect(gain);gain.connect(notificationAudioContext.destination);oscillator.start(now);oscillator.stop(now+.19);}catch(_){}}
 function updateNotificationBadge(count){
  notificationUnreadCount=Math.max(0,Number(count)||0);
  let badge=$('#notificationBadge');
@@ -522,7 +524,7 @@ async function loadNotifications(){
   const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});
   if(!response.ok)throw new Error(response.status===401?'Oturumun sona ermiş.':'Bildirimler yüklenemedi.');
   const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();
-  const visibleNotifications=(data.notifications||[]).filter(item=>!(item.category==='friendship'&&memberPreferences.settingFriendRequests===false)&&!(['private_message','private-message'].includes(item.category)&&memberPreferences.settingPrivateMessages===false));
+  const visibleNotifications=(data.notifications||[]).filter(item=>!(item.category==='friendship'&&memberPreferences.settingFriendRequests===false));
   updateNotificationBadge(data.unreadCount);
   notificationStatus.textContent=visibleNotifications.length+' bildirim';
   if(!notificationsEnabled){notificationList.innerHTML='<div class="notification-empty"><b>Bildirimler kapalı</b><span>Yeni bildirim almak için yukarıdaki düğmeyi açabilirsin.</span></div>';return;}
@@ -573,7 +575,7 @@ document.addEventListener('click',e=>{
 });
 async function pollNotificationCount(){
  if(!gameSignedIn){updateNotificationBadge(0);return;}
- try{const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();updateNotificationBadge(data.unreadCount);if(!notificationsPopover.hidden)loadNotifications();}}
+ try{const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();const unread=Math.max(0,Number(data.unreadCount)||0);if(lastNotificationUnreadCount!==null&&unread>lastNotificationUnreadCount)playNotificationSound();lastNotificationUnreadCount=unread;updateNotificationBadge(unread);if(!notificationsPopover.hidden)loadNotifications();}}
  catch(_){}
 }
 pollNotificationCount();notificationPollTimer=setInterval(pollNotificationCount,30000);
@@ -668,7 +670,7 @@ Array.from(document.querySelectorAll('.password-visibility-toggle')).forEach(but
 $('#closeMemberSettings').addEventListener('click',()=>settingsDialog.close());
 settingsDialog.addEventListener('click',e=>{if(e.target===settingsDialog)settingsDialog.close()});
 settingsKeys.forEach(id=>{const control=$('#'+id);if(!control)return;control.addEventListener('change',async()=>{
- const value=$('#'+id).checked;$('#settingsSaveState').textContent='Kaydediliyor…';
+ const value=$('#'+id).checked;if(id==='settingNotificationSound'&&value)prepareNotificationAudio();$('#settingsSaveState').textContent='Kaydediliyor…';
  applyMemberSettings({...memberPreferences,[id]:value});
  try{
   await saveMemberPreferences({[id]:value});
