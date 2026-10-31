@@ -3,8 +3,8 @@ const $=s=>document.querySelector(s);
 const toast=$('#gameToast');let toastTimer;
 function notify(message){toast.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2600)}
 let tables=[],activeTable=null,selectedTile=null,idleTimer=null;
-let gameSignedIn=false;
-function requireGameMembership(action){if(gameSignedIn)return true;openGameAuth('register');$('#gameAuthMessage').textContent=action+' için önce ücretsiz üyelik oluşturmalısın.';notify('Devam etmek için üye olmalısın.');return false;}
+let gameSignedIn=false,pendingMembershipAction=null;
+function requireGameMembership(action,onSuccess){if(gameSignedIn)return true;pendingMembershipAction=typeof onSuccess==='function'?onSuccess:null;openGameAuth('register');$('#gameAuthMessage').textContent=action+' için önce ücretsiz üyelik oluşturmalısın.';notify('Devam etmek için üye olmalısın.');return false;}
 const discarded=[];
 function lobbyNotice(message){const box=$('#chatMessages');const item=document.createElement('div');item.className='chat-system';item.textContent=message;box.append(item);box.scrollTop=box.scrollHeight;}
 function clearIdleTimer(){if(idleTimer){clearTimeout(idleTimer);idleTimer=null}}
@@ -26,24 +26,24 @@ function renderRack(){
  sampleTiles.forEach((tile,i)=>{const el=document.createElement('button');el.type='button';el.className='rack-tile '+tile.c+(selectedTile===i?' selected':'');el.textContent=tile.v;el.setAttribute('aria-label',tile.v+' numaralı taş');el.addEventListener('click',()=>{selectedTile=selectedTile===i?null:i;renderRack()});root.append(el)});
  $('#rackCount').textContent=sampleTiles.length+' taş • örnek dizilim';
 }
-function openTable(id){if(!requireGameMembership('Masaya oturmak'))return;activeTable=id;const t=tables.find(x=>x.id===id);if(!t)return;$('#lobbyView').hidden=true;$('#tableView').hidden=false;$('#tableTitle').textContent='Masa '+String(t.id).padStart(3,'0');$('.table-number').textContent='MASA #'+String(t.id).padStart(3,'0');$('#roundStatus').textContent=t.type+' • Oyuncular bekleniyor';renderTabs();renderRack();resetIdleTimer()}
+function openTable(id){if(!requireGameMembership('Masaya oturmak',()=>openTable(id)))return;activeTable=id;const t=tables.find(x=>x.id===id);if(!t)return;$('#lobbyView').hidden=true;$('#tableView').hidden=false;$('#tableTitle').textContent='Masa '+String(t.id).padStart(3,'0');$('.table-number').textContent='MASA #'+String(t.id).padStart(3,'0');$('#roundStatus').textContent=t.type+' • Oyuncular bekleniyor';renderTabs();renderRack();resetIdleTimer()}
 function closeTable(id){if(!confirm('Masayı kapatmak istediğinizden emin misiniz?'))return;clearIdleTimer();tables=tables.filter(t=>t.id!==id);if(activeTable===id){activeTable=null;$('#tableView').hidden=true;$('#lobbyView').hidden=false}renderTabs();renderLobby();lobbyNotice(String(id).padStart(3,'0')+' nolu masadan kendi isteğinle çıkış yaptın.');notify('Masa kapatıldı.')}
 function createTable(){
- if(!requireGameMembership('Masa oluşturmak'))return;
+ if(!requireGameMembership('Masa oluşturmak',()=>createTable()))return;
  if(tables.length>=1){notify('Bu önizlemede aynı anda yalnızca bir masa açılabilir.');return}
  const name=$('#newTableName').value.trim()||'Klasik Okey';const id=1;
  tables.push({id,name,type:$('#gameType').value,privacy:$('#tablePrivacy').value,style:$('#tableStyle').value,isTest:true});activeTable=id;
  $('#createDialog').close();renderTabs();renderLobby();openTable(id);notify('Masa arayüzü oluşturuldu. Oyun sunucusu henüz bağlı değil.');
 }
-$('#openCreateTable').addEventListener('click',()=>{if(requireGameMembership('Masa oluşturmak'))$('#createDialog').showModal()});
-const lobbyCreateTable=$('#lobbyCreateTable');if(lobbyCreateTable)lobbyCreateTable.addEventListener('click',()=>{if(requireGameMembership('Masa oluşturmak'))$('#createDialog').showModal()});
+$('#openCreateTable').addEventListener('click',()=>{if(requireGameMembership('Masa oluşturmak',()=>$('#createDialog').showModal()))$('#createDialog').showModal()});
+const lobbyCreateTable=$('#lobbyCreateTable');if(lobbyCreateTable)lobbyCreateTable.addEventListener('click',()=>{if(requireGameMembership('Masa oluşturmak',()=>$('#createDialog').showModal()))$('#createDialog').showModal()});
 $('.lobby-tab').addEventListener('click',()=>{clearIdleTimer();activeTable=null;$('#tableView').hidden=true;$('#lobbyView').hidden=false;renderTabs();});
 $('#createTableForm').addEventListener('submit',e=>{e.preventDefault();createTable()});
 $('#leaveTable').addEventListener('click',()=>{if(!activeTable)return;const id=activeTable;if(!confirm('Masadan çıkmak istediğinizden emin misiniz?'))return;clearIdleTimer();tables=tables.filter(t=>t.id!==id);activeTable=null;$('#tableView').hidden=true;$('#lobbyView').hidden=false;renderTabs();renderLobby();lobbyNotice(String(id).padStart(3,'0')+' nolu masadan kendi isteğinle çıkış yaptın.');notify('Masadan ayrıldın.')});
 $('#sortTiles').addEventListener('click',()=>{sampleTiles.sort((a,b)=>a.c.localeCompare(b.c)||a.v-b.v);selectedTile=null;renderRack();notify('Taşlar renge ve sayıya göre sıralandı (örnek).')});
 $('#sortPairs').addEventListener('click',()=>{sampleTiles.sort((a,b)=>a.v-b.v);selectedTile=null;renderRack();notify('Çift dizme önizlemesi uygulandı.')});
 $('#discardTile').addEventListener('click',()=>{if(selectedTile===null){notify('Önce atmak istediğin taşı seç.');return}const tile=sampleTiles.splice(selectedTile,1)[0];discarded.push(tile);const target=$('#discardedTile');target.textContent=tile.v;target.classList.add('has-tile');target.style.color=tile.c==='red'?'#d42e29':tile.c==='blue'?'#2566c6':tile.c==='yellow'?'#c49b18':'#171717';selectedTile=null;renderRack();notify('Taş atma görsel önizlemesi uygulandı.');});
-$('#startGame').addEventListener('click',()=>{if(!requireGameMembership('Oyun oynamak'))return;notify('Oyun motoru henüz bağlı değil.')});
+$('#startGame').addEventListener('click',()=>{if(!requireGameMembership('Oyun oynamak',()=>notify('Oyun motoru henüz bağlı değil.')))return;notify('Oyun motoru henüz bağlı değil.')});
 $('#tableView').addEventListener('pointerdown',resetIdleTimer);
 $('#tableView').addEventListener('keydown',resetIdleTimer);
 
@@ -442,7 +442,7 @@ $('#chatTextGrow').addEventListener('click',()=>{
  finally{chatBusy=false;}
 }
 $('#chatForm').addEventListener('submit',async e=>{
- e.preventDefault();if(!requireGameMembership('Sohbete mesaj göndermek'))return;const input=$('#chatInput'),message=input.value.trim();if(!message)return;
+ e.preventDefault();if(!requireGameMembership('Sohbete mesaj göndermek',()=>$('#chatForm').requestSubmit()))return;const input=$('#chatInput'),message=input.value.trim();if(!message)return;
  try{
   const r=await fetch('/api/lobby/messages',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({message})});
   const data=await r.json().catch(()=>({}));
@@ -576,8 +576,8 @@ async function refreshGameAccount(){
   await loadChatStyle(signed,signed?data.user.id:null);
  }catch(error){$('#gameAccountState').textContent='Hesap bağlantısı yok';}
 }
-$('#chatInput').addEventListener('focus',()=>{if(!gameSignedIn)openGameAuth('register')});
- $('#chatInput').addEventListener('click',()=>{if(!gameSignedIn)openGameAuth('register')});
+$('#chatInput').addEventListener('focus',()=>{if(!gameSignedIn)requireGameMembership('Sohbete yazmak',()=>$('#chatInput').focus())});
+ $('#chatInput').addEventListener('click',()=>{if(!gameSignedIn)requireGameMembership('Sohbete yazmak',()=>$('#chatInput').focus())});
  $('#gameLoginButton').addEventListener('click',()=>openGameAuth('login'));
 $('#gameRegisterButton').addEventListener('click',()=>openGameAuth('register'));
 $('#gameAuthClose').addEventListener('click',()=>$('#gameLoginDialog').close());
@@ -591,6 +591,7 @@ $('#gameAuthForm').addEventListener('submit',async e=>{
   const r=await fetch('/api/auth/'+gameAuthMode,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Üyelik işlemi tamamlanamadı.');
   $('#gameLoginDialog').close();await refreshGameAccount();await loadLobbyMessages(true);await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
+   if(gameAuthMode==='register'&&pendingMembershipAction){const resume=pendingMembershipAction;pendingMembershipAction=null;resume();}
  }catch(error){$('#gameAuthMessage').textContent=error.message;}
  finally{submit.disabled=false;}
 });
