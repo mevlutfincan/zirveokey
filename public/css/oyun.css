@@ -2418,3 +2418,20 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .header-user .user-avatar{display:none!important}
  .header-user .game-auth-actions .icon-button,.header-user>#gameLogoutButton{padding:0 5px!important;font-size:8px!important}
 }
+
+/* Horizontal Premium Neon header trial; existing controls and page layout remain intact. */
+.game-header{min-height:82px!important;height:auto!important;padding:10px clamp(16px,2.5vw,38px)!important;gap:clamp(16px,2.2vw,34px)!important;background:linear-gradient(100deg,rgba(3,13,7,.99),rgba(8,25,12,.97) 52%,rgba(4,15,8,.99))!important;border-bottom:1px solid rgba(126,245,67,.42)!important;box-shadow:0 8px 30px rgba(0,0,0,.34),inset 0 -1px 0 rgba(130,244,77,.12)!important}
+.game-brand{font-size:clamp(22px,2vw,29px)!important;white-space:nowrap!important}
+.header-tools{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:clamp(7px,.8vw,12px)!important}
+.header-tools .header-center{padding:10px 13px!important;margin:0 2px 0 0!important;border:1px solid rgba(135,245,79,.35)!important;border-radius:13px!important;background:linear-gradient(145deg,rgba(78,170,44,.22),rgba(12,39,19,.82))!important;color:#dfffd0!important;white-space:nowrap!important;box-shadow:inset 0 1px rgba(255,255,255,.08),0 0 16px rgba(76,203,43,.08)!important}
+.header-tools .header-divider{display:none!important}
+.header-tools #connectionState{font-size:10px!important;color:#a9c6a6!important}
+.header-tools .user-online-count{display:flex!important;align-items:center!important;gap:7px!important;padding:10px 13px!important;white-space:nowrap!important}
+.header-tools .header-action{width:auto!important;min-width:48px!important;height:43px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;padding:0 12px!important;border-radius:13px!important}
+.header-tools .header-action span{font-size:19px!important;line-height:1!important}
+.header-tools .header-action small{display:inline!important;color:inherit!important;font-size:11px!important;font-weight:800!important;white-space:nowrap!important}
+.header-user{padding-left:clamp(10px,1.2vw,18px)!important;border-left:1px solid rgba(137,238,91,.28)!important}
+.header-user .user-avatar{width:43px!important;height:43px!important;border:2px solid #91ef52!important;box-shadow:0 0 0 3px rgba(125,232,65,.12),0 0 20px rgba(111,232,58,.22)!important}
+.header-user .user-meta b{font-size:13px!important}
+@media(max-width:1100px){.game-header{gap:12px!important;padding-left:14px!important;padding-right:14px!important}.header-tools{gap:6px!important}.header-tools .header-center{padding:8px 9px!important}.header-tools .header-action{padding:0 9px!important}.header-tools .header-action small{font-size:10px!important}}
+@media(max-width:760px){.game-header{min-height:54px!important;height:auto!important;padding:6px 9px!important;gap:8px!important;flex-wrap:nowrap!important}.header-tools .header-action{width:32px!important;min-width:32px!important;height:32px!important;padding:0!important}.header-tools .header-action small{display:none!important}}
