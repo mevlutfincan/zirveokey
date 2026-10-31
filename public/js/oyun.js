@@ -576,6 +576,39 @@ async function pollNotificationCount(){
 pollNotificationCount();notificationPollTimer=setInterval(pollNotificationCount,30000);
 
 const settingsDialog=$('#memberSettingsDialog');
+let memberAvatarData=null;
+function paintMemberAvatar(value){
+ memberAvatarData=value||null;
+ const headerAvatar=$('#gameUserAvatar'),preview=$('#settingsAvatarPreview');
+ [headerAvatar,preview].forEach(node=>{
+  if(!node)return;
+  if(memberAvatarData){node.textContent='';const img=document.createElement('img');img.src=memberAvatarData;img.alt='Avatar';img.className='member-avatar-image';node.append(img);}
+  else node.textContent=(($('#gameUsername')?.textContent||'M').trim().charAt(0)||'M').toLocaleUpperCase('tr-TR');
+ });
+}
+async function loadMemberAvatar(){
+ if(!chatStyleAuthenticated){paintMemberAvatar(null);$('#settingAvatarStatus').textContent='Avatar seçmek için giriş yapmalısın.';return;}
+ try{const r=await fetch('/api/account/avatar',{credentials:'same-origin',cache:'no-store'});if(!r.ok)throw new Error();const data=await r.json();paintMemberAvatar(data.avatar);$('#settingAvatarStatus').textContent='Avatar hesabına kaydedildi.';}
+ catch(_){$('#settingAvatarStatus').textContent='Avatar bilgisi alınamadı.';}
+}
+$('#settingAvatarFile').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>1024*1024){$('#settingAvatarStatus').textContent='PNG, JPG veya WebP formatında en fazla 1 MB görsel seç.';e.target.value='';return;}
+ if(!chatStyleAuthenticated){$('#settingAvatarStatus').textContent='Avatar yüklemek için giriş yapmalısın.';return;}
+ const reader=new FileReader();
+ reader.onload=async()=>{
+  const avatar=String(reader.result||'');$('#settingAvatarStatus').textContent='Avatar kaydediliyor…';
+  try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaydedilemedi.');paintMemberAvatar(data.avatar);$('#settingAvatarStatus').textContent='Avatarın kaydedildi.';notify('Avatarın güncellendi.');}
+  catch(error){$('#settingAvatarStatus').textContent=error.message;}
+ };
+ reader.onerror=()=>$('#settingAvatarStatus').textContent='Görsel okunamadı.';
+ reader.readAsDataURL(file);
+});
+$('#removeSettingAvatar').addEventListener('click',async()=>{
+ if(!chatStyleAuthenticated){$('#settingAvatarStatus').textContent='Avatarı kaldırmak için giriş yapmalısın.';return;}
+ try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:null})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaldırılamadı.');paintMemberAvatar(null);$('#settingAvatarFile').value='';$('#settingAvatarStatus').textContent='Avatar kaldırıldı.';notify('Avatar kaldırıldı.');}
+ catch(error){$('#settingAvatarStatus').textContent=error.message;}
+});
 const settingsKeys=['settingAnimations','settingDarkMode','settingNotifications','settingShowOnline'];
 function applyMemberSettings(values){
  document.body.classList.toggle('member-reduce-motion',!values.settingAnimations);
@@ -592,7 +625,7 @@ function loadMemberSettings(){
  settingsKeys.forEach(id=>{$('#'+id).checked=!!values[id]});
  applyMemberSettings(values);
 }
-$('#settingsButton').addEventListener('click',()=>{loadMemberSettings();settingsDialog.showModal()});
+$('#settingsButton').addEventListener('click',()=>{loadMemberSettings();loadMemberAvatar();settingsDialog.showModal()});
 function updateMemberColorPreview(){
  const name=$('#settingNickColor').value,text=$('#settingMessageColor').value;
  $('#memberColorPreviewName').style.color=name;
