@@ -521,12 +521,14 @@ async function loadNotifications(){
  try{
   const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});
   if(!response.ok)throw new Error(response.status===401?'Oturumun sona ermiş.':'Bildirimler yüklenemedi.');
-  const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();updateNotificationBadge(data.unreadCount);
-  notificationStatus.textContent=data.notifications.length+' bildirim';
+  const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();
+  const visibleNotifications=(data.notifications||[]).filter(item=>!(item.category==='friendship'&&memberPreferences.settingFriendRequests===false)&&!(['private_message','private-message'].includes(item.category)&&memberPreferences.settingPrivateMessages===false));
+  updateNotificationBadge(data.unreadCount);
+  notificationStatus.textContent=visibleNotifications.length+' bildirim';
   if(!notificationsEnabled){notificationList.innerHTML='<div class="notification-empty"><b>Bildirimler kapalı</b><span>Yeni bildirim almak için yukarıdaki düğmeyi açabilirsin.</span></div>';return;}
-  if(!data.notifications.length){notificationList.innerHTML='<div class="notification-empty"><b>Henüz bildirimin yok</b><span>Yeni bildirimlerin burada görünecek.</span></div>';return;}
+  if(!visibleNotifications.length){notificationList.innerHTML='<div class="notification-empty"><b>Gösterilecek bildirim yok</b><span>Yeni bildirimlerin burada görünecek veya tercihlerin nedeniyle gizleniyor.</span></div>';return;}
   notificationList.replaceChildren();
-  data.notifications.forEach(item=>{
+  visibleNotifications.forEach(item=>{
    const card=document.createElement('article');card.className='notification-item'+(item.read_at?'':' unread');card.dataset.id=item.id;
    const icon=document.createElement('span');icon.className='notification-icon';icon.textContent=({friendship:'♙',players:'●',game:'◆',system:'⚙',management:'✦',rewards:'★'})[item.category]||'•';
    const body=document.createElement('div');body.className='notification-copy';
@@ -608,6 +610,8 @@ $('#settingAvatarFile').addEventListener('change',async e=>{
  reader.readAsDataURL(file);
 });
 $('#removeSettingAvatar').addEventListener('click',async()=>{
+ if(!memberAvatarData){$('#settingAvatarStatus').textContent='Zaten varsayılan avatar kullanılıyor.';return;}
+ if(!confirm('Mevcut avatarını kaldırıp varsayılan görsele dönmek istiyor musun?'))return;
  if(!chatStyleAuthenticated){$('#settingAvatarStatus').textContent='Avatarı kaldırmak için giriş yapmalısın.';return;}
  try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:null})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaldırılamadı.');paintMemberAvatar(null);$('#settingAvatarFile').value='';$('#settingAvatarStatus').textContent='Avatar kaldırıldı.';notify('Avatar kaldırıldı.');}
  catch(error){$('#settingAvatarStatus').textContent=error.message;}
@@ -652,6 +656,7 @@ async function loadMemberSettings(){
  settingsKeys.forEach(id=>{if($('#'+id))$('#'+id).checked=!!memberPreferences[id]});
  applyMemberSettings(memberPreferences);
  $('#settingsAccountName').textContent=$('#gameUsername')?.textContent||'Üye hesabı';
+ $('#settingsAccountStatus').textContent=chatStyleAuthenticated?'Oturum açık · Ayarların hesabına kaydedilir.':'Misafir oturumu · Değişiklikleri kaydetmek için giriş yap.';
 }
 function showSettingsCategory(category){
  $Array.from(document.querySelectorAll('.settings-category')).forEach(button=>button.classList.toggle('active',button.dataset.settingsCategory===category));
@@ -684,6 +689,7 @@ $('#settingMessageColor').addEventListener('input',updateMemberColorPreview);
 $('#changeAccountPassword').addEventListener('click',async()=>{
  const currentPassword=$('#currentPassword').value,newPassword=$('#newPassword').value,confirmPassword=$('#confirmNewPassword').value,status=$('#passwordChangeStatus'),button=$('#changeAccountPassword');
  if(!chatStyleAuthenticated){status.textContent='Şifre değiştirmek için giriş yapmalısın.';notify(status.textContent);return;}
+ if(!currentPassword){status.textContent='Mevcut şifreni girmelisin.';return;}
  if(newPassword.length<10||newPassword.length>72){status.textContent='Yeni şifre 10-72 karakter arasında olmalı.';return;}
  if(newPassword!==confirmPassword){status.textContent='Yeni şifreler eşleşmiyor.';return;}
  button.disabled=true;button.textContent='Güncelleniyor…';status.textContent='Şifre kontrol ediliyor…';
