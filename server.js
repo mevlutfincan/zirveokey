@@ -270,8 +270,23 @@ app.put('/api/account/password', dbRequired, authLimiter, asyncRoute(async (req,
   const found = await pool.query('SELECT password_hash FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!found.rows[0] || !(await bcrypt.compare(currentPassword, found.rows[0].password_hash))) return res.status(400).json({ error: 'Mevcut şifren doğru değil.' });
   const passwordHash = await bcrypt.hash(newPassword, 12);
-  await pool.query('UPDATE users SET password_hash=$1 WHERE id=$2', [passwordHash, req.session.user.id]);
-  res.json({ ok: true, message: 'Şifren başarıyla güncellendi.' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE users SET password_hash=$1 WHERE id=$2 AND is_active=TRUE', [passwordHash, req.session.user.id]);
+    await client.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [req.session.user.id]);
+    await client.query(
+      "DELETE FROM user_sessions WHERE sess::jsonb->'user'->>'id'=$1 AND sid<>$2",
+      [String(req.session.user.id), req.sessionID]
+    );
+    await client.query('COMMIT');
+    res.json({ ok: true, message: 'Şifren başarıyla güncellendi. Diğer oturumların güvenlik için kapatıldı.' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }));
 
 app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
