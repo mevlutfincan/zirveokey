@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
 <link rel="stylesheet" href="/css/oyun.css?v=notification-stack-final-20261031-14">
-<script defer src="/js/oyun.js?v=login-modal-close-20261031-05"></script>
+<script defer src="/js/oyun.js?v=member-color-settings-20261031-06"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
@@ -91,6 +91,12 @@
   <section class="settings-group"><h3>Görünüm</h3>
    <label class="setting-row"><span><b>Arayüz animasyonları</b><small>Geçiş ve hareket efektlerini göster</small></span><input type="checkbox" id="settingAnimations" checked></label>
    <label class="setting-row"><span><b>Koyu görünüm</b><small>Oyun alanının koyu temasını kullan</small></span><input type="checkbox" id="settingDarkMode" checked></label>
+  </section>
+  <section class="settings-group"><h3>Kullanıcı Renk Ayarları</h3>
+   <label class="setting-row"><span><b>Nick Rengi</b><small>Lobi, sohbet ve oyun masasında kullanıcı adının rengi</small></span><input type="color" id="settingNickColor" value="#111111"></label>
+   <label class="setting-row"><span><b>Sohbet Yazı Rengi</b><small>Lobi sohbetinde gönderdiğin mesajların rengi</small></span><input type="color" id="settingMessageColor" value="#111111"></label>
+   <div class="chat-color-preview" id="memberColorPreview"><b id="memberColorPreviewName">KullanıcıAdı</b><span id="memberColorPreviewText">Mesajın böyle görünür.</span></div>
+   <small id="memberColorStatus" class="chat-color-status" aria-live="polite">Renk tercihleri hesabına kaydedilir ve sohbet alanına yansıtılır.</small>
   </section>
   <section class="settings-group"><h3>Bildirimler</h3>
    <label class="setting-row"><span><b>Bildirimleri göster</b><small>Yeni sistem bildirimlerini görüntüle</small></span><input type="checkbox" id="settingNotifications" checked></label>
