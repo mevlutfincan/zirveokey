@@ -93,6 +93,21 @@ async function main() {
   assert.equal(prefsB.settingDarkMode, undefined, 'A kullanıcısının ayarı B hesabına sızdı.');
   const invalidPreferences = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { isAdmin: true } } });
   assert.equal(invalidPreferences.status, 400, 'İzin verilmeyen hesap tercihi kabul edildi.');
+  const anonymousAvatar = await request('/api/account/avatar');
+  assert.equal(anonymousAvatar.status, 401, 'Oturumsuz kullanıcı avatar verisini okuyabildi.');
+  const avatarData = 'data:image/png;base64,iVBORw0KGgo=';
+  const saveAvatarA = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: avatarData } });
+  assert.equal(saveAvatarA.status, 200, 'A avatarını kaydedemedi.');
+  assert.equal((await saveAvatarA.json()).avatar, avatarData, 'Avatar kaydetme yanıtı farklı veri döndürdü.');
+  const savedAvatarA = await request('/api/account/avatar', { cookie: cookieA });
+  assert.equal((await savedAvatarA.json()).avatar, avatarData, 'Avatar oturum sonrası kalıcı değil.');
+  const avatarB = await request('/api/account/avatar', { cookie: cookieB });
+  assert.equal((await avatarB.json()).avatar, null, 'A kullanıcısının avatarı B hesabına sızdı.');
+  const invalidAvatar = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: 'https://example.com/avatar.png' } });
+  assert.equal(invalidAvatar.status, 400, 'Harici veya geçersiz avatar verisi kabul edildi.');
+  const removeAvatarA = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: null } });
+  assert.equal(removeAvatarA.status, 200, 'A varsayılan avatara dönemedi.');
+  assert.equal((await (await request('/api/account/avatar', { cookie: cookieA })).json()).avatar, null, 'Avatar silme işlemi kalıcı değil.');
 
   const anonymousNotifications = await request('/api/notifications');
   assert.equal(anonymousNotifications.status, 401, 'Oturumsuz kullanıcı bildirimleri okuyabildi.');
