@@ -2346,3 +2346,75 @@ nav.lobby-tabs>.lobby-tab:first-child{
 
 /* Hidden auth inputs must remain hidden after the modal input styling rules. */
 .game-auth-dialog form>input[hidden]{display:none!important}
+
+/* Header refresh: vivid green navigation grouped beside the brand. */
+.game-header{
+ display:flex!important;align-items:center!important;justify-content:flex-start!important;
+ gap:clamp(14px,2vw,28px)!important;padding:0 clamp(18px,3vw,42px)!important;
+ background:linear-gradient(100deg,rgba(5,18,10,.98),rgba(9,25,13,.96))!important;
+ border-bottom:1px solid rgba(128,244,70,.28)!important;
+ box-shadow:0 8px 28px rgba(0,0,0,.2),inset 0 -1px 0 rgba(126,227,78,.08)!important;
+}
+.game-brand{flex:0 0 auto!important;text-shadow:0 0 22px rgba(126,227,78,.15)}
+.game-brand b{color:#91f34e!important;text-shadow:0 0 16px rgba(126,243,78,.25)}
+.brand-crown{color:#a0fa59!important}
+.header-tools{display:flex;align-items:center;gap:9px;min-width:0;flex:1 1 auto}
+.header-tools .header-center{margin-right:8px;padding-right:16px;border-right:1px solid rgba(144,232,112,.2)}
+.header-tools .user-online-count{margin-right:3px}
+.header-tools .header-action{
+ width:42px!important;height:42px!important;border-radius:13px!important;
+ border:1px solid rgba(143,239,89,.34)!important;
+ color:#baff83!important;
+ background:linear-gradient(145deg,rgba(95,194,53,.24),rgba(25,67,31,.62))!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 4px 14px rgba(0,0,0,.18)!important;
+ font-size:19px!important;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease!important;
+}
+.header-tools .header-action:hover,.header-tools .header-action:focus-visible{
+ transform:translateY(-2px)!important;border-color:#a7ff68!important;
+ color:#f0ffe5!important;background:linear-gradient(145deg,#65d83d,#287e2c)!important;
+ box-shadow:0 0 0 3px rgba(130,239,78,.12),0 8px 22px rgba(67,194,48,.25)!important;outline:none!important;
+}
+.header-tools .header-action:active{transform:translateY(0) scale(.95)!important}
+.header-tools .user-online-count{
+ padding:10px 13px!important;border-radius:13px!important;
+ border:1px solid rgba(139,239,91,.32)!important;
+ background:linear-gradient(135deg,rgba(70,157,47,.23),rgba(21,54,27,.72))!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.06)!important;
+}
+.header-tools .user-online-count i{animation:headerLivePulse 1.8s ease-in-out infinite}
+.header-user{margin-left:auto!important;flex:0 0 auto!important;gap:10px!important}
+.header-user .user-avatar{border:1px solid rgba(151,242,99,.55)!important;box-shadow:0 0 16px rgba(106,220,61,.13)!important}
+.header-user .game-auth-actions .icon-button,.header-user>#gameLogoutButton{
+ border:1px solid rgba(147,240,91,.48)!important;color:#d7ffc1!important;
+ background:linear-gradient(135deg,rgba(87,180,48,.28),rgba(35,90,35,.65))!important;
+ transition:all .2s ease!important
+}
+.header-user .game-auth-actions .icon-button:hover,.header-user>#gameLogoutButton:hover{
+ color:#081508!important;background:linear-gradient(135deg,#a5f85c,#52d82f)!important;
+ border-color:#b5ff78!important;transform:translateY(-1px)!important;box-shadow:0 6px 18px rgba(80,208,44,.24)!important
+}
+@keyframes headerLivePulse{0%,100%{box-shadow:0 0 5px #7ee34e;opacity:1}50%{box-shadow:0 0 14px #9dff65;opacity:.65}}
+@media(max-width:760px){
+ .game-header{min-height:54px!important;height:auto!important;padding:6px 9px!important;gap:8px!important;flex-wrap:nowrap!important}
+ .game-brand{display:flex!important;font-size:18px!important;letter-spacing:-.7px!important}
+ .game-brand small,.brand-crown{display:none!important}
+ .header-tools{gap:5px!important;flex:0 1 auto!important}
+ .header-tools .header-center{display:none!important}
+ .header-tools .user-online-count{padding:6px 8px!important;gap:4px!important}
+ .header-tools .user-online-count small{display:none!important}
+ .header-tools .header-action{display:grid!important;width:32px!important;height:32px!important;min-width:32px!important;border-radius:9px!important;font-size:15px!important}
+ .header-user{flex:0 0 auto!important;gap:5px!important}
+ .header-user .user-avatar{width:30px!important;height:30px!important;flex:0 0 30px!important}
+ .header-user .user-meta{display:none!important}
+ .header-user .game-auth-actions{display:flex!important;gap:3px!important}
+ .header-user .game-auth-actions .icon-button,.header-user>#gameLogoutButton{height:31px!important;min-width:0!important;padding:0 7px!important;font-size:9px!important}
+}
+@media(max-width:390px){
+ .game-header{gap:5px!important;padding-left:6px!important;padding-right:6px!important}
+ .game-brand{font-size:16px!important}
+ .header-tools{gap:3px!important}
+ .header-tools .header-action{width:29px!important;min-width:29px!important;height:29px!important}
+ .header-tools .user-online-count{padding:5px!important}
+ .header-user .user-avatar{display:none!important}
+ .header-user .game-auth-actions .icon-button,.header-user>#gameLogoutButton{padding:0 5px!important;font-size:8px!important}
+}
