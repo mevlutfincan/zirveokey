@@ -496,7 +496,7 @@ const notificationList=$('#notificationList');
 const notificationUnreadLabel=$('#notificationUnreadLabel');
 const notificationStatus=$('#notificationStatus');
 const notificationPreferenceToggle=$('#notificationPreferenceToggle');
-let notificationUnreadCount=0,notificationPollTimer=null,notificationsEnabled=true,lastNotificationUnreadCount=null,notificationAudioContext=null;
+let notificationUnreadCount=0,notificationUnreadByCategory={},notificationPollTimer=null,notificationsEnabled=true,lastNotificationUnreadCount=null,notificationAudioContext=null;
 function prepareNotificationAudio(){const AudioContextClass=window.AudioContext||window.webkitAudioContext;if(!AudioContextClass)return;try{if(!notificationAudioContext)notificationAudioContext=new AudioContextClass();if(notificationAudioContext.state==='suspended')notificationAudioContext.resume().catch(()=>{});}catch(_){}}
 function playNotificationSound(){if(!memberPreferences.settingNotificationSound||!notificationsEnabled||!notificationAudioContext||notificationAudioContext.state!=='running')return;try{const oscillator=notificationAudioContext.createOscillator(),gain=notificationAudioContext.createGain(),now=notificationAudioContext.currentTime;oscillator.type='sine';oscillator.frequency.setValueAtTime(880,now);oscillator.frequency.exponentialRampToValueAtTime(660,now+.13);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.12,now+.015);gain.gain.exponentialRampToValueAtTime(.0001,now+.18);oscillator.connect(gain);gain.connect(notificationAudioContext.destination);oscillator.start(now);oscillator.stop(now+.19);}catch(_){}}
 function updateNotificationBadge(count){
@@ -513,6 +513,9 @@ function renderNotificationPreference(){
  notificationPreferenceToggle.classList.toggle('enabled',notificationsEnabled);
  notificationPreferenceToggle.querySelector('b').textContent=notificationsEnabled?'Açık':'Kapalı';
  $('#notificationPreferenceHint').textContent=notificationsEnabled?'Yeni bildirimleri alıyorsun.':'Yeni bildirimler gösterilmeyecek.';
+}
+function syncNotificationCategoryControls(){
+ settingsKeys.forEach(id=>{const control=$('#'+id);if(control)control.checked=!!memberPreferences[id];});
 }
 function isNotificationCategoryEnabled(category){
  const keys={friendship:'settingFriendRequests',players:'settingNotifyPlayers',game:'settingNotifyGame',system:'settingNotifySystem',management:'settingNotifyManagement',rewards:'settingNotifyRewards'};
@@ -532,7 +535,7 @@ async function loadNotifications(){
  try{
   const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});
   if(!response.ok)throw new Error(response.status===401?'Oturumun sona ermiş.':'Bildirimler yüklenemedi.');
-  const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();
+  const data=await response.json();memberPreferences={...preferenceDefaults,...memberPreferences,...(data.preferences||{})};notificationUnreadByCategory=data.unreadByCategory||{};notificationsEnabled=data.enabled!==false;syncNotificationCategoryControls();renderNotificationPreference();
   const visibleNotifications=(data.notifications||[]).filter(item=>isNotificationCategoryEnabled(item.category));
   updateNotificationBadge(visibleUnreadCount(data));
   notificationStatus.textContent=visibleNotifications.length+' bildirim';
@@ -584,7 +587,7 @@ document.addEventListener('click',e=>{
 });
 async function pollNotificationCount(){
  if(!gameSignedIn){updateNotificationBadge(0);return;}
- try{const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();notificationsEnabled=data.enabled!==false;renderNotificationPreference();const unread=visibleUnreadCount(data);if(lastNotificationUnreadCount!==null&&unread>lastNotificationUnreadCount)playNotificationSound();lastNotificationUnreadCount=unread;updateNotificationBadge(unread);if(!notificationsPopover.hidden)loadNotifications();}}
+ try{const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();memberPreferences={...preferenceDefaults,...memberPreferences,...(data.preferences||{})};notificationUnreadByCategory=data.unreadByCategory||{};syncNotificationCategoryControls();notificationsEnabled=data.enabled!==false;renderNotificationPreference();const unread=visibleUnreadCount(data);if(lastNotificationUnreadCount!==null&&unread>lastNotificationUnreadCount)playNotificationSound();lastNotificationUnreadCount=unread;updateNotificationBadge(unread);if(!notificationsPopover.hidden)loadNotifications();}}
  catch(_){}
 }
 pollNotificationCount();notificationPollTimer=setInterval(pollNotificationCount,30000);
@@ -634,7 +637,7 @@ function applyMemberSettings(values){
  notificationsEnabled=values.settingNotifications!==false;
  $('#notificationsButton').hidden=!notificationsEnabled;
  renderNotificationPreference();
- updateNotificationBadge(notificationUnreadCount);
+ updateNotificationBadge(visibleUnreadCount({unreadByCategory:notificationUnreadByCategory}));
  $('.user-online-count').hidden=!values.settingShowOnline;
 }
 let preferenceSaveQueue=Promise.resolve();
@@ -647,6 +650,7 @@ async function saveMemberPreferences(patch){
   memberPreferences={...preferenceDefaults,...data.preferences};
   settingsKeys.forEach(id=>{if($('#'+id))$('#'+id).checked=!!memberPreferences[id]});
   applyMemberSettings(memberPreferences);
+  if(Object.keys(patch).some(key=>key.startsWith('settingNotify')||key==='settingFriendRequests')&&!notificationsPopover.hidden)loadNotifications();
   if(Object.prototype.hasOwnProperty.call(patch,'settingShowOnline')){sendPresenceHeartbeat();loadOnlineMembers();}
   $('#settingsSaveState').textContent='Değişiklikler hesabına kaydedildi.';
  };
