@@ -609,23 +609,63 @@ $('#removeSettingAvatar').addEventListener('click',async()=>{
  try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:null})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaldırılamadı.');paintMemberAvatar(null);$('#settingAvatarFile').value='';$('#settingAvatarStatus').textContent='Avatar kaldırıldı.';notify('Avatar kaldırıldı.');}
  catch(error){$('#settingAvatarStatus').textContent=error.message;}
 });
-const settingsKeys=['settingAnimations','settingDarkMode','settingNotifications','settingShowOnline'];
+const settingsKeys=['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingShowOnline','settingPrivateMessages','settingFriendRequests','settingAutoArrange','settingConfirmExit','settingCompactUI'];
+let memberPreferences={};
+const preferenceDefaults={settingAnimations:true,settingDarkMode:true,settingNotifications:true,settingNotificationSound:false,settingShowOnline:true,settingPrivateMessages:true,settingFriendRequests:true,settingAutoArrange:false,settingConfirmExit:true,settingCompactUI:false};
 function applyMemberSettings(values){
  document.body.classList.toggle('member-reduce-motion',!values.settingAnimations);
  document.body.classList.toggle('member-light-theme',!values.settingDarkMode);
+ document.body.classList.toggle('member-compact-ui',!!values.settingCompactUI);
  $('#notificationsButton').hidden=!values.settingNotifications;
  $('.user-online-count').hidden=!values.settingShowOnline;
 }
-function readMemberSettings(){
- const defaults={settingAnimations:true,settingDarkMode:true,settingNotifications:true,settingShowOnline:true};
- try{return {...defaults,...JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}')}}catch{return defaults}
+async function saveMemberPreferences(patch){
+ if(!chatStyleAuthenticated)throw new Error('Ayarları kaydetmek için giriş yapmalısın.');
+ const response=await fetch('/api/account/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:patch})});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.error||'Ayarlar kaydedilemedi.');
+ memberPreferences={...preferenceDefaults,...data.preferences};
+ settingsKeys.forEach(id=>{if($('#'+id))$('#'+id).checked=!!memberPreferences[id]});
+ applyMemberSettings(memberPreferences);
+ $('#settingsSaveState').textContent='Değişiklikler hesabına kaydedildi.';
 }
-function loadMemberSettings(){
- const values=readMemberSettings();
- settingsKeys.forEach(id=>{$('#'+id).checked=!!values[id]});
- applyMemberSettings(values);
+async function loadMemberSettings(){
+ const saveState=$('#settingsSaveState');
+ memberPreferences={...preferenceDefaults};
+ if(chatStyleAuthenticated){
+  try{const response=await fetch('/api/account/preferences',{credentials:'same-origin',cache:'no-store'});const data=await response.json();if(!response.ok)throw new Error(data.error||'Ayarlar yüklenemedi.');memberPreferences={...preferenceDefaults,...data.preferences};saveState.textContent='Hesap ayarların yüklendi.';}
+  catch(error){saveState.textContent=error.message;notify(error.message);}
+ }else{saveState.textContent='Ayarları hesabına kaydetmek için giriş yap.';}
+ settingsKeys.forEach(id=>{if($('#'+id))$('#'+id).checked=!!memberPreferences[id]});
+ applyMemberSettings(memberPreferences);
+ $('#settingsAccountName').textContent=$('#gameUsername')?.textContent||'Üye hesabı';
 }
-$('#settingsButton').addEventListener('click',()=>{loadMemberSettings();loadMemberAvatar();settingsDialog.showModal()});
+function showSettingsCategory(category){
+ $$('.settings-category').forEach(button=>button.classList.toggle('active',button.dataset.settingsCategory===category));
+ $$('.settings-page').forEach(page=>{const active=page.dataset.settingsPage===category;page.hidden=!active;page.classList.toggle('active',active);});
+}
+$$('.settings-category').forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsCategory)));
+$('#closeMemberSettings').addEventListener('click',()=>settingsDialog.close());
+settingsDialog.addEventListener('click',e=>{if(e.target===settingsDialog)settingsDialog.close()});
+settingsKeys.forEach(id=>$('#'+id).addEventListener('change',async()=>{
+ const value=$('#'+id).checked;$('#settingsSaveState').textContent='Kaydediliyor…';
+ applyMemberSettings({...memberPreferences,[id]:value});
+ try{await saveMemberPreferences({[id]:value});}
+ catch(error){$('#'+id).checked=!value;applyMemberSettings(memberPreferences);$('#settingsSaveState').textContent=error.message;notify(error.message);}
+}));
+$('#settingsButton').addEventListener('click',async()=>{showSettingsCategory('account');await loadMemberSettings();loadMemberAvatar();settingsDialog.showModal();});
+function updateMemberColorPreview(){const name=$('#settingNickColor').value,text=$('#settingMessageColor').value;$('#memberColorPreviewName').style.color=name;$('#memberColorPreviewText').style.color=text;}
+$('#settingNickColor').addEventListener('input',updateMemberColorPreview);
+$('#settingMessageColor').addEventListener('input',updateMemberColorPreview);
+$('#saveMemberSettings').addEventListener('click',async()=>{
+ const nameColor=$('#settingNickColor').value,textColor=$('#settingMessageColor').value;
+ if(!chatStyleAuthenticated){$('#memberColorStatus').textContent='Renk tercihlerini kaydetmek için giriş yapmalısın.';notify('Renk ayarları için giriş yapmalısın.');return;}
+ const button=$('#saveMemberSettings');button.disabled=true;button.textContent='Kaydediliyor…';
+ try{const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor,textColor,rowColor:'#e8efe8'})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Renk tercihleri kaydedilemedi.');const saved=data.chatStyle||{nameColor,textColor};setChatColorInputs(saved);if(chatStyleAccountId)applyLobbyChatStyles([{id:chatStyleAccountId,chat_name_color:saved.nameColor,chat_text_color:saved.textColor}]);chatLastId=0;renderedChatMessageIds.clear();chatMessagesBox.replaceChildren();await loadLobbyMessages(true);$('#memberColorStatus').textContent='Nick ve sohbet yazı renklerin kaydedildi.';notify('Renk tercihlerin kaydedildi.');}
+ catch(error){$('#memberColorStatus').textContent=error.message;notify(error.message);}
+ finally{button.disabled=false;button.textContent='Renkleri kaydet';}
+});
+loadMemberSettings();loadMemberAvatar();settingsDialog.showModal()});
 function updateMemberColorPreview(){
  const name=$('#settingNickColor').value,text=$('#settingMessageColor').value;
  $('#memberColorPreviewName').style.color=name;
