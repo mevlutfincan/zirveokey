@@ -4,14 +4,20 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
-<link rel="stylesheet" href="/css/oyun.css?v=notifications-premium-20261031-11">
+<link rel="stylesheet" href="/css/oyun.css?v=notifications-single-feed-20261031-12">
 <script defer src="/js/oyun.js?v=login-modal-close-20261031-05"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
  <div class="game-brand"><span class="brand-crown">♛</span><span><b>Zirve</b>Okey</span></div>
  <div class="header-tools" aria-label="Oyun menüleri">
-  <button class="icon-button header-action" id="notificationsButton" type="button" aria-label="Bildirimler" aria-expanded="false" title="Bildirimler"><span aria-hidden="true">♧</span><small>Bildirimler</small></button>
+  <div class="notification-anchor">  <button class="icon-button header-action" id="notificationsButton" type="button" aria-label="Bildirimler" aria-expanded="false" title="Bildirimler"><span aria-hidden="true">♧</span><small>Bildirimler</small></button><section class="notification-panel" id="notificationsPopover" aria-label="Bildirim merkezi" hidden>
+ <header class="notification-head"><div><strong>Bildirimler</strong><small id="notificationUnreadLabel">Bildirimlerin</small></div><button type="button" id="notificationReadAll" class="notification-text-action">Tümünü okundu yap</button></header>
+ <div class="notification-preferences"><span><b>Bildirimleri al</b><small id="notificationPreferenceHint">Bildirimleri istediğin zaman kapatabilirsin.</small></span><button type="button" id="notificationPreferenceToggle" class="notification-switch" role="switch" aria-checked="true"><span></span><b>Açık</b></button></div>
+ 
+ <div class="notification-list" id="notificationList" aria-live="polite"><div class="notification-empty">Bildirimler yükleniyor…</div></div>
+ <footer class="notification-foot"><span id="notificationStatus">Bildirim geçmişin</span><button type="button" id="notificationClearAll" class="notification-text-action danger">Tümünü temizle</button></footer>
+</section></div>
   <button class="icon-button header-action" id="settingsButton" type="button" aria-label="Ayarlar" title="Ayarlar"><span aria-hidden="true">⚙</span><small>Ayarlar</small></button>
   <button class="icon-button header-action" id="fullscreenButton" type="button" aria-label="Tam ekran" title="Tam ekran"><span aria-hidden="true">⛶</span><small>Tam ekran</small></button>
   <span class="user-online-count" aria-live="polite" title="Çevrimiçi oyuncular"><i></i><b id="headerOnlineCount">0</b><small>Çevrimiçi</small></span>
@@ -23,14 +29,7 @@
  </div>
 </header>
 
-<section class="notification-panel" id="notificationsPopover" aria-label="Bildirim merkezi" hidden>
- <header class="notification-head"><div><strong>Bildirimler</strong><small id="notificationUnreadLabel">Giriş yapınca bildirimlerini görebilirsin</small></div><button type="button" id="notificationReadAll" class="notification-text-action">Tümünü okundu yap</button></header>
- <nav class="notification-filters" aria-label="Bildirim kategorileri">
-  <button type="button" class="active" data-notification-filter="all">Tümü</button><button type="button" data-notification-filter="friendship">Arkadaşlık</button><button type="button" data-notification-filter="players">Oyuncular</button><button type="button" data-notification-filter="game">Oyun</button><button type="button" data-notification-filter="system">Sistem</button><button type="button" data-notification-filter="management">Yönetim</button><button type="button" data-notification-filter="rewards">Ödüller</button>
- </nav>
- <div class="notification-list" id="notificationList" aria-live="polite"><div class="notification-empty">Bildirimler yükleniyor…</div></div>
- <footer class="notification-foot"><span id="notificationStatus">Bildirim geçmişin</span><button type="button" id="notificationClearAll" class="notification-text-action danger">Tümünü temizle</button></footer>
-</section>
+
 <nav class="lobby-tabs" aria-label="Lobi ve masa sekmeleri">
  <button class="lobby-tab active" type="button" data-tab="lobby"><span class="tab-symbol">⌂</span><span>Lobi</span><i class="tab-live"></i></button>
  <div class="tab-divider"></div>
