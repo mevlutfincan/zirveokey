@@ -4,8 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
-<link rel="stylesheet" href="/css/oyun.css?v=category-settings-20261031-08">
-<script defer src="/js/oyun.js?v=category-settings-20261031-08"></script>
+<link rel="stylesheet" href="/css/oyun.css?v=password-category-20261031-09">
+<script defer src="/js/oyun.js?v=password-category-20261031-09"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
@@ -97,6 +97,7 @@
     <button type="button" class="settings-category" data-settings-category="appearance">Görünüm ve Tema</button>
     <button type="button" class="settings-category" data-settings-category="avatar">Avatar Ayarları</button>
     <button type="button" class="settings-category" data-settings-category="colors">Renk Ayarları</button>
+    <button type="button" class="settings-category" data-settings-category="password">Şifre Değiştir</button>
    </nav>
    <small class="settings-save-state" id="settingsSaveState" aria-live="polite">Ayarlar hesabına kaydedilir.</small>
   </aside>
@@ -124,6 +125,13 @@
     <section class="settings-page" data-settings-page="avatar" hidden><span class="eyebrow">PROFİL GÖRSELİ</span><h3>Avatar Ayarları</h3>
      <div class="avatar-setting-row"><span class="user-avatar" id="settingsAvatarPreview">M</span><div><label class="primary-button" for="settingAvatarFile">Avatar seç</label><input type="file" id="settingAvatarFile" accept="image/png,image/jpeg,image/webp" hidden><small>PNG, JPG veya WebP · En fazla 1 MB</small></div></div>
      <button type="button" class="subtle-button" id="removeSettingAvatar">Avatarı kaldır</button><small id="settingAvatarStatus" class="chat-color-status" aria-live="polite">Avatarın profilinde ve oyun alanında kullanılacak.</small>
+    </section>
+    <section class="settings-page" data-settings-page="password" hidden><span class="eyebrow">GÜVENLİK</span><h3>Şifre Değiştir</h3><p>Hesabının güvenliği için mevcut şifreni ve yeni şifreni gir.</p>
+     <label class="setting-password-field">Mevcut şifre<input type="password" id="currentPassword" autocomplete="current-password" minlength="10" required></label>
+     <label class="setting-password-field">Yeni şifre<input type="password" id="newPassword" autocomplete="new-password" minlength="10" maxlength="72" required></label>
+     <label class="setting-password-field">Yeni şifre tekrar<input type="password" id="confirmNewPassword" autocomplete="new-password" minlength="10" maxlength="72" required></label>
+     <small id="passwordChangeStatus" class="chat-color-status" aria-live="polite">Şifren en az 10 karakter olmalıdır.</small>
+     <button type="button" class="primary-button" id="changeAccountPassword">Şifreyi güncelle</button>
     </section>
     <section class="settings-page" data-settings-page="colors" hidden><span class="eyebrow">KİŞİSELLEŞTİRME</span><h3>Renk Ayarları</h3>
      <label class="setting-row"><span><b>Nick Rengi</b><small>Lobi ve sohbet alanındaki kullanıcı adın</small></span><input type="color" id="settingNickColor" value="#111111"></label>
