@@ -280,7 +280,7 @@ app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
 }));
 app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarları kaydetmek için giriş yapmalısınız.' });
-  const allowed = ['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingShowOnline','settingPrivateMessages','settingFriendRequests','settingAutoArrange','settingConfirmExit','settingCompactUI'];
+  const allowed = ['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingShowOnline','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI'];
   const input = req.body?.preferences;
   if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(key => !allowed.includes(key)) || Object.values(input).some(value => typeof value !== 'boolean')) {
     return res.status(400).json({ error: 'Geçersiz ayar verisi.' });
@@ -414,14 +414,15 @@ app.post('/api/auth/reset-password', dbRequired, authLimiter, asyncRoute(async (
 const notificationCategories = ['friendship','players','game','system','management','rewards'];
 app.get('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Bildirimleri görmek için giriş yapmalısınız.'});
-  const pref=await pool.query('SELECT notifications_enabled FROM users WHERE id=$1',[req.session.user.id]);
+  const pref=await pool.query('SELECT notifications_enabled,member_preferences FROM users WHERE id=$1',[req.session.user.id]);
   const enabled=pref.rows[0]?.notifications_enabled===true;
   const [items,counts]=await Promise.all([
     pool.query('SELECT id,category,title,message,action_url,read_at,created_at FROM user_notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50',[req.session.user.id]),
-    pool.query('SELECT COUNT(*)::int AS unread FROM user_notifications WHERE user_id=$1 AND read_at IS NULL',[req.session.user.id])
+    pool.query('SELECT category,COUNT(*)::int AS unread FROM user_notifications WHERE user_id=$1 AND read_at IS NULL GROUP BY category',[req.session.user.id])
   ]);
+  const unreadByCategory=Object.fromEntries(counts.rows.map(row=>[row.category,row.unread]));
   res.setHeader('Cache-Control','no-store');
-  res.json({notifications:items.rows,unreadCount:enabled?counts.rows[0].unread:0,enabled});
+  res.json({notifications:items.rows,unreadByCategory,preferences:pref.rows[0]?.member_preferences||{},enabled});
 }));
 app.put('/api/notifications/preferences', dbRequired, asyncRoute(async(req,res)=>{
   if(!req.session.user?.id)return res.status(401).json({error:'Giriş yapmalısınız.'});
