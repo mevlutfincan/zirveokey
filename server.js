@@ -170,6 +170,7 @@ app.post('/api/auth/register', dbRequired, authLimiter, asyncRoute(async (req, r
       [username, username.toLocaleLowerCase('tr-TR'), email, email, hash, country, gender]
     );
     const user = result.rows[0];
+    await pool.query("INSERT INTO user_notifications(user_id,category,title,message) VALUES($1,'system',$2,$3)",[user.id,'ZirveOkey’e hoş geldin','Hesabın başarıyla oluşturuldu. Oyun lobisinde seni bekliyoruz.']);
     await new Promise((resolve, reject) => {
       req.session.regenerate(error => error ? reject(error) : resolve());
     });
@@ -197,6 +198,7 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
   const user = result.rows[0];
   const valid = user ? await bcrypt.compare(password, user.password_hash) : await bcrypt.compare(password, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
   if (!user || !valid) return res.status(401).json({ error: 'Giriş bilgileri hatalı.' });
+  await pool.query("INSERT INTO user_notifications(user_id,category,title,message) VALUES($1,'system',$2,$3)",[user.id,'Hesabına giriş yapıldı','ZirveOkey hesabına yeni bir oturum açıldı. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.']);
   await pool.query('UPDATE users SET last_login_at=NOW() WHERE id=$1', [user.id]);
   req.session.regenerate(err => {
     if (err) return res.status(500).json({ error: 'Oturum açılamadı.' });
