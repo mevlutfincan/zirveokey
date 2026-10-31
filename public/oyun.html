@@ -90,56 +90,81 @@
   <aside class="settings-sidebar">
    <div class="dialog-heading"><div><span class="eyebrow">ÜYE TERCİHLERİ</span><h2>Ayarlar</h2></div><button class="icon-button" id="closeMemberSettings" aria-label="Kapat">×</button></div>
    <nav class="settings-category-nav" aria-label="Ayar kategorileri">
-    <button type="button" class="settings-category active" data-settings-category="account">Hesap ve Profil</button>
-    <button type="button" class="settings-category" data-settings-category="notifications">Bildirim Tercihleri</button>
-    <button type="button" class="settings-category" data-settings-category="privacy">Sohbet ve Gizlilik</button>
-    <button type="button" class="settings-category" data-settings-category="game">Oyun Tercihleri</button>
-    <button type="button" class="settings-category" data-settings-category="appearance">Görünüm ve Tema</button>
-    <button type="button" class="settings-category" data-settings-category="avatar">Avatar Ayarları</button>
-    <button type="button" class="settings-category" data-settings-category="colors">Renk Ayarları</button>
-    <button type="button" class="settings-category" data-settings-category="password">Şifre Değiştir</button>
+    <button type="button" class="settings-category active" data-settings-category="account"><span>Hesap ve Profil</span><small>Hesap bilgilerin</small></button>
+    <button type="button" class="settings-category" data-settings-category="notifications"><span>Bildirimler</span><small>Uyarı ve ses tercihleri</small></button>
+    <button type="button" class="settings-category" data-settings-category="privacy"><span>Gizlilik ve Sohbet</span><small>Görünürlük ve iletişim</small></button>
+    <button type="button" class="settings-category" data-settings-category="appearance"><span>Görünüm</span><small>Tema ve arayüz</small></button>
+    <button type="button" class="settings-category" data-settings-category="avatar"><span>Avatarım</span><small>Profil görseli</small></button>
+    <button type="button" class="settings-category" data-settings-category="colors"><span>Sohbet Renkleri</span><small>Nick ve mesaj renkleri</small></button>
+    <button type="button" class="settings-category" data-settings-category="password"><span>Güvenlik</span><small>Şifre işlemleri</small></button>
    </nav>
    <small class="settings-save-state" id="settingsSaveState" aria-live="polite">Ayarlar hesabına kaydedilir.</small>
   </aside>
   <main class="settings-content">
    <form id="memberSettingsForm" novalidate>
-    <section class="settings-page active" data-settings-page="account"><span class="eyebrow">HESAP</span><h3>Hesap ve Profil Ayarları</h3><p>Hesap bilgilerin ve profil tercihlerin.</p><div class="settings-account-summary"><b id="settingsAccountName">Üye hesabı</b><small>Bu alandaki hesap bilgileri yalnızca sana aittir.</small></div></section>
-    <section class="settings-page" data-settings-page="notifications" hidden><span class="eyebrow">BİLDİRİMLER</span><h3>Bildirim Tercihleri</h3>
-     <label class="setting-row"><span><b>Bildirimleri göster</b><small>Yeni sistem bildirimlerini görüntüle</small></span><input type="checkbox" id="settingNotifications"></label>
-     <label class="setting-row"><span><b>Bildirim sesi</b><small>Desteklendiğinde bildirim sesi çal</small></span><input type="checkbox" id="settingNotificationSound"></label>
+    <section class="settings-page active" data-settings-page="account">
+     <span class="eyebrow">HESAP MERKEZİ</span><h3>Hesap ve Profil</h3><p>Üyelik durumunu görüntüle, profilini ve hesap güvenliğini yönet.</p>
+     <div class="settings-account-summary"><span class="settings-summary-label">OTURUM AÇIK HESAP</span><b id="settingsAccountName">Üye hesabı</b><small id="settingsAccountStatus">Hesap bilgilerin yalnızca sana gösterilir.</small></div>
+     <div class="settings-action-card"><div><b>Profil görselin</b><small>Avatarını değiştirmek için profil düzenleyicisini aç.</small></div><button type="button" class="settings-action-button" data-settings-open="avatar">Avatarı düzenle</button></div>
+     <div class="settings-action-card"><div><b>Hesap güvenliği</b><small>Şifreni düzenli aralıklarla güncel tut.</small></div><button type="button" class="settings-action-button" data-settings-open="password">Şifre işlemleri</button></div>
     </section>
-    <section class="settings-page" data-settings-page="privacy" hidden><span class="eyebrow">SOHBET VE GİZLİLİK</span><h3>Sohbet ve Gizlilik Ayarları</h3>
-     <label class="setting-row"><span><b>Çevrimiçi durumumu göster</b><small>Diğer üyeler çevrimiçi olduğunu görebilsin</small></span><input type="checkbox" id="settingShowOnline"></label>
-     <label class="setting-row"><span><b>Özel mesaj bildirimleri</b><small>Özel mesaj geldiğinde uyarı göster</small></span><input type="checkbox" id="settingPrivateMessages"></label>
-     <label class="setting-row"><span><b>Arkadaşlık istekleri</b><small>Arkadaşlık istekleri için bildirim al</small></span><input type="checkbox" id="settingFriendRequests"></label>
+    <section class="settings-page" data-settings-page="notifications" hidden>
+     <span class="eyebrow">BİLDİRİM MERKEZİ</span><h3>Bildirim Tercihleri</h3><p>Hangi uyarıları görmek istediğini belirle. Değişiklikler hesabına otomatik kaydedilir.</p>
+     <div class="settings-control-group">
+      <label class="setting-row"><span><b>Bildirimleri etkinleştir</b><small>Sistem ve hesap bildirimlerini göster</small></span><input type="checkbox" id="settingNotifications"></label>
+      <label class="setting-row"><span><b>Bildirim sesi</b><small>Yeni bildirim geldiğinde kısa sesli uyarı ver</small></span><input type="checkbox" id="settingNotificationSound"></label>
+     </div>
+     <details class="settings-disclosure"><summary>Bildirim ayarları hakkında</summary><p>Bildirimleri kapattığında bildirim paneli gizlenir. Bildirim geçmişin sunucudaki hesabında saklanmaya devam eder.</p></details>
     </section>
-    <section class="settings-page" data-settings-page="game" hidden><span class="eyebrow">OYUN</span><h3>Oyun Tercihleri</h3>
-     <label class="setting-row"><span><b>Taşları otomatik diz</b><small>Oyun başladığında taşlarını düzenle</small></span><input type="checkbox" id="settingAutoArrange"></label>
-     <label class="setting-row"><span><b>Masadan çıkış onayı</b><small>Masadan ayrılırken onay iste</small></span><input type="checkbox" id="settingConfirmExit"></label>
+    <section class="settings-page" data-settings-page="privacy" hidden>
+     <span class="eyebrow">GİZLİLİK KONTROLLERİ</span><h3>Gizlilik ve Sohbet</h3><p>Diğer üyelerin seni nasıl göreceğini ve iletişim tercihlerini yönet.</p>
+     <div class="settings-control-group">
+      <label class="setting-row"><span><b>Çevrimiçi durumumu göster</b><small>Çevrimiçi listesinde görünür ol</small></span><input type="checkbox" id="settingShowOnline"></label>
+      <label class="setting-row"><span><b>Özel mesaj bildirimleri</b><small>Özel mesaj bildirimlerine izin ver</small></span><input type="checkbox" id="settingPrivateMessages"></label>
+      <label class="setting-row"><span><b>Arkadaşlık isteği bildirimleri</b><small>Yeni arkadaşlık istekleri için uyarı al</small></span><input type="checkbox" id="settingFriendRequests"></label>
+     </div>
+     <details class="settings-disclosure"><summary>Gizlilik tercihlerinin kapsamı</summary><p>Çevrimiçi görünürlüğü kapatmak listede görünmeni sınırlar. Özel mesaj ve arkadaşlık tercihleri bildirim seçimini belirler; hesap erişimini veya mevcut bağlantılarını silmez.</p></details>
     </section>
-    <section class="settings-page" data-settings-page="appearance" hidden><span class="eyebrow">GÖRÜNÜM</span><h3>Görünüm ve Tema</h3>
-     <label class="setting-row"><span><b>Arayüz animasyonları</b><small>Geçiş ve hareket efektlerini göster</small></span><input type="checkbox" id="settingAnimations"></label>
-     <label class="setting-row"><span><b>Koyu görünüm</b><small>Oyun alanının koyu temasını kullan</small></span><input type="checkbox" id="settingDarkMode"></label>
-     <label class="setting-row"><span><b>Sade arayüz</b><small>Daha kompakt görünümü kullan</small></span><input type="checkbox" id="settingCompactUI"></label>
+    <section class="settings-page" data-settings-page="appearance" hidden>
+     <span class="eyebrow">ARAYÜZ KİŞİSELLEŞTİRME</span><h3>Görünüm ve Tema</h3><p>Arayüzün görünümünü ve hareket yoğunluğunu kendine göre ayarla.</p>
+     <div class="settings-control-group">
+      <label class="setting-row"><span><b>Koyu tema</b><small>ZirveOkey koyu renk temasını kullan</small></span><input type="checkbox" id="settingDarkMode"></label>
+      <label class="setting-row"><span><b>Animasyonlar</b><small>Arayüz geçiş ve hareket efektlerini göster</small></span><input type="checkbox" id="settingAnimations"></label>
+      <label class="setting-row"><span><b>Sade arayüz</b><small>Desteklenen alanlarda daha sıkı boşluklar kullan</small></span><input type="checkbox" id="settingCompactUI"></label>
+     </div>
+     <details class="settings-disclosure"><summary>Görünüm seçenekleri</summary><p>Tema ve animasyon tercihleri bu cihazda açık olan oyun arayüzüne uygulanır. Sade arayüz yalnızca desteklenen bileşenlerin boşluklarını azaltır.</p></details>
     </section>
-    <section class="settings-page" data-settings-page="avatar" hidden><span class="eyebrow">PROFİL GÖRSELİ</span><h3>Avatar Ayarları</h3>
-     <div class="avatar-setting-row"><span class="user-avatar" id="settingsAvatarPreview">M</span><div><label class="primary-button" for="settingAvatarFile">Avatar seç</label><input type="file" id="settingAvatarFile" accept="image/png,image/jpeg,image/webp" hidden><small>PNG, JPG veya WebP · En fazla 1 MB</small></div></div>
-     <button type="button" class="subtle-button" id="removeSettingAvatar">Avatarı kaldır</button><small id="settingAvatarStatus" class="chat-color-status" aria-live="polite">Avatarın profilinde ve oyun alanında kullanılacak.</small>
+    <section class="settings-page" data-settings-page="avatar" hidden>
+     <span class="eyebrow">PROFİL KİŞİSELLEŞTİRME</span><h3>Avatarım</h3><p>Profilinde ve oyun arayüzünde görünecek avatarını buradan yönet.</p>
+     <div class="avatar-editor">
+      <div class="avatar-preview-wrap"><span class="user-avatar avatar-editor-preview" id="settingsAvatarPreview">M</span><span class="avatar-preview-caption">ÖNİZLEME</span></div>
+      <div class="avatar-editor-actions"><b>Profil görseli</b><small>Kare ve net bir görsel kullanman önerilir.</small><label class="primary-button avatar-upload-button" for="settingAvatarFile">Yeni avatar seç</label><input type="file" id="settingAvatarFile" accept="image/png,image/jpeg,image/webp" hidden><button type="button" class="subtle-button" id="removeSettingAvatar">Varsayılan avatara dön</button></div>
+     </div>
+     <div class="avatar-guidelines"><b>Görsel gereksinimleri</b><span>PNG, JPG veya WebP</span><span>En fazla 1 MB</span><span>Kare görsel önerilir</span></div>
+     <small id="settingAvatarStatus" class="chat-color-status" aria-live="polite">Avatarın profilinde ve oyun alanında kullanılacak.</small>
     </section>
-    <section class="settings-page" data-settings-page="password" hidden><span class="eyebrow">GÜVENLİK</span><h3>Şifre Değiştir</h3><p>Hesabının güvenliği için mevcut şifreni ve yeni şifreni gir.</p>
-     <label class="setting-password-field">Mevcut şifre<input type="password" id="currentPassword" autocomplete="current-password" minlength="10" required></label>
-     <label class="setting-password-field">Yeni şifre<input type="password" id="newPassword" autocomplete="new-password" minlength="10" maxlength="72" required></label>
-     <label class="setting-password-field">Yeni şifre tekrar<input type="password" id="confirmNewPassword" autocomplete="new-password" minlength="10" maxlength="72" required></label>
-     <small id="passwordChangeStatus" class="chat-color-status" aria-live="polite">Şifren en az 10 karakter olmalıdır.</small>
-     <button type="button" class="primary-button" id="changeAccountPassword">Şifreyi güncelle</button>
+    <section class="settings-page" data-settings-page="colors" hidden>
+     <span class="eyebrow">SOHBET KİŞİSELLEŞTİRME</span><h3>Sohbet Renkleri</h3><p>Lobi sohbetinde kullanıcı adının ve mesajlarının nasıl görüneceğini düzenle.</p>
+     <div class="settings-color-controls">
+      <label class="setting-row"><span><b>Kullanıcı adı rengi</b><small>Nick rengini belirle</small></span><input type="color" id="settingNickColor" value="#111111"></label>
+      <label class="setting-row"><span><b>Mesaj yazısı rengi</b><small>Gönderdiğin mesajların rengini belirle</small></span><input type="color" id="settingMessageColor" value="#111111"></label>
+     </div>
+     <div class="chat-color-preview" id="memberColorPreview"><b id="memberColorPreviewName">KullanıcıAdı</b><span id="memberColorPreviewText">Mesajın böyle görünür.</span></div>
+     <small id="memberColorStatus" class="chat-color-status" aria-live="polite">Önizleme değişiklikleri anında gösterir.</small>
+     <button type="button" class="primary-button settings-primary-action" id="saveMemberSettings">Renkleri kaydet</button>
     </section>
-    <section class="settings-page" data-settings-page="colors" hidden><span class="eyebrow">KİŞİSELLEŞTİRME</span><h3>Renk Ayarları</h3>
-     <label class="setting-row"><span><b>Nick Rengi</b><small>Lobi ve sohbet alanındaki kullanıcı adın</small></span><input type="color" id="settingNickColor" value="#111111"></label>
-     <label class="setting-row"><span><b>Sohbet Yazı Rengi</b><small>Lobi sohbetinde mesajlarının rengi</small></span><input type="color" id="settingMessageColor" value="#111111"></label>
-     <div class="chat-color-preview" id="memberColorPreview"><b id="memberColorPreviewName">KullanıcıAdı</b><span id="memberColorPreviewText">Mesajın böyle görünür.</span></div><small id="memberColorStatus" class="chat-color-status" aria-live="polite">Renk tercihleri hesabına kaydedilir.</small>
-     <button type="button" class="primary-button" id="saveMemberSettings">Renkleri kaydet</button>
+    <section class="settings-page" data-settings-page="password" hidden>
+     <span class="eyebrow">HESAP GÜVENLİĞİ</span><h3>Şifre İşlemleri</h3><p>Hesap şifreni güvenli biçimde güncelle. Yeni şifreni başka sitelerde kullandığın şifrelerden farklı seç.</p>
+     <div class="password-form-card">
+      <label class="setting-password-field">Mevcut şifre<span class="password-input-wrap"><input type="password" id="currentPassword" autocomplete="current-password" required><button type="button" class="password-visibility-toggle" data-password-target="currentPassword" aria-label="Şifreyi göster">Göster</button></span></label>
+      <label class="setting-password-field">Yeni şifre<span class="password-input-wrap"><input type="password" id="newPassword" autocomplete="new-password" minlength="10" maxlength="72" required><button type="button" class="password-visibility-toggle" data-password-target="newPassword" aria-label="Şifreyi göster">Göster</button></span></label>
+      <label class="setting-password-field">Yeni şifre tekrar<span class="password-input-wrap"><input type="password" id="confirmNewPassword" autocomplete="new-password" minlength="10" maxlength="72" required><button type="button" class="password-visibility-toggle" data-password-target="confirmNewPassword" aria-label="Şifreyi göster">Göster</button></span></label>
+      <div class="password-strength-note"><b>Şifre koşulları</b><span>10-72 karakter arasında olmalı. Uzun ve tahmin edilmesi zor bir parola kullan.</span></div>
+      <small id="passwordChangeStatus" class="chat-color-status" aria-live="polite">Şifren en az 10 karakter olmalıdır.</small>
+      <button type="button" class="primary-button settings-primary-action" id="changeAccountPassword">Şifreyi güncelle</button>
+     </div>
     </section>
-    <div class="settings-footer"><small>Tercihler otomatik kaydedilir. Renk değişiklikleri için ayrıca kaydet.</small></div>
+    <div class="settings-footer"><small>Tercihler otomatik kaydedilir. Renkler ve şifre için ilgili sayfadaki kaydet düğmesini kullan.</small></div>
    </form>
   </main>
  </div>
