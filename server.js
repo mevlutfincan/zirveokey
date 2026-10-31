@@ -285,7 +285,14 @@ app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(key => !allowed.includes(key)) || Object.values(input).some(value => typeof value !== 'boolean')) {
     return res.status(400).json({ error: 'Geçersiz ayar verisi.' });
   }
-  const result = await pool.query('UPDATE users SET member_preferences=member_preferences || $1::jsonb WHERE id=$2 AND is_active=TRUE RETURNING member_preferences', [JSON.stringify(input), req.session.user.id]);
+  const result = await pool.query(
+    `UPDATE users
+     SET member_preferences=member_preferences || $1::jsonb,
+         notifications_enabled=CASE WHEN $2::boolean IS NULL THEN notifications_enabled ELSE $2::boolean END
+     WHERE id=$3 AND is_active=TRUE
+     RETURNING member_preferences`,
+    [JSON.stringify(input), Object.prototype.hasOwnProperty.call(input, 'settingNotifications') ? input.settingNotifications : null, req.session.user.id]
+  );
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
   res.json({ ok: true, preferences: result.rows[0].member_preferences });
 }));
@@ -419,7 +426,14 @@ app.get('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
 app.put('/api/notifications/preferences', dbRequired, asyncRoute(async(req,res)=>{
   if(!req.session.user?.id)return res.status(401).json({error:'Giriş yapmalısınız.'});
   if(typeof req.body.enabled!=='boolean')return res.status(400).json({error:'Bildirim tercihi geçersiz.'});
-  const result=await pool.query('UPDATE users SET notifications_enabled=$1 WHERE id=$2 RETURNING notifications_enabled',[req.body.enabled,req.session.user.id]);
+  const result=await pool.query(
+    `UPDATE users
+     SET notifications_enabled=$1,
+         member_preferences=member_preferences || jsonb_build_object('settingNotifications',$1)
+     WHERE id=$2
+     RETURNING notifications_enabled`,
+    [req.body.enabled,req.session.user.id]
+  );
   res.setHeader('Cache-Control','no-store');
   res.json({enabled:result.rows[0]?.notifications_enabled===true});
 }));
