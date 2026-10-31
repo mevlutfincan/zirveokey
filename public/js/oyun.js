@@ -608,7 +608,7 @@ $('#gameAuthForm').addEventListener('submit',async e=>{
   if(mode==='forgot'){
    $('#gameAuthMessage').textContent=data.message||'Adres kayıtlıysa sıfırlama bağlantısı gönderilecektir.';
   }else{
-   $('#gameLoginDialog').close();await refreshGameAccount();await loadLobbyMessages(true);await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
+   gameSignedIn=true;$('#gameLoginDialog').close();await refreshGameAccount();await loadLobbyMessages(true);await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
    if(pendingMembershipAction){const resume=pendingMembershipAction;pendingMembershipAction=null;resume();}
   }
  }catch(error){$('#gameAuthMessage').textContent=error.message;}
