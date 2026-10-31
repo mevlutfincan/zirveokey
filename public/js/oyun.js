@@ -4,7 +4,7 @@ const toast=$('#gameToast');let toastTimer;
 function notify(message){toast.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2600)}
 let tables=[],activeTable=null,selectedTile=null,idleTimer=null;
 let gameSignedIn=false,pendingMembershipAction=null;
-function requireGameMembership(action,onSuccess){if(gameSignedIn)return true;pendingMembershipAction=typeof onSuccess==='function'?onSuccess:null;openGameAuth('register');$('#gameAuthMessage').textContent=action+' için önce ücretsiz üyelik oluşturmalısın.';notify('Devam etmek için üye olmalısın.');return false;}
+function requireGameMembership(action,onSuccess){if(gameSignedIn)return true;pendingMembershipAction=typeof onSuccess==='function'?onSuccess:null;openGameAuth('login');$('#gameAuthMessage').textContent=action+' için önce hesabına giriş yapmalısın. Hesabın yoksa Üye Ol seçeneğini kullanabilirsin.';notify('Devam etmek için giriş yapmalısın.');return false;}
 const discarded=[];
 function lobbyNotice(message){const box=$('#chatMessages');const item=document.createElement('div');item.className='chat-system';item.textContent=message;box.append(item);box.scrollTop=box.scrollHeight;}
 function clearIdleTimer(){if(idleTimer){clearTimeout(idleTimer);idleTimer=null}}
@@ -609,7 +609,7 @@ $('#gameAuthForm').addEventListener('submit',async e=>{
    $('#gameAuthMessage').textContent=data.message||'Adres kayıtlıysa sıfırlama bağlantısı gönderilecektir.';
   }else{
    $('#gameLoginDialog').close();await refreshGameAccount();await loadLobbyMessages(true);await sendPresenceHeartbeat();await sendActivityHeartbeat();notify('Hoş geldin, '+data.user.username+'.');loadOnlineMembers();
-   if(mode==='register'&&pendingMembershipAction){const resume=pendingMembershipAction;pendingMembershipAction=null;resume();}
+   if(pendingMembershipAction){const resume=pendingMembershipAction;pendingMembershipAction=null;resume();}
   }
  }catch(error){$('#gameAuthMessage').textContent=error.message;}
  finally{submit.disabled=false;submit.textContent=mode==='register'?'Üye Ol':mode==='forgot'?'Sıfırlama Bağlantısı Gönder':'Giriş Yap';}
