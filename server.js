@@ -490,8 +490,21 @@ app.get('/api/account/avatar', dbRequired, activeAccountRequired, asyncRoute(asy
 app.put('/api/account/avatar', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Avatar değiştirmek için giriş yapmalısınız.' });
   const avatar = req.body.avatar === null ? null : String(req.body.avatar || '');
-  if (avatar !== null && (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar) || avatar.length > 1400000)) {
-    return res.status(400).json({ error: 'PNG, JPG veya WebP formatında, en fazla 1 MB bir görsel seçin.' });
+  if (avatar !== null) {
+    const match = avatar.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/);
+    if (!match || avatar.length > 1400000) {
+      return res.status(400).json({ error: 'PNG, JPG veya WebP formatında, en fazla 1 MB bir görsel seçin.' });
+    }
+    const bytes = Buffer.from(match[2], 'base64');
+    const canonicalBase64 = bytes.length > 0 && bytes.toString('base64') === match[2];
+    const validSignature = match[1] === 'png'
+      ? bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+      : match[1] === 'jpeg'
+        ? bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+        : bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
+    if (!canonicalBase64 || bytes.length > 1024 * 1024 || !validSignature) {
+      return res.status(400).json({ error: 'PNG, JPG veya WebP formatında, en fazla 1 MB bir görsel seçin.' });
+    }
   }
   const result = await pool.query('UPDATE users SET avatar_data=$1 WHERE id=$2 AND is_active=TRUE RETURNING avatar_data', [avatar, req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
