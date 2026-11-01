@@ -29,7 +29,7 @@ async function refreshAuthState(){
     const signedIn=data.authenticated===true;
     if(homeSignedIn!==signedIn){notificationSessionVersion++;if(!signedIn)notificationState=null;}
     homeSignedIn=signedIn;
-    if(signedIn){homePreferencesLoaded=await loadHomeAccountPreferences();if(homePreferencesLoaded){sendHomePresenceHeartbeat();sendActivityHeartbeat();}}else{homePreferencesLoaded=false;}
+    if(signedIn){homePreferencesLoaded=await loadHomeAccountPreferences();if(homePreferencesLoaded){applyMemberAppearance();sendHomePresenceHeartbeat();sendActivityHeartbeat();}}else{homePreferencesLoaded=false;document.body.classList.remove('soft-light');}
     authButtons.forEach(button=>button.hidden=signedIn);
     const notificationToggle=document.getElementById('notificationToggle');if(notificationToggle)notificationToggle.hidden=!signedIn;
     if(signedIn)loadNotifications();else closeNotificationPanel();
@@ -190,6 +190,10 @@ async function loadActiveMembers(){
 }
 let activityHeartbeatBusy=false;
 let homeSignedIn=false,homePreferencesLoaded=false;
+function applyMemberAppearance(){
+  try{const settings=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');document.body.classList.toggle('soft-light',settings.settingDarkMode===false);}
+  catch{document.body.classList.remove('soft-light');}
+}
 function readHomeShowOnlinePreference(){
   try{
     const settings=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');
