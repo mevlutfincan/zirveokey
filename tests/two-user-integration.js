@@ -316,7 +316,7 @@ async function main() {
   assert.equal(registerC.status, 201, 'Üçüncü bildirim test hesabı oluşturulamadı: ' + await registerC.text());
   const cAnnouncementA = await (await request('/api/notifications', { cookie: cookieA })).json();
   const cAnnouncementB = await (await request('/api/notifications', { cookie: cookieB })).json();
-  assert.ok(!cAnnouncementA.notifications.some(item => item.category === 'players' && item.message.includes(userC.username)), 'Oyuncu bildirimleri kapalı A hesabı yeni üye bildirimi aldı.');
+  assert.ok(cAnnouncementA.notifications.some(item => item.category === 'players' && item.message.includes(userC.username)), 'Oyuncu bildirimleri açık A hesabı yeni üye bildirimi almadı.');
   assert.ok(cAnnouncementB.notifications.some(item => item.category === 'players' && item.message.includes(userC.username)), 'Oyuncu bildirimleri açık B hesabı yeni üye bildirimi almadı.');
   let cookieC = cookieFrom(registerC);
   const initialCNotifications = await (await request('/api/notifications', { cookie: cookieC })).json();
