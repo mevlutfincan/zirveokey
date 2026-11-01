@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS email_change_tokens (
   used_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+ALTER TABLE email_change_tokens ADD COLUMN IF NOT EXISTS previous_email VARCHAR(254);
 CREATE INDEX IF NOT EXISTS email_change_user_idx ON email_change_tokens(user_id);
 CREATE INDEX IF NOT EXISTS email_change_expiry_idx ON email_change_tokens(expires_at);
 CREATE TABLE IF NOT EXISTS user_activity (user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), active_seconds BIGINT NOT NULL DEFAULT 0);
@@ -133,6 +134,13 @@ const contactLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Çok fazla iletişim isteği gönderdiniz. Lütfen daha sonra tekrar deneyin.' }
+});
+const emailVerifyLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Çok fazla doğrulama denemesi yapıldı. Daha sonra tekrar deneyin.' }
 });
 const notificationPreferenceByCategory = { friendship: 'settingFriendRequests', players: 'settingNotifyPlayers', game: 'settingNotifyGame', system: 'settingNotifySystem', management: 'settingNotifyManagement', rewards: 'settingNotifyRewards' };
 async function createUserNotification(userId, category, title, message, actionUrl = null) {
@@ -251,7 +259,7 @@ app.post('/api/account/email-change', dbRequired, activeAccountRequired, authLim
     const existing = await pool.query('SELECT 1 FROM users WHERE email_normalized=$1 AND id<>$2 LIMIT 1', [email, req.session.user.id]);
     if (existing.rowCount) return res.status(202).json({ ok: true, message: 'Adres uygunsa doğrulama bağlantısı gönderilecektir.' });
     await pool.query('UPDATE email_change_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [req.session.user.id]);
-    await pool.query('INSERT INTO email_change_tokens(user_id,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$2,$3,NOW()+INTERVAL \'30 minutes\')', [req.session.user.id, email, tokenHash]);
+    await pool.query('INSERT INTO email_change_tokens(user_id,previous_email,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$3,$3,$4,NOW()+INTERVAL \'30 minutes\')', [req.session.user.id, account.rows[0].email, email, tokenHash]);
     const mail = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
@@ -269,14 +277,14 @@ app.post('/api/account/email-change', dbRequired, activeAccountRequired, authLim
   }
 }));
 
-app.post('/api/account/email-change/verify', dbRequired, asyncRoute(async (req, res) => {
+app.post('/api/account/email-change/verify', dbRequired, emailVerifyLimiter, asyncRoute(async (req, res) => {
   const token = String(req.body?.token || '');
   if (!/^[a-f0-9]{64}$/.test(token)) return res.status(400).json({ error: 'Doğrulama bağlantısı geçersiz veya süresi dolmuş.' });
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const found = await client.query('SELECT id,user_id,new_email,new_email_normalized FROM email_change_tokens WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW() FOR UPDATE', [tokenHash]);
+    const found = await client.query('SELECT id,user_id,previous_email,new_email,new_email_normalized FROM email_change_tokens WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW() FOR UPDATE', [tokenHash]);
     if (!found.rows[0]) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Doğrulama bağlantısı geçersiz veya süresi dolmuş.' }); }
     const updated = await client.query('UPDATE users SET email=$1,email_normalized=$2 WHERE id=$3 AND is_active=TRUE RETURNING id', [found.rows[0].new_email, found.rows[0].new_email_normalized, found.rows[0].user_id]);
     if (!updated.rowCount) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Doğrulama bağlantısı geçersiz veya süresi dolmuş.' }); }
@@ -289,6 +297,16 @@ app.post('/api/account/email-change/verify', dbRequired, asyncRoute(async (req, 
     );
     await client.query('COMMIT');
     res.clearCookie('zirve.sid', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    if (found.rows[0].previous_email && process.env.RESEND_API_KEY && process.env.MAIL_FROM) {
+      try {
+        const notice = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: process.env.MAIL_FROM, to: [found.rows[0].previous_email], subject: 'ZirveOkey e-posta adresi değiştirildi', text: 'ZirveOkey hesabınızın e-posta adresi doğrulama işlemiyle değiştirildi. Bu işlemi siz yapmadıysanız derhal hesabınızın güvenliğini sağlayın ve destek ekibiyle iletişime geçin.' })
+        });
+        if (!notice.ok) console.error('Previous email security notice rejected:', notice.status);
+      } catch (noticeError) { console.error('Previous email security notice failed:', noticeError.message); }
+    }
     res.json({ ok: true, message: 'E-posta adresiniz doğrulandı ve güncellendi. Yeni adresinizle tekrar giriş yapabilirsiniz.' });
   } catch (error) {
     await client.query('ROLLBACK');
