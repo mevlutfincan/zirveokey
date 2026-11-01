@@ -63,6 +63,8 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'Puan Sıralaması'
           curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q '.community-card'
           curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q '.hero-copy'
+          curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q '.notification-panel'
+          curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q '.notification-toggle'
           curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q 'radio.is-open .radio-panel'
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'radioPlay'
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q '/api/radio/status'
