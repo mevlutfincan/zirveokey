@@ -532,6 +532,19 @@ async function openMemberProfile(memberId){
   $('#memberProfileTier').textContent=p.membership_tier==='gold'?'🪙 Gold Üye':p.membership_tier==='vip'?'💎 VIP Üye':'Normal Üye';
   $('#memberProfileStatus').textContent=({online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Meşgul',offline:'Çevrim Dışı'})[p.status]||'Çevrim Dışı';
   $('#memberProfileBio').textContent=p.bio||'Henüz profil açıklaması eklenmemiş.';
+  const hours=Math.floor(Number(p.active_seconds||0)/3600),days=Number(p.member_days||0);
+  $('#memberProfileStats').replaceChildren();
+  [['Üyelik',days+' gündür'],['Aktif süre',hours+' saat'],['Arkadaş',String(p.friend_count||0)]].forEach(([label,value])=>{const item=document.createElement('span');item.innerHTML='<small>'+label+'</small><b>'+value+'</b>';$('#memberProfileStats').append(item);});
+  const badges=[];
+  if(days>=30)badges.push('🏅 Topluluk Üyesi');
+  else if(days>=7)badges.push('🌱 Yeni Topluluk Üyesi');
+  if(hours>=10)badges.push('⭐ Sadık Oyuncu');
+  else if(hours>=1)badges.push('🎯 Aktif Üye');
+  if(p.membership_tier==='gold')badges.push('🪙 Gold Üye');
+  if(p.membership_tier==='vip')badges.push('💎 VIP Üye');
+  const badgeRoot=$('#memberProfileAchievements');badgeRoot.replaceChildren();
+  if(!badges.length){badgeRoot.textContent='Rozet kazanmak için toplulukta aktif ol.';}
+  else badges.forEach(label=>{const badge=document.createElement('span');badge.textContent=label;badgeRoot.append(badge);});
   const root=$('#memberProfileActions');root.replaceChildren();
   const add=(label,action)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>runMemberAction(action,activeSocialMember,p));root.append(b);};
   if(p.incoming_request)add('İsteği kabul et','accept');else if(!p.is_friend&&!p.outgoing_request)add('Arkadaş ekle','friend');else if(p.outgoing_request)add('İstek gönderildi','pending');
