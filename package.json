@@ -5,7 +5,8 @@
   "description": "ZirveOkey homepage",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test:webhook": "node --test tests/resend-webhook-signature.test.js"
   },
   "dependencies": {
     "express": "^4.21.2",
