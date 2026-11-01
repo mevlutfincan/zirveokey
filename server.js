@@ -164,21 +164,23 @@ app.get('/health', asyncRoute(async (_req, res) => {
   });
 }));
 
-app.get('/api/auth/me', dbRequired, (req, res) => {
+app.get('/api/auth/me', dbRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  const hasSessionCookie = String(req.headers.cookie || '').split(';').some(part => part.trim().startsWith('zirve.sid='));
-  const authenticated = Boolean(req.session?.user?.id);
-  console.info('[auth-session-check]', JSON.stringify({
-    path: req.path,
-    host: req.get('host'),
-    secure: req.secure,
-    hasSessionCookie,
-    sessionLoaded: Boolean(req.session),
-    authenticated
-  }));
-  if (!authenticated) return res.json({ authenticated: false });
+  const userId = req.session?.user?.id;
+  if (!userId) return res.json({ authenticated: false });
+  const result = await pool.query('SELECT id,username,email FROM users WHERE id=$1 AND is_active=TRUE', [userId]);
+  if (!result.rows[0]) {
+    await new Promise(resolve => {
+      if (!req.session) return resolve();
+      req.session.destroy(() => resolve());
+    });
+    res.clearCookie('zirve.sid', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    return res.json({ authenticated: false });
+  }
+  const user = result.rows[0];
+  req.session.user = { id: user.id, username: user.username, email: user.email };
   res.json({ authenticated: true, user: req.session.user });
-});
+}));
 
 app.post('/api/auth/register', dbRequired, authLimiter, asyncRoute(async (req, res) => {
   const username = String(req.body.username || '').trim();
@@ -368,7 +370,7 @@ app.put('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
   const rowColor = req.body.rowColor === undefined ? null : String(req.body.rowColor || '').toLowerCase();
   const validHex = value => /^#[0-9a-f]{6}$/.test(value);
   if (!validHex(nameColor) || !validHex(textColor) || (rowColor !== null && !validHex(rowColor))) return res.status(400).json({ error: 'Geçerli bir HEX renk seçin.' });
-  const result = await pool.query('UPDATE users SET chat_name_color=$1,chat_text_color=$2,chat_row_color=COALESCE($3,chat_row_color) WHERE id=$4 RETURNING chat_name_color,chat_text_color,chat_row_color', [nameColor, textColor, rowColor, req.session.user.id]);
+  const result = await pool.query('UPDATE users SET chat_name_color=$1,chat_text_color=$2,chat_row_color=COALESCE($3,chat_row_color) WHERE id=$4 AND is_active=TRUE RETURNING chat_name_color,chat_text_color,chat_row_color', [nameColor, textColor, rowColor, req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
   res.json({ ok: true, chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color, rowColor: result.rows[0].chat_row_color } });
 }));
