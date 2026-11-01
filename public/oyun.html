@@ -128,11 +128,15 @@
      <details class="settings-disclosure"><summary>Bildirim ayarları hakkında</summary><p>Bildirimleri kapattığında bildirim paneli gizlenir. Bildirim geçmişin sunucudaki hesabında saklanmaya devam eder.</p></details>
     </section>
     <section class="settings-page" data-settings-page="privacy" hidden>
-     <span class="eyebrow">GİZLİLİK KONTROLLERİ</span><h3>Gizlilik ve Sohbet</h3><p>Diğer üyelerin seni çevrimiçi listesinde görüp görmeyeceğini yönet.</p>
+     <span class="eyebrow">ÜYE DURUMU</span><h3>Çevrim İçi Durumum</h3><p>Çevrim içi listesinde adın her zaman görünür. Buradan o anki durumunu seçebilirsin.</p>
      <div class="settings-control-group">
-      <label class="setting-row"><span><b>Çevrimiçi durumumu göster</b><small>Çevrimiçi listesinde görünür ol</small></span><input type="checkbox" id="settingShowOnline"></label>
+      <label class="setting-row" for="settingPresenceStatus"><span><b>Durumum</b><small>Diğer üyelerin göreceği durum etiketi</small></span>
+       <select id="settingPresenceStatus" class="setting-select">
+        <option value="online">Çevrim İçi</option><option value="away">Dışarda</option><option value="sleeping">Uyuyorum</option><option value="busy">Şu Anda Meşgul</option>
+       </select>
+      </label>
      </div>
-     <details class="settings-disclosure"><summary>Gizlilik tercihlerinin kapsamı</summary><p>Çevrimiçi görünürlüğü kapatmak listede görünmeni sınırlar. Arkadaşlık isteği bildirimlerini Bildirimler kategorisinden ayrı olarak açıp kapatabilirsin.</p></details>
+     <details class="settings-disclosure"><summary>Durum seçenekleri</summary><p>Durumunu değiştirdiğinde kullanıcı adın çevrim içi listesinden kaldırılmaz; yalnızca durum etiketin güncellenir.</p></details>
     </section>
     <section class="settings-page" data-settings-page="avatar" hidden>
      <span class="eyebrow">PROFİL KİŞİSELLEŞTİRME</span><h3>Avatarım</h3><p>Profilinde ve oyun arayüzünde görünecek avatarını buradan yönet.</p>
