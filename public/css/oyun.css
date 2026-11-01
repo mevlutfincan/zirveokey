@@ -2697,3 +2697,10 @@ nav.lobby-tabs>.lobby-tab:first-child{
 #memberReportForm label{display:grid;gap:6px;color:#cbdac5;font-size:12px}
 #memberReportForm textarea{min-height:110px;resize:vertical}
 @media(max-width:760px){.online-panel-actions{gap:3px}.online-panel-actions>button{padding:5px 6px;font-size:9px}.member-social-dialog{padding:20px 16px}.social-list-item{flex-wrap:wrap}.member-profile-actions button{flex:1 1 42%}}
+
+.member-profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.member-profile-stats>span{display:grid;gap:4px;padding:10px;border:1px solid #ffffff16;border-radius:9px;background:#ffffff08}
+.member-profile-stats small{color:#a8b9a2;font-size:10px}.member-profile-stats b{font-size:13px;color:#edf5e9}
+.member-profile-achievements{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.member-profile-achievements>span{padding:6px 9px;border:1px solid #b7a05b55;border-radius:20px;background:#a68a2c1a;color:#e8d18c;font-size:10px}
+@media(max-width:420px){.member-profile-stats{gap:5px}.member-profile-stats>span{padding:8px 5px}.member-profile-stats b{font-size:11px}}
