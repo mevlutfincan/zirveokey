@@ -946,7 +946,9 @@ function openGameAuth(mode='login'){
  $('#gameAuthMessage').textContent='';
  $('#gameLoginDialog').showModal();
 }
+let gameAuthCheckSequence=0;
 async function refreshGameAccount(){
+ const checkSequence=++gameAuthCheckSequence;
  let data;
  try{
   const r=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
@@ -960,6 +962,7 @@ async function refreshGameAccount(){
   $('#chatInput').placeholder='Oturum doğrulanamadı';$('#chatForm button[type="submit"]').disabled=true;
   console.error('Oyun hesabı doğrulama hatası:',error);return;
  }
+ if(checkSequence!==gameAuthCheckSequence)return;
  const signed=data.authenticated===true;
  gameSignedIn=signed;chatDisplayEnabled=signed;
  if(!signed){chatMessagesBox.replaceChildren();renderedChatMessageIds.clear();}
@@ -1017,7 +1020,9 @@ $('#gameLogoutButton').addEventListener('click',async()=>{
 });
 
 refreshGameAccount().then(async()=>{await loadMemberSettings();await loadLobbyMessages(true);await loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();}).catch(error=>console.error('Hesap başlangıcı:',error));loadLobbyChatStyles();
-window.setInterval(()=>{loadLobbyMessages(false);loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();},25000);
+window.setInterval(()=>{refreshGameAccount().catch(error=>console.error('Oturum yenileme hatası:',error));loadLobbyMessages(false);loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();},25000);
+window.addEventListener('focus',()=>{refreshGameAccount().catch(error=>console.error('Oturum odak yenileme hatası:',error));});
+window.addEventListener('pageshow',()=>{refreshGameAccount().catch(error=>console.error('Oturum sayfa yenileme hatası:',error));});
 window.setInterval(loadLobbyChatStyles,10000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){loadLobbyMessages(false);loadLobbyChatStyles();loadOnlineMembers();sendPresenceHeartbeat();sendActivityHeartbeat();}});
 renderTabs();renderLobby();renderRack();
