@@ -442,6 +442,14 @@ async function main() {
     const emailToken = randomUUID().replaceAll('-', '').repeat(2);
     const newEmailD = 'verified-' + suffix + '@example.invalid';
     const userDId = await testDb.query('SELECT id FROM users WHERE username_normalized=LOWER($1)', [userD.username]);
+    const userBId = await testDb.query('SELECT id FROM users WHERE username_normalized=LOWER($1)', [users[1].username]);
+    await testDb.query("UPDATE user_presence SET last_seen_at=NOW()-INTERVAL '2 minutes' WHERE user_id=$1", [userBId.rows[0].id]);
+    const stalePresenceResponse = await request('/api/presence/online');
+    assert.equal(stalePresenceResponse.status, 200, 'Eski çevrimiçi kayıtları sorgulanamadı.');
+    const stalePresenceMembers = (await stalePresenceResponse.json()).members;
+    assert.ok(!stalePresenceMembers.some(member => member.username === users[1].username), '90 saniyeyi aşan hareketsiz kullanıcı çevrimiçi listede kaldı.');
+    const restorePresenceB = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
+    assert.equal(restorePresenceB.status, 204, 'Eski presence kaydı test sonrası yenilenemedi.');
     await testDb.query('INSERT INTO email_change_tokens(user_id,previous_email,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$3,$3,$4,NOW()+INTERVAL \'30 minutes\')', [userDId.rows[0].id, userD.email, newEmailD, require('node:crypto').createHash('sha256').update(emailToken).digest('hex')]);
     const verifyEmailD = await request('/api/account/email-change/verify', { method: 'POST', body: { token: emailToken } });
     assert.equal(verifyEmailD.status, 200, 'Geçerli e-posta doğrulama bağlantısı çalışmadı: ' + await verifyEmailD.text());
