@@ -29,10 +29,119 @@ async function refreshAuthState(){
     homeSignedIn=signedIn;
     if(signedIn){homePreferencesLoaded=await loadHomeAccountPreferences();if(homePreferencesLoaded){sendHomePresenceHeartbeat();sendActivityHeartbeat();}}else{homePreferencesLoaded=false;}
     authButtons.forEach(button=>button.hidden=signedIn);
+    const notificationToggle=document.getElementById('notificationToggle');if(notificationToggle)notificationToggle.hidden=!signedIn;
+    if(signedIn)loadNotifications();else closeNotificationPanel();
     ['logoutButton','mobileLogoutButton'].forEach(id=>{const button=document.getElementById(id);if(button)button.hidden=!signedIn;});
     ['accountGreeting','mobileAccountGreeting'].forEach(id=>{const el=document.getElementById(id);if(el){el.hidden=!signedIn;el.textContent=signedIn?'Merhaba, '+data.user.username:'';}});
   }catch(error){console.warn('Oturum durumu kontrol edilemedi:',error.message);}
 }
+let notificationState=null,notificationBusy=false;
+const notificationPanel=document.getElementById('notificationPanel');
+const notificationToggle=document.getElementById('notificationToggle');
+function closeNotificationPanel(){
+  if(!notificationPanel||!notificationToggle)return;
+  notificationPanel.hidden=true;
+  notificationToggle.setAttribute('aria-expanded','false');
+}
+function notificationDate(value){
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('tr-TR',{dateStyle:'short',timeStyle:'short'}).format(date);
+}
+function renderNotifications(){
+  if(!notificationState)return;
+  const items=document.getElementById('notificationItems');
+  const unread=Object.values(notificationState.unreadByCategory||{}).reduce((sum,count)=>sum+Number(count||0),0);
+  const badge=document.getElementById('notificationBadge');
+  badge.hidden=unread===0;badge.textContent=unread>99?'99+':String(unread);
+  document.getElementById('notificationSummary').textContent=unread?unread+' okunmamış bildirim':'Okunmamış bildirimin yok.';
+  document.getElementById('notificationsEnabled').checked=notificationState.enabled===true;
+  document.querySelectorAll('[data-notification-category]').forEach(input=>{
+    const key=input.dataset.notificationCategory;
+    input.checked=notificationState.preferences?.[key]!==false;
+    input.disabled=!notificationState.enabled;
+  });
+  items.replaceChildren();
+  if(!notificationState.notifications?.length){
+    const empty=document.createElement('p');empty.className='notification-empty';empty.textContent='Henüz bildirimin yok.';items.append(empty);return;
+  }
+  notificationState.notifications.forEach(item=>{
+    const article=document.createElement('article');article.className='notification-item'+(item.read_at?'':' is-unread');
+    const copy=document.createElement('div');copy.className='notification-copy';
+    const title=document.createElement('strong');title.textContent=item.title||'Bildirim';
+    const message=document.createElement('p');message.textContent=item.message||'';
+    const meta=document.createElement('small');meta.textContent=notificationDate(item.created_at);
+    copy.append(title,message,meta);
+    if(item.action_url){
+      try{const action=new URL(item.action_url,window.location.origin);if(action.origin===window.location.origin){const link=document.createElement('a');link.href=action.href;link.textContent='Görüntüle';copy.append(link);}}
+      catch{}
+    }
+    const actions=document.createElement('div');actions.className='notification-item-actions';
+    if(!item.read_at){const read=document.createElement('button');read.type='button';read.textContent='Okundu';read.addEventListener('click',()=>mutateNotification('/api/notifications/'+encodeURIComponent(item.id)+'/read','POST'));actions.append(read);}
+    const remove=document.createElement('button');remove.type='button';remove.textContent='Sil';remove.addEventListener('click',()=>mutateNotification('/api/notifications/'+encodeURIComponent(item.id),'DELETE'));actions.append(remove);
+    article.append(copy,actions);items.append(article);
+  });
+}
+async function loadNotifications(){
+  if(!homeSignedIn||notificationBusy)return;
+  notificationBusy=true;
+  try{
+    const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'Bildirimler alınamadı.');
+    notificationState=data;renderNotifications();
+  }catch(error){
+    const items=document.getElementById('notificationItems');
+    if(items){const message=document.createElement('p');message.className='notification-empty';message.textContent=error.message;items.replaceChildren(message);}
+  }finally{notificationBusy=false;}
+}
+async function mutateNotification(url,method){
+  try{
+    const response=await fetch(url,{method,credentials:'same-origin',cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'Bildirim işlemi tamamlanamadı.');
+    await loadNotifications();
+  }catch(error){alert(error.message);}
+}
+async function saveNotificationCategories(changes){
+  const status=document.getElementById('notificationSettingsStatus');
+  try{
+    const response=await fetch('/api/account/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:changes})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'Bildirim ayarı kaydedilemedi.');
+    notificationState.preferences={...(notificationState.preferences||{}),...(data.preferences||{}),...changes};
+    try{const saved=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');localStorage.setItem('zirveMemberSettings',JSON.stringify({...saved,...changes}));}catch{}
+    status.textContent='Bildirim kategorileri kaydedildi.';
+    renderNotifications();
+  }catch(error){status.textContent=error.message;await loadNotifications();}
+}
+notificationToggle?.addEventListener('click',async()=>{
+  const open=notificationPanel.hidden;
+  notificationPanel.hidden=!open;
+  notificationToggle.setAttribute('aria-expanded',String(open));
+  if(open)await loadNotifications();
+});
+document.getElementById('notificationClose')?.addEventListener('click',closeNotificationPanel);
+document.getElementById('notificationsEnabled')?.addEventListener('change',async event=>{
+  const checkbox=event.currentTarget;checkbox.disabled=true;
+  try{
+    const response=await fetch('/api/notifications/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:checkbox.checked})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'Bildirim tercihi kaydedilemedi.');
+    notificationState.enabled=data.enabled===true;
+    notificationState.preferences={...(notificationState.preferences||{}),settingNotifications:notificationState.enabled};
+    try{const saved=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');localStorage.setItem('zirveMemberSettings',JSON.stringify({...saved,settingNotifications:notificationState.enabled}));}catch{}
+    renderNotifications();
+  }catch(error){alert(error.message);checkbox.checked=notificationState?.enabled===true;}
+  finally{checkbox.disabled=false;}
+});
+document.querySelectorAll('[data-notification-category]').forEach(input=>input.addEventListener('change',()=>{
+  const changes={[input.dataset.notificationCategory]:input.checked};
+  saveNotificationCategories(changes);
+}));
+document.getElementById('markAllNotificationsRead')?.addEventListener('click',()=>mutateNotification('/api/notifications/read-all','POST'));
+document.addEventListener('click',event=>{
+  if(notificationPanel&&!notificationPanel.hidden&&!notificationPanel.contains(event.target)&&!notificationToggle?.contains(event.target))closeNotificationPanel();
+});
 async function loadNewMembers(){
   const target=document.getElementById('newMembersList');
   if(!target)return;
@@ -174,7 +283,7 @@ function closeModal(){
 $('#modalClose').addEventListener('click',closeModal);
 backdrop.addEventListener('click',e=>{if(e.target===backdrop)closeModal();});
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){if(!backdrop.hidden)closeModal();else closeNav();}
+  if(e.key==='Escape'){if(!backdrop.hidden)closeModal();else if(notificationPanel&&!notificationPanel.hidden)closeNotificationPanel();else closeNav();}
   if(e.key==='Tab'&&!backdrop.hidden){
     const focusable=[...backdrop.querySelectorAll('button:not([disabled]),input:not([hidden]):not([disabled]),select:not([disabled])')];
     const first=focusable[0],last=focusable[focusable.length-1];
