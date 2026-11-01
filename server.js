@@ -115,6 +115,22 @@ const lobbyMessageLimiter = rateLimit({
   message: { error: 'Çok sık mesaj gönderiyorsunuz. Lütfen biraz bekleyin.' }
 });
 const asyncRoute = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Çok fazla iletişim isteği gönderdiniz. Lütfen daha sonra tekrar deneyin.' }
+});
+const notificationPreferenceByCategory = { friendship: 'settingFriendRequests', players: 'settingNotifyPlayers', game: 'settingNotifyGame', system: 'settingNotifySystem', management: 'settingNotifyManagement', rewards: 'settingNotifyRewards' };
+async function createUserNotification(userId, category, title, message, actionUrl = null) {
+  const preferenceKey = notificationPreferenceByCategory[category];
+  if (!preferenceKey) throw new Error('Unsupported notification category');
+  return pool.query(
+    'INSERT INTO user_notifications(user_id,category,title,message,action_url) SELECT id,$2,$3,$4,$5 FROM users WHERE id=$1 AND is_active=TRUE AND notifications_enabled=TRUE AND COALESCE(member_preferences->>$6,\'true\') <> \'false\'',
+    [userId, category, title, message, actionUrl, preferenceKey]
+  );
+}
 const activeAccountRequired = asyncRoute(async (req, res, next) => {
   const userId = req.session?.user?.id;
   if (!userId) return res.status(401).json({ error: 'Giriş yapmalısınız.' });
@@ -219,7 +235,11 @@ app.post('/api/auth/register', dbRequired, authLimiter, asyncRoute(async (req, r
       [username, username.toLocaleLowerCase('tr-TR'), email, email, hash, country, gender]
     );
     const user = result.rows[0];
-    await pool.query("INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",[user.id,'ZirveOkey’e hoş geldin','Hesabın başarıyla oluşturuldu. Oyun lobisinde seni bekliyoruz.']);
+    await createUserNotification(user.id, 'system', 'ZirveOkey’e hoş geldin', 'Hesabın başarıyla oluşturuldu. Oyun lobisinde seni bekliyoruz.');
+    await pool.query(
+      "INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'players',$2,$3 FROM users WHERE id<>$1 AND is_active=TRUE AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifyPlayers','true') <> 'false'",
+      [user.id, 'Yeni üye aramızda', user.username + ' ZirveOkey ailesine katıldı.']
+    );
     await new Promise((resolve, reject) => {
       req.session.regenerate(error => error ? reject(error) : resolve());
     });
@@ -247,7 +267,7 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
   const user = result.rows[0];
   const valid = user ? await bcrypt.compare(password, user.password_hash) : await bcrypt.compare(password, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
   if (!user || !valid) return res.status(401).json({ error: 'Giriş bilgileri hatalı.' });
-  await pool.query("INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",[user.id,'Hesabına giriş yapıldı','ZirveOkey hesabına yeni bir oturum açıldı. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.']);
+  await createUserNotification(user.id, 'system', 'Hesabına giriş yapıldı', 'ZirveOkey hesabına yeni bir oturum açıldı. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.');
   await pool.query('UPDATE users SET last_login_at=NOW() WHERE id=$1', [user.id]);
   req.session.regenerate(err => {
     if (err) return res.status(500).json({ error: 'Oturum açılamadı.' });
@@ -429,6 +449,29 @@ app.post('/api/lobby/messages', dbRequired, lobbyMessageLimiter, activeAccountRe
 }));
 
 
+app.get('/api/contact/status', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ configured: Boolean(process.env.RESEND_API_KEY && process.env.MAIL_FROM && process.env.SUPPORT_EMAIL) });
+});
+
+app.post('/api/contact', contactLimiter, asyncRoute(async (req, res) => {
+  const name = String(req.body?.name || '').trim();
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const subject = String(req.body?.subject || '').trim();
+  const message = String(req.body?.message || '').trim();
+  if (name.length < 2 || name.length > 80) return res.status(400).json({ error: 'Ad alanı 2-80 karakter arasında olmalı.' });
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+  if (subject.length < 3 || subject.length > 120) return res.status(400).json({ error: 'Konu 3-120 karakter arasında olmalı.' });
+  if (message.length < 10 || message.length > 3000) return res.status(400).json({ error: 'Mesaj 10-3000 karakter arasında olmalı.' });
+  if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.SUPPORT_EMAIL) return res.status(503).json({ error: 'İletişim gönderim kanalı henüz yapılandırılmadı.' });
+  const mail = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: process.env.MAIL_FROM, to: [process.env.SUPPORT_EMAIL], reply_to: email, subject: '[ZirveOkey Destek] ' + subject, text: 'Gönderen: ' + name + '\\nE-posta: ' + email + '\\n\\n' + message })
+  });
+  if (!mail.ok) { console.error('Contact email provider rejected the request:', mail.status); return res.status(502).json({ error: 'Mesaj şu anda gönderilemedi. Lütfen daha sonra tekrar deneyin.' }); }
+  res.status(202).json({ ok: true, message: 'Mesajın destek ekibine iletildi.' });
+}));
 app.post('/api/auth/forgot-password', dbRequired, resetLimiter, asyncRoute(async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
