@@ -307,6 +307,20 @@ async function main() {
   });
   assert.equal(restoredStyleResponse.status, 200, 'Açık renklerden sonra renkler yeniden değiştirilemedi.');
 
+  const anonymousActivityHeartbeat = await request('/api/activity/heartbeat', { method: 'POST' });
+  assert.equal(anonymousActivityHeartbeat.status, 401, 'Oturumsuz kullanıcı aktiflik kaydı oluşturabildi.');
+  const anonymousPresenceHeartbeat = await request('/api/presence/heartbeat', { method: 'POST', body: { showOnline: true } });
+  assert.equal(anonymousPresenceHeartbeat.status, 401, 'Oturumsuz kullanıcı çevrimiçi durumunu değiştirebildi.');
+  const publicNewMembers = await request('/api/public/new-members');
+  assert.equal(publicNewMembers.status, 200, 'Anasayfa yeni üyeler listesi alınamadı.');
+  assert.equal(publicNewMembers.headers.get('cache-control'), 'public, max-age=60', 'Yeni üyeler listesi önbellek politikası beklenmiyor.');
+  const publicActiveMembers = await request('/api/public/active-members');
+  assert.equal(publicActiveMembers.status, 200, 'Anasayfa aktif üyeler listesi alınamadı.');
+  assert.equal(publicActiveMembers.headers.get('cache-control'), 'public, max-age=60', 'Aktif üyeler listesi önbellek politikası beklenmiyor.');
+  const activeMemberPayload = await publicActiveMembers.json();
+  assert.ok(Array.isArray(activeMemberPayload.members), 'Aktif üyeler yanıtı dizi döndürmedi.');
+  assert.ok(activeMemberPayload.members.length <= 5, 'Aktif üyeler listesi beş kişi sınırını aştı.');
+
   const anonymousPost = await request('/api/lobby/messages', { method: 'POST', body: { message: 'Yetkisiz test' } });
   assert.equal(anonymousPost.status, 401, 'Oturumsuz kullanıcının sohbet mesajı engellenmedi.');
 
@@ -341,6 +355,13 @@ async function main() {
   assert.ok(!savedPreferenceOnline.members.some(member => member.username === users[0].username), 'Veritabanında çevrimiçi görünme kapalıyken istemcinin true isteği kullanıcıyı görünür yaptı.');
   const enableOnlinePreference = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingShowOnline: true } } });
   assert.equal(enableOnlinePreference.status, 200, 'A çevrimiçi görünürlük tercihini tekrar açamadı.');
+  const activityHeartbeatA = await request('/api/activity/heartbeat', { method: 'POST', cookie: cookieA });
+  const activityHeartbeatB = await request('/api/activity/heartbeat', { method: 'POST', cookie: cookieB });
+  assert.equal(activityHeartbeatA.status, 204, 'A aktiflik heartbeat gönderemedi.');
+  assert.equal(activityHeartbeatB.status, 204, 'B aktiflik heartbeat gönderemedi.');
+  const activeMembersAfterHeartbeat = await (await request('/api/public/active-members')).json();
+  assert.ok(activeMembersAfterHeartbeat.members.some(member => member.username === users[0].username), 'Aktiflik heartbeat sonrası A anasayfa aktif üyeler listesine girmedi.');
+  assert.ok(activeMembersAfterHeartbeat.members.some(member => member.username === users[1].username), 'Aktiflik heartbeat sonrası B anasayfa aktif üyeler listesine girmedi.');
   const heartbeatA = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: { showOnline: true } });
   const heartbeatB = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
   assert.equal(heartbeatA.status, 204, 'A çevrimiçi heartbeat başarısız.');
