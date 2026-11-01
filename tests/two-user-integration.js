@@ -3,6 +3,19 @@ const { spawn } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
 const { Pool } = require('pg');
 
+if (process.env.NODE_ENV !== 'test') {
+  throw new Error('Integration tests are restricted to NODE_ENV=test.');
+}
+if (!process.env.DATABASE_URL) {
+  throw new Error('Integration tests require a dedicated test DATABASE_URL.');
+}
+const testDatabaseUrl = new URL(process.env.DATABASE_URL);
+if (testDatabaseUrl.pathname.replace(/^\\//, '') !== 'zirveokey_test' ||
+    !['localhost', '127.0.0.1', '::1'].includes(testDatabaseUrl.hostname)) {
+  throw new Error('Refusing to run integration tests against a non-local zirveokey_test database.');
+}
+const cleanupUsernames = [];
+
 const port = Number(process.env.TEST_PORT || 3101);
 const baseUrl = 'http://127.0.0.1:' + port;
 const child = spawn(process.execPath, ['server.js'], {
@@ -69,6 +82,7 @@ async function main() {
     { username: 'TestA_' + suffix, email: 'testa-' + suffix + '@example.invalid', password: 'ZirveTest!2026A', country: 'Türkiye', gender: 'Kadın' },
     { username: 'TestB_' + suffix, email: 'testb-' + suffix + '@example.invalid', password: 'ZirveTest!2026B', country: 'Almanya', gender: 'Erkek' }
   ];
+  cleanupUsernames.push(...users.map(user => user.username));
 
   const registerA = await request('/api/auth/register', { method: 'POST', body: users[0] });
   assert.equal(registerA.status, 201, 'Birinci kullanıcı kaydı başarısız: ' + await registerA.text());
@@ -462,6 +476,7 @@ async function main() {
   assert.equal(disabledEmailChange.status, 503, 'E-posta gönderim yapılandırması olmadan adres değişikliği başlatılmış gibi kabul edildi.');
 
   const userD = { username: 'TestD_' + suffix, email: 'testd-' + suffix + '@example.invalid', password: 'ZirveTest!2026D', country: 'Türkiye', gender: 'Belirtmek istemiyorum' };
+  cleanupUsernames.push(userD.username);
   const registerD = await request('/api/auth/register', { method: 'POST', body: userD });
   assert.equal(registerD.status, 201, 'E-posta doğrulama test hesabı oluşturulamadı.');
   const cookieD = cookieFrom(registerD);
@@ -573,6 +588,17 @@ main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 }).finally(async () => {
+  if (cleanupUsernames.length) {
+    const cleanupPool = new Pool({ connectionString: process.env.DATABASE_URL });
+    try {
+      await cleanupPool.query('DELETE FROM users WHERE username = ANY($1::text[])', [cleanupUsernames]);
+    } catch (cleanupError) {
+      console.error('Test-user cleanup failed:', cleanupError.message);
+      process.exitCode = 1;
+    } finally {
+      await cleanupPool.end();
+    }
+  }
   child.kill('SIGTERM');
   await new Promise(resolve => {
     if (child.exitCode !== null) return resolve();
