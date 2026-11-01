@@ -23,7 +23,10 @@ async function loadAccount(){
   $('#profileGender').textContent=me.user.gender||'';
   $('#profileCountryInput').value=me.user.country||'Türkiye';
   $('#profileGenderInput').value=me.user.gender||'Belirtmek istemiyorum';
-  const [avatar,prefs,style,emailChange]=await Promise.all([api('/api/account/avatar'),api('/api/account/preferences'),api('/api/account/chat-style'),api('/api/account/email-change/status')]);
+  const accountResults=await Promise.allSettled([api('/api/account/avatar'),api('/api/account/preferences'),api('/api/account/chat-style'),api('/api/account/email-change/status')]);
+  const accountData=accountResults.map(result=>result.status==='fulfilled'?result.value:{});
+  const [avatar,prefs,style,emailChange]=accountData;
+  const partialFailure=accountResults.some(result=>result.status==='rejected');
   renderAvatar(avatar.avatar,me.user.username);
   preferences=prefs.preferences||{};
   document.body.classList.toggle('soft-light',preferences.settingDarkMode===false);
@@ -34,7 +37,9 @@ async function loadAccount(){
   $('#rowColor').value=colors.rowColor||'#102016';
   $('#emailChangeForm').hidden=emailChange.configured!==true;
   $('#emailChangeUnavailable').hidden=emailChange.configured===true;
-  content.hidden=false;status.hidden=true;
+  content.hidden=false;
+  if(partialFailure){setStatus(status,'Bazı hesap ayarları yüklenemedi. Sayfayı yenileyerek tekrar deneyebilirsin.',true);status.hidden=false;}
+  else status.hidden=true;
  }catch(error){setStatus(status,error.message,true);}
 }
 $('#emailChangeForm').addEventListener('submit',async event=>{
