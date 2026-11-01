@@ -35,8 +35,9 @@ async function loadAccount(){
   $('#nameColor').value=colors.nameColor||'#ffffff';
   $('#textColor').value=colors.textColor||'#e9f0e8';
   $('#rowColor').value=colors.rowColor||'#102016';
-  $('#emailChangeForm').hidden=emailChange.configured!==true;
-  $('#emailChangeUnavailable').hidden=emailChange.configured===true;
+  const emailChangeLoaded=accountResults[3].status==='fulfilled';
+  $('#emailChangeForm').hidden=!emailChangeLoaded||emailChange.configured!==true;
+  $('#emailChangeUnavailable').hidden=!emailChangeLoaded||emailChange.configured===true;
   content.hidden=false;
   if(partialFailure){setStatus(status,'Bazı hesap ayarları yüklenemedi. Sayfayı yenileyerek tekrar deneyebilirsin.',true);status.hidden=false;}
   else status.hidden=true;
