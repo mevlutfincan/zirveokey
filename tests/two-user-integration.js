@@ -300,6 +300,43 @@ async function main() {
    assert.ok(busyMember, 'Meşgul durumundaki B listeden kayboldu.');
    assert.equal(busyMember.status, 'busy', 'Meşgul etiketi listede gösterilmedi.');
 
+  const profileA = await request('/api/members/' + (await (await request('/api/auth/me',{cookie:cookieA})).json()).user.id + '/profile', { cookie: cookieA });
+  assert.equal(profileA.status, 200, 'A kendi profilini açamadı.');
+  const profileBId = (await (await request('/api/auth/me',{cookie:cookieB})).json()).user.id;
+  const profileB = await request('/api/members/' + profileBId + '/profile', { cookie: cookieA });
+  assert.equal(profileB.status, 200, 'A, B profilini görüntüleyemedi.');
+  const friendRequest = await request('/api/social/friends/' + profileBId, { method:'POST', cookie:cookieA, body:{} });
+  assert.equal(friendRequest.status, 201, 'A arkadaşlık isteği gönderemedi: ' + await friendRequest.text());
+  const incoming = await (await request('/api/social/summary',{cookie:cookieB})).json();
+  assert.ok(incoming.incoming.some(item=>item.username===users[0].username), 'B gelen arkadaşlık isteğini göremedi.');
+  const acceptFriend = await request('/api/social/friends/' + (await (await request('/api/auth/me',{cookie:cookieA})).json()).user.id, { method:'PUT', cookie:cookieB, body:{status:'accepted'} });
+  assert.equal(acceptFriend.status, 200, 'B arkadaşlık isteğini kabul edemedi.');
+  const friendsA = await (await request('/api/social/summary',{cookie:cookieA})).json();
+  assert.ok(friendsA.friends.some(item=>item.username===users[1].username), 'A arkadaş listesinde B görünmüyor.');
+  const addFavorite = await request('/api/social/favorites/' + profileBId, { method:'POST', cookie:cookieA, body:{} });
+  assert.equal(addFavorite.status, 200, 'A B kullanıcısını favoriye ekleyemedi.');
+  const profileBFromA = await (await request('/api/members/' + profileBId + '/profile',{cookie:cookieA})).json();
+  assert.equal(profileBFromA.profile.is_favorite,true,'Favori ilişkisi profil API yanıtında görünmüyor.');
+  const sendPrivate = await request('/api/private-messages/' + profileBId, { method:'POST', cookie:cookieA, body:{message:'Özel mesaj entegrasyon testi '+suffix} });
+  assert.equal(sendPrivate.status,201,'Özel mesaj gönderilemedi: '+await sendPrivate.text());
+  const readPrivate = await request('/api/private-messages/' + (await (await request('/api/auth/me',{cookie:cookieA})).json()).user.id,{cookie:cookieB});
+  assert.equal(readPrivate.status,200,'B özel mesajı okuyamadı.');
+  assert.ok((await readPrivate.json()).messages.some(item=>item.message==='Özel mesaj entegrasyon testi '+suffix),'A özel mesajı B gelen kutusuna ulaşmadı.');
+  const report = await request('/api/social/reports/' + profileBId,{method:'POST',cookie:cookieA,body:{reason:'Diğer',details:'Bu bir otomatik entegrasyon test şikâyetidir.'}});
+  assert.equal(report.status,201,'Üye şikâyeti kaydedilemedi: '+await report.text());
+  const block = await request('/api/social/blocks/' + profileBId,{method:'POST',cookie:cookieA,body:{}});
+  assert.equal(block.status,200,'A B kullanıcısını engelleyemedi.');
+  const blockedMessage = await request('/api/private-messages/' + profileBId,{method:'POST',cookie:cookieA,body:{message:'Engel kontrolü'}});
+  assert.equal(blockedMessage.status,403,'Engellenen üyeye özel mesaj gönderilebildi.');
+  const blockedProfile = await request('/api/members/' + profileBId + '/profile',{cookie:cookieB});
+  assert.equal(blockedProfile.status,403,'Engelleyen üyenin profili engellenen kullanıcıya açık kaldı.');
+  const unblock = await request('/api/social/blocks/' + profileBId,{method:'DELETE',cookie:cookieA});
+  assert.equal(unblock.status,200,'A engeli kaldıramadı.');
+  const removeFavorite = await request('/api/social/favorites/' + profileBId,{method:'DELETE',cookie:cookieA});
+  assert.equal(removeFavorite.status,200,'A favoriden çıkaramadı.');
+  const removeFriend = await request('/api/social/friends/' + profileBId,{method:'DELETE',cookie:cookieA});
+  assert.equal(removeFriend.status,200,'A arkadaşlıktan çıkaramadı.');
+
   const logoutA = await request('/api/auth/logout', { method: 'POST', cookie: cookieA });
   assert.equal(logoutA.status, 200, 'A çıkış yapamadı.');
   const meAfterLogout = await request('/api/auth/me', { cookie: cookieA });
@@ -314,6 +351,7 @@ async function main() {
   const bAfterLogout = await request('/api/auth/me', { cookie: cookieB });
   assert.equal((await bAfterLogout.json()).authenticated, false, 'B çıkıştan sonra oturum açık kaldı.');
 
+  console.log('PASS: üye profili, arkadaşlık, favoriler, özel mesaj, engelleme ve şikâyet işlemleri');
   console.log('PASS: iki ayrı hesap kaydı ve oturum doğrulama');
   console.log('PASS: oturumsuz sohbet yazma engeli');
   console.log('PASS: hesap bazlı renk tercihleri kaydedildi ve doğrulandı');
