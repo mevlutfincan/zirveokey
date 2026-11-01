@@ -160,6 +160,13 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Çok fazla deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin.' }
 });
+const socialLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Çok sık üye işlemi yapıldı. Lütfen daha sonra tekrar deneyin.' }
+});
 const resetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 4,
@@ -568,7 +575,7 @@ app.get('/api/social/summary',dbRequired,asyncRoute(async(req,res)=>{
   ]);
   res.json({friends:friends.rows,incoming:incoming.rows,favorites:favorites.rows,blocked:blocked.rows});
 }));
-app.post('/api/social/friends/:id',dbRequired,authLimiter,asyncRoute(async(req,res)=>{
+app.post('/api/social/friends/:id',dbRequired,socialLimiter,asyncRoute(async(req,res)=>{
   const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);
   if(!targetId||targetId===userId)return res.status(400).json({error:'Geçerli bir üye seçin.'});
   const target=await pool.query('SELECT username FROM users WHERE id=$1 AND is_active=TRUE',[targetId]);if(!target.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
@@ -621,7 +628,7 @@ app.delete('/api/social/blocks/:id',dbRequired,asyncRoute(async(req,res)=>{
   const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);if(!targetId)return res.status(400).json({error:'Geçersiz üye.'});
   await pool.query('DELETE FROM member_blocks WHERE blocker_id=$1 AND blocked_id=$2',[userId,targetId]);res.json({ok:true,blocked:false});
 }));
-app.post('/api/social/reports/:id',dbRequired,authLimiter,asyncRoute(async(req,res)=>{
+app.post('/api/social/reports/:id',dbRequired,socialLimiter,asyncRoute(async(req,res)=>{
   const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);
   const reason=String(req.body.reason||'').trim(),details=String(req.body.details||'').trim();
   if(!targetId||targetId===userId||!['Spam','Hakaret veya taciz','Uygunsuz profil','Dolandırıcılık','Diğer'].includes(reason)||details.length<10||details.length>500)return res.status(400).json({error:'Şikâyet nedeni ve 10-500 karakter açıklama girin.'});
@@ -641,7 +648,7 @@ app.get('/api/private-messages/:id',dbRequired,asyncRoute(async(req,res)=>{
   await pool.query('UPDATE private_messages SET read_at=COALESCE(read_at,NOW()) WHERE sender_id=$1 AND recipient_id=$2 AND read_at IS NULL',[targetId,userId]);
   res.json({messages:result.rows});
 }));
-app.post('/api/private-messages/:id',dbRequired,authLimiter,asyncRoute(async(req,res)=>{
+app.post('/api/private-messages/:id',dbRequired,socialLimiter,asyncRoute(async(req,res)=>{
   const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id),message=String(req.body.message||'').trim();
   if(!targetId||targetId===userId||!message||message.length>1000)return res.status(400).json({error:'Mesaj 1-1000 karakter arasında olmalı.'});
   const target=await pool.query('SELECT username FROM users WHERE id=$1 AND is_active=TRUE',[targetId]);if(!target.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
