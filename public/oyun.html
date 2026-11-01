@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
 <link rel="stylesheet" href="/css/oyun.css?v=settings-notification-linked-20261031">
-<script defer src="/js/oyun.js?v=auth-resync-20261102"></script>
+<script defer src="/js/oyun.js?v=auth-race-seat-20261102"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
@@ -54,7 +54,7 @@
      <div class="seat seat-top"><span class="seat-avatar">?</span><b>Boş</b><small>Oyuncu bekleniyor</small></div>
      <div class="seat seat-left"><span class="seat-avatar">?</span><b>Boş</b><small>Oyuncu bekleniyor</small></div>
      <div class="seat seat-right"><span class="seat-avatar">?</span><b>Boş</b><small>Oyuncu bekleniyor</small></div>
-     <div class="seat seat-bottom"><span class="seat-avatar self">M</span><b>Misafir Oyuncu</b><small>Sen</small></div>
+     <div class="seat seat-bottom"><span class="seat-avatar self" id="gameSeatAvatar">M</span><b id="gameSeatUsername">Misafir Oyuncu</b><small>Sen</small></div>
     </div>
    </div>
    <div class="rack-toolbar"><div><b>Taşların</b><span id="rackCount">14 taş • örnek dizilim</span></div><div class="rack-actions"><button class="subtle-button" id="sortTiles" type="button">Taşları diz</button><button class="subtle-button" id="sortPairs" type="button">Çift diz</button></div></div>
