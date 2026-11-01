@@ -204,6 +204,15 @@ async function main() {
   assert.equal(storedNotificationCategories.settingNotifySystem, false, 'Sistem bildirimi tercihi kalıcı değil.');
   assert.equal(storedNotificationCategories.settingNotifyManagement, false, 'Yönetim bildirimi tercihi kalıcı değil.');
   assert.equal(storedNotificationCategories.settingNotifyRewards, true, 'Ödül bildirimi tercihi kalıcı değil.');
+  const concurrentCategoryWrites = await Promise.all([
+    request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingNotifyPlayers: true } } }),
+    request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingNotifyGame: false } } })
+  ]);
+  assert.ok(concurrentCategoryWrites.every(response => response.status === 200), 'Eşzamanlı bildirim kategori kayıtlarından biri başarısız oldu.');
+  const afterConcurrentCategoryWrites = (await (await request('/api/account/preferences', { cookie: cookieA })).json()).preferences;
+  assert.equal(afterConcurrentCategoryWrites.settingNotifyPlayers, true, 'Eşzamanlı kayıt oyuncu bildirimi tercihini kaybetti.');
+  assert.equal(afterConcurrentCategoryWrites.settingNotifyGame, false, 'Eşzamanlı kayıt oyun bildirimi tercihini kaybetti.');
+
   const notificationsAfterCategorySave = await (await request('/api/notifications', { cookie: cookieA })).json();
   assert.equal(notificationsAfterCategorySave.preferences.settingNotifySystem, false, 'Bildirim API kategori tercihlerini güncel döndürmüyor.');
   assert.ok(notificationsAfterCategorySave.notifications.some(item => item.id === notificationId), 'Kategori tercihi geçmiş bildirimi silmemeli.');
