@@ -2637,3 +2637,5 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .password-form-card{padding:13px}
  .settings-primary-action{width:100%}
 }
+
+.online-member{flex-wrap:wrap}.online-member-status{margin-left:auto;font-size:9px;line-height:1.2;color:#a9c1a5;white-space:nowrap}.online-member-status.status-away{color:#e8c77d}.online-member-status.status-sleeping{color:#aeb8e8}.online-member-status.status-busy{color:#e89b86}
