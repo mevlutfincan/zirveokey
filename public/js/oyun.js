@@ -478,7 +478,12 @@ async function loadOnlineMembers(){
    const fallback=document.createElement('span');fallback.textContent=(member.username||'?').trim().charAt(0).toLocaleUpperCase('tr-TR');
    image.addEventListener('error',()=>{image.remove();avatar.append(fallback);},{once:true});
    avatar.append(image);
-   avatar.addEventListener('click',()=>openOnlineMemberAvatar(member.username,image.src));
+   avatar.addEventListener('click',()=>openMemberProfile(member.id));
+   name.addEventListener('click',()=>openMemberProfile(member.id));name.className='online-member-name-button';
+   row.dataset.memberId=member.id;row.dataset.memberName=member.username;
+   row.addEventListener('contextmenu',event=>{event.preventDefault();showMemberContextMenu(member,event.clientX,event.clientY);});
+   let holdTimer=null;row.addEventListener('pointerdown',event=>{if(event.pointerType==='touch')holdTimer=window.setTimeout(()=>showMemberContextMenu(member,event.clientX,event.clientY),550);});
+   ['pointerup','pointercancel','pointerleave'].forEach(type=>row.addEventListener(type,()=>{if(holdTimer)clearTimeout(holdTimer);holdTimer=null;}));
    const identity=document.createElement('span');identity.className='online-member-identity';
    const nameLine=document.createElement('span');nameLine.className='online-member-name-line';
    if(tier!=='normal'){const mark=document.createElement('span');mark.className='online-member-tier-icon';mark.textContent=tier==='gold'?'🪙':'💎';mark.setAttribute('aria-label',tier==='gold'?'Gold Üye':'VIP Üye');nameLine.append(mark);}
@@ -495,6 +500,129 @@ async function loadOnlineMembers(){
   updateOnlineCount(Number(data.count)||0);
  }catch(error){console.warn('Çevrimiçi üye listesi yüklenemedi.');}
 }
+let activeSocialMember=null,activePrivateMember=null,privateMessageLastId=0;
+const memberProfileDialog=$('#memberProfileDialog'),privateMessageDialog=$('#privateMessageDialog'),socialCenterDialog=$('#socialCenterDialog'),memberContextMenu=$('#memberContextMenu');
+async function socialRequest(url,method='GET',body){
+ const response=await fetch(url,{method,credentials:'same-origin',headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.error||'İşlem tamamlanamadı.');
+ return data;
+}
+function closeMemberContextMenu(){memberContextMenu.hidden=true;memberContextMenu.replaceChildren();}
+function showMemberContextMenu(member,x,y){
+ if(!gameSignedIn){requireGameMembership('Üye işlemleri');return;}
+ activeSocialMember=member;
+ const actions=[['profile','Profili görüntüle'],['friend','Arkadaşlık isteği gönder'],['favorite','Favorilere ekle'],['message','Özel mesaj gönder'],['block','Üyeyi engelle'],['report','Şikâyet et']];
+ memberContextMenu.replaceChildren();
+ actions.forEach(([action,label])=>{const button=document.createElement('button');button.type='button';button.role='menuitem';button.textContent=label;button.addEventListener('click',()=>{closeMemberContextMenu();runMemberAction(action,member);});memberContextMenu.append(button);});
+ memberContextMenu.hidden=false;
+ const rect=memberContextMenu.getBoundingClientRect();
+ memberContextMenu.style.left=Math.max(8,Math.min(x,window.innerWidth-rect.width-8))+'px';
+ memberContextMenu.style.top=Math.max(8,Math.min(y,window.innerHeight-rect.height-8))+'px';
+}
+document.addEventListener('click',event=>{if(!event.target.closest('#memberContextMenu'))closeMemberContextMenu();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMemberContextMenu();});
+async function openMemberProfile(memberId){
+ if(!requireGameMembership('Üye profilini görüntülemek',()=>openMemberProfile(memberId)))return;
+ try{
+  const data=await socialRequest('/api/members/'+memberId+'/profile'),p=data.profile;activeSocialMember={id:p.id,username:p.username};
+  $('#memberProfileName').textContent=p.username;
+  $('#memberProfileAvatar').src='/api/public/members/'+p.id+'/avatar';
+  $('#memberProfileAvatar').onerror=()=>{$('#memberProfileAvatar').src='';};
+  $('#memberProfileTier').textContent=p.membership_tier==='gold'?'🪙 Gold Üye':p.membership_tier==='vip'?'💎 VIP Üye':'Normal Üye';
+  $('#memberProfileStatus').textContent=({online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Meşgul',offline:'Çevrim Dışı'})[p.status]||'Çevrim Dışı';
+  $('#memberProfileBio').textContent=p.bio||'Henüz profil açıklaması eklenmemiş.';
+  const root=$('#memberProfileActions');root.replaceChildren();
+  const add=(label,action)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>runMemberAction(action,activeSocialMember,p));root.append(b);};
+  if(p.incoming_request)add('İsteği kabul et','accept');else if(!p.is_friend&&!p.outgoing_request)add('Arkadaş ekle','friend');else if(p.outgoing_request)add('İstek gönderildi','pending');
+  if(p.is_friend)add('Arkadaşlıktan çıkar','unfriend');
+  add(p.is_favorite?'Favorilerden çıkar':'Favorilere ekle','favorite');
+  add('Özel mesaj gönder','message');add(p.is_blocked?'Engeli kaldır':'Engelle','block');add('Şikâyet et','report');
+  $('#memberProfileFeedback').textContent='';
+  memberProfileDialog.showModal();
+ }catch(error){notify(error.message);}
+}
+async function runMemberAction(action,member,profile){
+ if(!member?.id)return;
+ try{
+  if(action==='profile'){await openMemberProfile(member.id);return;}
+  if(action==='message'){memberProfileDialog.close();await openPrivateConversation(member);return;}
+  if(action==='report'){activeSocialMember=member;$('#memberReportFeedback').textContent='';$('#memberReportForm').reset();$('#memberReportDialog').showModal();return;}
+  let data;
+  if(action==='friend')data=await socialRequest('/api/social/friends/'+member.id,'POST',{});
+  else if(action==='accept')data=await socialRequest('/api/social/friends/'+member.id,'PUT',{status:'accepted'});
+  else if(action==='unfriend')data=await socialRequest('/api/social/friends/'+member.id,'DELETE');
+  else if(action==='favorite')data=await socialRequest('/api/social/favorites/'+member.id,profile?.is_favorite?'DELETE':'POST',{});
+  else if(action==='block'){if(!confirm(member.username+' adlı üyeyi engellemek istiyor musun?'))return;data=await socialRequest('/api/social/blocks/'+member.id,profile?.is_blocked?'DELETE':'POST',{});}
+  notify(action==='friend'?'Arkadaşlık isteği gönderildi.':action==='accept'?'Arkadaşlık isteği kabul edildi.':action==='favorite'?'Favori listen güncellendi.':action==='block'?'Engelleme listen güncellendi.':'İşlem tamamlandı.');
+  if(memberProfileDialog.open)await openMemberProfile(member.id);
+  if(socialCenterDialog.open)await loadSocialCenter(currentSocialTab);
+ }catch(error){notify(error.message);}
+}
+let currentSocialTab='friends';
+async function loadSocialCenter(tab='friends'){
+ currentSocialTab=tab;
+ $('.social-center-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.socialTab===tab));
+ const root=$('#socialCenterList');root.textContent='Yükleniyor…';
+ try{
+  if(tab==='messages'){
+   const data=await socialRequest('/api/private-messages');root.replaceChildren();
+   (data.conversations||[]).forEach(item=>addSocialListItem(root,item.username,item.message,()=>openPrivateConversation({id:item.id,username:item.username}),item.unread?item.unread+' okunmamış':''));
+   if(!root.children.length)root.textContent='Henüz özel mesajın yok.';
+   return;
+  }
+  const data=await socialRequest('/api/social/summary');
+  const key={friends:'friends',requests:'incoming',favorites:'favorites',blocked:'blocked'}[tab],items=data[key]||[];
+  root.replaceChildren();
+  items.forEach(item=>{
+   const suffix=tab==='requests'?'Arkadaşlık isteği':tab==='blocked'?'Engellenmiş üye':tab==='favorites'?'Favori üye':'Arkadaş';
+   const row=document.createElement('div');row.className='social-list-item';
+   const name=document.createElement('b');name.textContent=item.username;
+   const sub=document.createElement('small');sub.textContent=suffix;
+   const open=document.createElement('button');open.type='button';open.textContent='Profili aç';open.addEventListener('click',()=>openMemberProfile(item.id));
+   row.append(name,sub,open);
+   if(tab==='requests'){const accept=document.createElement('button');accept.type='button';accept.textContent='Kabul et';accept.addEventListener('click',async()=>{await runMemberAction('accept',item);});row.append(accept);}
+   if(tab==='blocked'){const unblock=document.createElement('button');unblock.type='button';unblock.textContent='Engeli kaldır';unblock.addEventListener('click',()=>runMemberAction('block',item,{is_blocked:true}));row.append(unblock);}
+   root.append(row);
+  });
+  if(!root.children.length)root.textContent=tab==='requests'?'Bekleyen arkadaşlık isteği yok.':tab==='favorites'?'Favori listen boş.':tab==='blocked'?'Engellediğin üye yok.':'Henüz arkadaşın yok.';
+ }catch(error){root.textContent=error.message;}
+}
+function addSocialListItem(root,name,description,onClick,meta=''){
+ const row=document.createElement('div');row.className='social-list-item';const b=document.createElement('b');b.textContent=name;const s=document.createElement('small');s.textContent=description;const action=document.createElement('button');action.type='button';action.textContent=meta||'Aç';action.addEventListener('click',onClick);row.append(b,s,action);root.append(row);
+}
+async function openPrivateConversation(member){
+ if(!requireGameMembership('Özel mesaj göndermek',()=>openPrivateConversation(member)))return;
+ activePrivateMember=member;privateMessageLastId=0;$('#privateMessageTitle').textContent=member.username+' · Özel Mesaj';$('#privateMessageHistory').replaceChildren();privateMessageDialog.showModal();await loadPrivateMessages();
+}
+async function loadPrivateMessages(){
+ if(!activePrivateMember)return;
+ try{
+  const data=await socialRequest('/api/private-messages/'+activePrivateMember.id+'?after='+privateMessageLastId);
+  const root=$('#privateMessageHistory');
+  (data.messages||[]).forEach(item=>{privateMessageLastId=Math.max(privateMessageLastId,Number(item.id));const line=document.createElement('div');line.className='private-message '+(Number(item.sender_id)===Number(chatStyleAccountId)?'mine':'theirs');line.textContent=item.message;root.append(line);});
+  root.scrollTop=root.scrollHeight;
+ }catch(error){notify(error.message);}
+}
+$('#privateMessageForm').addEventListener('submit',async event=>{
+ event.preventDefault();const input=$('#privateMessageInput'),message=input.value.trim();if(!message||!activePrivateMember)return;
+ const button=event.submitter;button.disabled=true;
+ try{await socialRequest('/api/private-messages/'+activePrivateMember.id,'POST',{message});input.value='';await loadPrivateMessages();}
+ catch(error){notify(error.message);}finally{button.disabled=false;input.focus();}
+});
+$('#memberReportForm').addEventListener('submit',async event=>{
+ event.preventDefault();if(!activeSocialMember)return;
+ const button=event.submitter;button.disabled=true;$('#memberReportFeedback').textContent='Gönderiliyor…';
+ try{await socialRequest('/api/social/reports/'+activeSocialMember.id,'POST',{reason:$('#memberReportReason').value,details:$('#memberReportDetails').value.trim()});$('#memberReportFeedback').textContent='Şikâyetin yönetime iletildi.';notify('Şikâyetin alındı.');window.setTimeout(()=>$('#memberReportDialog').close(),700);}
+ catch(error){$('#memberReportFeedback').textContent=error.message;}finally{button.disabled=false;}
+});
+$('[data-close-dialog]').forEach(button=>button.addEventListener('click',()=>$('#'+button.dataset.closeDialog).close()));
+$('[data-social-tab]').forEach(button=>button.addEventListener('click',()=>loadSocialCenter(button.dataset.socialTab)));
+$('#openSocialCenter').addEventListener('click',()=>{if(!requireGameMembership('Arkadaş listesini açmak'))return;socialCenterDialog.showModal();loadSocialCenter('friends');});
+$('#openPrivateInbox').addEventListener('click',()=>{if(!requireGameMembership('Özel mesajlarını açmak'))return;socialCenterDialog.showModal();loadSocialCenter('messages');});
+window.setInterval(()=>{if(privateMessageDialog.open)loadPrivateMessages();},5000);
+window.addEventListener('resize',closeMemberContextMenu);
+
 function openOnlineMemberAvatar(username,src){
  const dialog=$('#onlineMemberAvatarDialog'),image=$('#onlineMemberAvatarImage');
  if(!dialog||!image)return;
