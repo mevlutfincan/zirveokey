@@ -417,6 +417,7 @@ $('#chatTextGrow').addEventListener('click',()=>{
     if(item.dataset.userId!==userId)return;
     item.style.setProperty('--chat-author-color',nameColor);
     item.style.setProperty('--chat-body-color',textColor);
+    item.style.setProperty('--chat-row-color',rowColor);
    });
   });
  }
