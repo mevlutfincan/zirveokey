@@ -10,7 +10,7 @@ if (!process.env.DATABASE_URL) {
   throw new Error('Integration tests require a dedicated test DATABASE_URL.');
 }
 const testDatabaseUrl = new URL(process.env.DATABASE_URL);
-if (testDatabaseUrl.pathname.replace(/^\\//, '') !== 'zirveokey_test' ||
+if (testDatabaseUrl.pathname.slice(1) !== 'zirveokey_test' ||
     !['localhost', '127.0.0.1', '::1'].includes(testDatabaseUrl.hostname)) {
   throw new Error('Refusing to run integration tests against a non-local zirveokey_test database.');
 }
