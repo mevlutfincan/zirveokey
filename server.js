@@ -635,6 +635,7 @@ app.get('/api/private-messages/:id',dbRequired,asyncRoute(async(req,res)=>{
   const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id),afterId=Math.max(0,Number.parseInt(req.query.after||'0',10)||0);
   if(!targetId||targetId===userId)return res.status(400).json({error:'Geçerli bir konuşma seçin.'});
   const blocked=await pool.query('SELECT 1 FROM member_blocks WHERE (blocker_id=$1 AND blocked_id=$2) OR (blocker_id=$2 AND blocked_id=$1)',[userId,targetId]);if(blocked.rowCount)return res.status(403).json({error:'Engellenmiş üyeler arasında mesajlaşma kapalı.'});
+  const privacy=await pool.query("SELECT COALESCE(member_preferences->>'settingPrivateMessages','true')<>'false' AS allowed FROM users WHERE id=$1",[targetId]);if(!privacy.rows[0]?.allowed)return res.status(403).json({error:'Bu üye özel mesajları kabul etmiyor.'});
   const result=await pool.query(`SELECT id,sender_id,recipient_id,message,created_at,read_at FROM private_messages
     WHERE ((sender_id=$1 AND recipient_id=$2) OR (sender_id=$2 AND recipient_id=$1)) AND id>$3 ORDER BY id ASC LIMIT 100`,[userId,targetId,afterId]);
   await pool.query('UPDATE private_messages SET read_at=COALESCE(read_at,NOW()) WHERE sender_id=$1 AND recipient_id=$2 AND read_at IS NULL',[targetId,userId]);
@@ -645,6 +646,7 @@ app.post('/api/private-messages/:id',dbRequired,authLimiter,asyncRoute(async(req
   if(!targetId||targetId===userId||!message||message.length>1000)return res.status(400).json({error:'Mesaj 1-1000 karakter arasında olmalı.'});
   const target=await pool.query('SELECT username FROM users WHERE id=$1 AND is_active=TRUE',[targetId]);if(!target.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
   const blocked=await pool.query('SELECT 1 FROM member_blocks WHERE (blocker_id=$1 AND blocked_id=$2) OR (blocker_id=$2 AND blocked_id=$1)',[userId,targetId]);if(blocked.rowCount)return res.status(403).json({error:'Engellenmiş üyeler arasında mesajlaşma kapalı.'});
+  const privacy=await pool.query("SELECT COALESCE(member_preferences->>'settingPrivateMessages','true')<>'false' AS allowed FROM users WHERE id=$1",[targetId]);if(!privacy.rows[0]?.allowed)return res.status(403).json({error:'Bu üye özel mesajları kabul etmiyor.'});
   const result=await pool.query('INSERT INTO private_messages(sender_id,recipient_id,message) VALUES($1,$2,$3) RETURNING id,sender_id,recipient_id,message,created_at,read_at',[userId,targetId,message]);
   await notifyMember(targetId,'players','Yeni özel mesaj',req.session.user.username+' sana özel mesaj gönderdi.','/oyun?social=messages');
   res.status(201).json({message:result.rows[0]});
