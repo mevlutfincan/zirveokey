@@ -281,7 +281,7 @@ app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
   res.json({ members: result.rows, count: result.rows.length });
 }));
 
-app.put('/api/account/password', dbRequired, authLimiter, asyncRoute(async (req, res) => {
+app.put('/api/account/password', dbRequired, activeAccountRequired, authLimiter, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Şifre değiştirmek için giriş yapmalısınız.' });
   const currentPassword = String(req.body.currentPassword || '');
   const newPassword = String(req.body.newPassword || '');
@@ -310,14 +310,14 @@ app.put('/api/account/password', dbRequired, authLimiter, asyncRoute(async (req,
   }
 }));
 
-app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
+app.get('/api/account/preferences', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarlar için giriş yapmalısınız.' });
   const result = await pool.query('SELECT member_preferences FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
   res.json({ preferences: result.rows[0].member_preferences || {} });
 }));
-app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
+app.put('/api/account/preferences', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarları kaydetmek için giriş yapmalısınız.' });
   const allowed = ['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingShowOnline','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI'];
   const input = req.body?.preferences;
@@ -336,7 +336,7 @@ app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   res.json({ ok: true, preferences: result.rows[0].member_preferences });
 }));
 
-app.get('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
+app.get('/api/account/avatar', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (!req.session.user?.id) return res.status(401).json({ error: 'Avatar için giriş yapmalısınız.' });
   const result = await pool.query('SELECT avatar_data FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
@@ -344,7 +344,7 @@ app.get('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
   res.json({ avatar: result.rows[0].avatar_data || null });
 }));
 
-app.put('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
+app.put('/api/account/avatar', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Avatar değiştirmek için giriş yapmalısınız.' });
   const avatar = req.body.avatar === null ? null : String(req.body.avatar || '');
   if (avatar !== null && (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar) || avatar.length > 1400000)) {
@@ -355,7 +355,7 @@ app.put('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
   res.json({ ok: true, avatar: result.rows[0].avatar_data || null });
 }));
 
-app.get('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
+app.get('/api/account/chat-style', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (!req.session.user?.id) return res.status(401).json({ error: 'Renk tercihleri için giriş yapmalısınız.' });
   const result = await pool.query('SELECT chat_name_color,chat_text_color,chat_row_color FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
@@ -363,7 +363,7 @@ app.get('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
   res.json({ chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color, rowColor: result.rows[0].chat_row_color } });
 }));
 
-app.put('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
+app.put('/api/account/chat-style', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Renk tercihleri için giriş yapmalısınız.' });
   const nameColor = String(req.body.nameColor || '').toLowerCase();
   const textColor = String(req.body.textColor || '').toLowerCase();
