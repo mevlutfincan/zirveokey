@@ -194,12 +194,13 @@ document.addEventListener('click',e=>{
  }
 });
 let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=false,chatStyleAccountId=null,chatDisplayEnabled=false;
- const defaultChatStyle={nameColor:'#111111',textColor:'#111111'};
+ const defaultChatStyle={nameColor:'#111111',textColor:'#111111',rowColor:'#e8efe8'};
+ function validChatRowHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
  const fixedChatRowColor='rgba(232,239,232,.92)';
  function validChatHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
  function updateChatColorPreview(){
   const name=$('#chatNameColor').value,text=$('#chatBodyColor').value;
-  $('#chatColorPreview').style.setProperty('--chat-row-color',fixedChatRowColor);
+  $('#chatColorPreview').style.setProperty('--chat-row-color',$('#settingRowColor')?.value||defaultChatStyle.rowColor);
   $('#chatColorPreviewName').style.color=name;$('#chatColorPreviewText').style.color=text;
   $('#chatColorSave').disabled=!chatStyleAuthenticated||chatStyleSaving;
   $('#chatColorStatus').textContent=!chatStyleAuthenticated?'Renkleri kaydetmek için giriş yapın.':chatStyleSaving?'Kaydediliyor…':'Seçtiğin tüm renkler kaydedilebilir ve diğer üyelere aynen görünür.';
@@ -207,6 +208,7 @@ let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=fal
  function setChatColorInputs(style){
   $('#chatNameColor').value=validChatHex(style?.nameColor)?style.nameColor:defaultChatStyle.nameColor;
   $('#chatBodyColor').value=validChatHex(style?.textColor)?style.textColor:defaultChatStyle.textColor;
+  const rowSetting=$('#settingRowColor');if(rowSetting)rowSetting.value=validChatRowHex(style?.rowColor)?style.rowColor:defaultChatStyle.rowColor;
   const nickSetting=$('#settingNickColor'),messageSetting=$('#settingMessageColor');
   if(nickSetting)nickSetting.value=$('#chatNameColor').value;
   if(messageSetting)messageSetting.value=$('#chatBodyColor').value;
@@ -387,7 +389,8 @@ $('#chatTextGrow').addEventListener('click',()=>{
   const author=document.createElement('b');author.className='chat-message-author';author.textContent=String(message.username||'Üye')+' :';
   const nameColor=validChatHex(message.chat_name_color)?message.chat_name_color:defaultChatStyle.nameColor;
   const textColor=validChatHex(message.chat_text_color)?message.chat_text_color:defaultChatStyle.textColor;
-  item.style.setProperty('--chat-author-color',nameColor);item.style.setProperty('--chat-body-color',textColor);item.style.setProperty('--chat-row-color',fixedChatRowColor);
+  item.style.setProperty('--chat-author-color',nameColor);item.style.setProperty('--chat-body-color',textColor);
+    item.style.setProperty('--chat-row-color',rowColor);item.style.setProperty('--chat-row-color',validChatRowHex(message.chat_row_color)?message.chat_row_color:defaultChatStyle.rowColor);
   const body=document.createElement('span');body.className='chat-message-body';
   const messageText=String(message.message||'');
   if(typeof Intl!=='undefined'&&Intl.Segmenter){
@@ -410,6 +413,7 @@ $('#chatTextGrow').addEventListener('click',()=>{
    if(!userId)return;
    const nameColor=validChatHex(member.chat_name_color)?member.chat_name_color:defaultChatStyle.nameColor;
    const textColor=validChatHex(member.chat_text_color)?member.chat_text_color:defaultChatStyle.textColor;
+   const rowColor=validChatRowHex(member.chat_row_color)?member.chat_row_color:defaultChatStyle.rowColor;
    chatMessagesBox.querySelectorAll('.chat-message').forEach(item=>{
     if(item.dataset.userId!==userId)return;
     item.style.setProperty('--chat-author-color',nameColor);
@@ -881,9 +885,10 @@ settingsKeys.forEach(id=>{const control=$('#'+id);if(!control)return;control.add
 });});
 $('#settingsButton').addEventListener('click',async()=>{showSettingsCategory('account');await loadMemberSettings();loadMemberAvatar();settingsDialog.showModal();});
 $('#openNotificationSettings').addEventListener('click',async()=>{notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');await loadMemberSettings();showSettingsCategory('notifications');settingsDialog.showModal();});
-function updateMemberColorPreview(){const name=$('#settingNickColor').value,text=$('#settingMessageColor').value;$('#memberColorPreviewName').style.color=name;$('#memberColorPreviewText').style.color=text;}
+function updateMemberColorPreview(){const name=$('#settingNickColor').value,text=$('#settingMessageColor').value,row=$('#settingRowColor')?.value||defaultChatStyle.rowColor;$('#memberColorPreviewName').style.color=name;$('#memberColorPreviewText').style.color=text;$('#memberColorPreview').style.background=row;}
 $('#settingNickColor').addEventListener('input',updateMemberColorPreview);
 $('#settingMessageColor').addEventListener('input',updateMemberColorPreview);
+$('#settingRowColor').addEventListener('input',updateMemberColorPreview);
 $('#changeAccountPassword').addEventListener('click',async()=>{
  const currentPassword=$('#currentPassword').value,newPassword=$('#newPassword').value,confirmPassword=$('#confirmNewPassword').value,status=$('#passwordChangeStatus'),button=$('#changeAccountPassword');
  if(!chatStyleAuthenticated){status.textContent='Şifre değiştirmek için giriş yapmalısın.';notify(status.textContent);return;}
@@ -897,10 +902,10 @@ $('#changeAccountPassword').addEventListener('click',async()=>{
  finally{button.disabled=false;button.textContent='Şifreyi güncelle';}
 });
 $('#saveMemberSettings').addEventListener('click',async()=>{
- const nameColor=$('#settingNickColor').value,textColor=$('#settingMessageColor').value;
+ const nameColor=$('#settingNickColor').value,textColor=$('#settingMessageColor').value,rowColor=$('#settingRowColor').value;
  if(!chatStyleAuthenticated){$('#memberColorStatus').textContent='Renk tercihlerini kaydetmek için giriş yapmalısın.';notify('Renk ayarları için giriş yapmalısın.');return;}
  const button=$('#saveMemberSettings');button.disabled=true;button.textContent='Kaydediliyor…';
- try{const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor,textColor,rowColor:'#e8efe8'})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Renk tercihleri kaydedilemedi.');const saved=data.chatStyle||{nameColor,textColor};setChatColorInputs(saved);if(chatStyleAccountId)applyLobbyChatStyles([{id:chatStyleAccountId,chat_name_color:saved.nameColor,chat_text_color:saved.textColor}]);chatLastId=0;renderedChatMessageIds.clear();chatMessagesBox.replaceChildren();await loadLobbyMessages(true);$('#memberColorStatus').textContent='Nick ve sohbet yazı renklerin kaydedildi.';notify('Renk tercihlerin kaydedildi.');}
+ try{const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor,textColor,rowColor})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Renk tercihleri kaydedilemedi.');const saved=data.chatStyle||{nameColor,textColor};setChatColorInputs(saved);if(chatStyleAccountId)applyLobbyChatStyles([{id:chatStyleAccountId,chat_name_color:saved.nameColor,chat_text_color:saved.textColor,chat_row_color:saved.rowColor}]);chatLastId=0;renderedChatMessageIds.clear();chatMessagesBox.replaceChildren();await loadLobbyMessages(true);$('#memberColorStatus').textContent='Nick, mesaj ve sohbet satırı renklerin kaydedildi.';notify('Renk tercihlerin kaydedildi.');}
  catch(error){$('#memberColorStatus').textContent=error.message;notify(error.message);}
  finally{button.disabled=false;button.textContent='Renkleri kaydet';}
 });
