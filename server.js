@@ -574,7 +574,7 @@ app.post('/api/contact', contactLimiter, asyncRoute(async (req, res) => {
     const mail = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [process.env.SUPPORT_EMAIL], reply_to: email, subject: '[ZirveOkey Destek] ' + subject, text: 'Gönderen: ' + name + '\\nE-posta: ' + email + '\\n\\n' + message })
+      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [process.env.SUPPORT_EMAIL], reply_to: email, subject: '[ZirveOkey Destek] ' + subject, text: 'Gönderen: ' + name + '\nE-posta: ' + email + '\n\n' + message })
     });
     if (!mail.ok) throw new Error('Provider HTTP ' + mail.status);
   } catch (mailError) {
