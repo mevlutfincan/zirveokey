@@ -547,7 +547,7 @@ async function openMemberProfile(memberId){
   else badges.forEach(label=>{const badge=document.createElement('span');badge.textContent=label;badgeRoot.append(badge);});
   const root=$('#memberProfileActions');root.replaceChildren();
   const add=(label,action)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>runMemberAction(action,activeSocialMember,p));root.append(b);};
-  if(p.incoming_request)add('İsteği kabul et','accept');else if(!p.is_friend&&!p.outgoing_request)add('Arkadaş ekle','friend');else if(p.outgoing_request)add('İstek gönderildi','pending');
+  if(p.incoming_request){add('İsteği kabul et','accept');add('İsteği reddet','decline');}else if(!p.is_friend&&!p.outgoing_request)add('Arkadaş ekle','friend');else if(p.outgoing_request)add('İsteği iptal et','cancel_request');
   if(p.is_friend)add('Arkadaşlıktan çıkar','unfriend');
   add(p.is_favorite?'Favorilerden çıkar':'Favorilere ekle','favorite');
   add('Özel mesaj gönder','message');add(p.is_blocked?'Engeli kaldır':'Engelle','block');add('Şikâyet et','report');
@@ -564,6 +564,8 @@ async function runMemberAction(action,member,profile){
   let data;
   if(action==='friend')data=await socialRequest('/api/social/friends/'+member.id,'POST',{});
   else if(action==='accept')data=await socialRequest('/api/social/friends/'+member.id,'PUT',{status:'accepted'});
+  else if(action==='decline')data=await socialRequest('/api/social/friends/'+member.id,'PUT',{status:'declined'});
+  else if(action==='cancel_request')data=await socialRequest('/api/social/friends/'+member.id,'DELETE');
   else if(action==='unfriend')data=await socialRequest('/api/social/friends/'+member.id,'DELETE');
   else if(action==='favorite')data=await socialRequest('/api/social/favorites/'+member.id,profile?.is_favorite?'DELETE':'POST',{});
   else if(action==='block'){if(!confirm(member.username+' adlı üyeyi engellemek istiyor musun?'))return;data=await socialRequest('/api/social/blocks/'+member.id,profile?.is_blocked?'DELETE':'POST',{});}
@@ -594,7 +596,7 @@ async function loadSocialCenter(tab='friends'){
    const sub=document.createElement('small');sub.textContent=suffix;
    const open=document.createElement('button');open.type='button';open.textContent='Profili aç';open.addEventListener('click',()=>openMemberProfile(item.id));
    row.append(name,sub,open);
-   if(tab==='requests'){const accept=document.createElement('button');accept.type='button';accept.textContent='Kabul et';accept.addEventListener('click',async()=>{await runMemberAction('accept',item);});row.append(accept);}
+   if(tab==='requests'){const accept=document.createElement('button');accept.type='button';accept.textContent='Kabul et';accept.addEventListener('click',async()=>{await runMemberAction('accept',item);});const decline=document.createElement('button');decline.type='button';decline.textContent='Reddet';decline.addEventListener('click',async()=>{await runMemberAction('decline',item);});row.append(accept,decline);}
    if(tab==='blocked'){const unblock=document.createElement('button');unblock.type='button';unblock.textContent='Engeli kaldır';unblock.addEventListener('click',()=>runMemberAction('block',item,{is_blocked:true}));row.append(unblock);}
    root.append(row);
   });
