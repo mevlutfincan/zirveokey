@@ -302,7 +302,8 @@ async function main() {
    assert.ok(busyMember, 'Meşgul durumundaki B listeden kayboldu.');
    assert.equal(busyMember.status, 'busy', 'Meşgul etiketi listede gösterilmedi.');
 
-  const profileA = await request('/api/members/' + (await (await request('/api/auth/me',{cookie:cookieA})).json()).user.id + '/profile', { cookie: cookieA });
+  const profileAId = (await (await request('/api/auth/me',{cookie:cookieA})).json()).user.id;
+  const profileA = await request('/api/members/' + profileAId + '/profile', { cookie: cookieA });
   assert.equal(profileA.status, 200, 'A kendi profilini açamadı.');
   const profileBId = (await (await request('/api/auth/me',{cookie:cookieB})).json()).user.id;
   const profileB = await request('/api/members/' + profileBId + '/profile', { cookie: cookieA });
@@ -334,7 +335,7 @@ async function main() {
   assert.equal(block.status,200,'A B kullanıcısını engelleyemedi.');
   const blockedMessage = await request('/api/private-messages/' + profileBId,{method:'POST',cookie:cookieA,body:{message:'Engel kontrolü'}});
   assert.equal(blockedMessage.status,403,'Engellenen üyeye özel mesaj gönderilebildi.');
-  const blockedProfile = await request('/api/members/' + profileBId + '/profile',{cookie:cookieB});
+  const blockedProfile = await request('/api/members/' + profileAId + '/profile',{cookie:cookieB});
   assert.equal(blockedProfile.status,403,'Engelleyen üyenin profili engellenen kullanıcıya açık kaldı.');
   const unblock = await request('/api/social/blocks/' + profileBId,{method:'DELETE',cookie:cookieA});
   assert.equal(unblock.status,200,'A engeli kaldıramadı.');
