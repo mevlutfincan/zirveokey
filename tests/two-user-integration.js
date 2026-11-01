@@ -352,6 +352,9 @@ async function main() {
   assert.equal(oldPasswordLogin.status, 401, 'Eski şifreyle yeniden giriş yapılabildi.');
   const newPasswordLogin = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: 'ZirveNew!2026A' } });
   assert.equal(newPasswordLogin.status, 200, 'Yeni şifreyle giriş yapılamadı.');
+  const newPasswordLoginData = await newPasswordLogin.json();
+  assert.equal(newPasswordLoginData.user.country, 'Türkiye', 'Yeni giriş yanıtında ülke bilgisi kayboldu.');
+  assert.equal(newPasswordLoginData.user.gender, 'Kadın', 'Yeni giriş yanıtında cinsiyet bilgisi kayboldu.');
   const cookieANewLogin = cookieFrom(newPasswordLogin);
   const testDb = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false });
   try {
