@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#06110b"><meta name="description" content="ZirveOkey hesap ve profil ayarları.">
 <title>Hesabım | ZirveOkey</title>
 <link rel="stylesheet" href="/css/styles.css?v=notifications-20261101-02">
-<link rel="stylesheet" href="/css/account.css?v=account-profile-edit-20261101">
+<link rel="stylesheet" href="/css/account.css?v=account-email-change-20261101">
 <script defer src="/js/account.js?v=account-profile-edit-20261101"></script>
 </head>
 <body class="account-page">
@@ -26,7 +26,10 @@
 </section>
 <div class="account-grid">
 <section class="account-card"><div class="account-card-head"><div><span class="account-label">GÜVENLİK</span><h2>Şifre değiştir</h2></div></div>
-<form id="passwordForm" class="account-form"><label>Mevcut şifre<input id="currentPassword" type="password" autocomplete="current-password" minlength="10" maxlength="72" required></label><label>Yeni şifre<input id="newPassword" type="password" autocomplete="new-password" minlength="10" maxlength="72" required></label><label>Yeni şifre tekrar<input id="confirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="72" required></label><button class="account-button" type="submit">Şifreyi güncelle</button><p class="form-status" id="passwordStatus" role="status"></p></form></section>
+<form id="passwordForm" class="account-form"><label>Mevcut şifre<input id="currentPassword" type="password" autocomplete="current-password" minlength="10" maxlength="72" required></label><label>Yeni şifre<input id="newPassword" type="password" autocomplete="new-password" minlength="10" maxlength="72" required></label><label>Yeni şifre tekrar<input id="confirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="72" required></label><button class="account-button" type="submit">Şifreyi güncelle</button><p class="form-status" id="passwordStatus" role="status"></p></form>
+<div class="account-subsection"><h3>E-posta adresini değiştir</h3><p>Yeni adresine doğrulama bağlantısı gönderilir. Bağlantı 30 dakika geçerlidir.</p>
+<form id="emailChangeForm" class="account-form" hidden><label>Yeni e-posta adresi<input id="newEmail" type="email" autocomplete="email" maxlength="254" required></label><label>Mevcut şifre<input id="emailCurrentPassword" type="password" autocomplete="current-password" minlength="10" maxlength="72" required></label><button class="account-button" type="submit">Doğrulama bağlantısı gönder</button><p class="form-status" id="emailChangeStatus" role="status" aria-live="polite"></p></form>
+<p class="form-status" id="emailChangeUnavailable" role="status">E-posta doğrulama hizmeti henüz yapılandırılmadı.</p></div></section>
 <section class="account-card"><div class="account-card-head"><div><span class="account-label">KİŞİSELLEŞTİRME</span><h2>Hesap tercihleri</h2></div></div>
 <form id="preferencesForm" class="preferences-list">
 <label><span><b>Koyu görünüm</b><small>Hesap arayüzünde koyu temayı kullan.</small></span><input type="checkbox" name="settingDarkMode"></label>
