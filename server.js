@@ -333,7 +333,7 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   res.status(204).end();
 }));
 
-app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
+app.get('/api/presence/online', dbRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
     SELECT u.id,u.username,u.membership_tier,
@@ -341,8 +341,9 @@ app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
         THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END AS status
     FROM user_presence p JOIN users u ON u.id=p.user_id
     WHERE p.last_seen_at>NOW()-INTERVAL '90 seconds' AND u.is_active=TRUE
+      AND ($1::bigint IS NULL OR NOT EXISTS(SELECT 1 FROM member_blocks b WHERE b.blocker_id=$1 AND b.blocked_id=u.id))
     ORDER BY u.username_normalized ASC LIMIT 100
-  `);
+  `,[req.session.user?.id||null]);
   res.json({ members: result.rows, count: result.rows.length });
 }));
 
@@ -368,14 +369,16 @@ app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
 }));
 app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarları kaydetmek için giriş yapmalısınız.' });
-  const allowed = ['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI','settingPresenceStatus'];
+  const allowed = ['profileBio','settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI','settingPresenceStatus'];
   const input = req.body?.preferences;
   const validPresenceStatuses = new Set(['online','away','sleeping','busy']);
   if (!input || typeof input !== 'object' || Array.isArray(input) ||
       Object.keys(input).some(key => !allowed.includes(key)) ||
-      Object.entries(input).some(([key,value]) => key === 'settingPresenceStatus'
-        ? typeof value !== 'string' || !validPresenceStatuses.has(value)
-        : typeof value !== 'boolean')) {
+      Object.entries(input).some(([key,value]) => key === 'profileBio'
+        ? typeof value !== 'string' || value.trim().length > 160
+        : key === 'settingPresenceStatus'
+          ? typeof value !== 'string' || !validPresenceStatuses.has(value)
+          : typeof value !== 'boolean')) {
     return res.status(400).json({ error: 'Geçersiz ayar verisi.' });
   }
   const result = await pool.query(
@@ -522,7 +525,12 @@ function requireMemberSession(req,res){
   return Number(req.session.user.id);
 }
 async function notifyMember(userId,category,title,message,actionUrl=null){
-  await pool.query('INSERT INTO user_notifications(user_id,category,title,message,action_url) VALUES($1,$2,$3,$4,$5)',[userId,category,title,message,actionUrl]);
+  const preferenceKey={friendship:'settingFriendRequests',players:'settingNotifyPlayers',game:'settingNotifyGame',system:'settingNotifySystem',management:'settingNotifyManagement',rewards:'settingNotifyRewards'}[category];
+  await pool.query(`INSERT INTO user_notifications(user_id,category,title,message,action_url)
+    SELECT id,$2,$3,$4,$5 FROM users
+    WHERE id=$1 AND notifications_enabled=TRUE
+      AND COALESCE(member_preferences->>$6,'true')<>'false'`,
+  [userId,category,title,message,actionUrl,preferenceKey||'']);
 }
 function parseMemberId(value){
   if(!/^[1-9]\d*$/.test(String(value)))return null;
