@@ -118,8 +118,8 @@ async function main() {
     const data = await me.json();
     assert.equal(data.authenticated, true, label + ' oturumu doğrulanmadı.');
     assert.equal(data.user.username, expected, label + ' yanlış kullanıcıya bağlandı.');
-    assert.equal(data.user.country, label === 'A' ? 'Türkiye' : 'Almanya', label + ' ülke bilgisi saklanmadı.');
-    assert.equal(data.user.gender, label === 'A' ? 'Kadın' : 'Erkek', label + ' cinsiyet bilgisi saklanmadı.');
+    assert.equal(data.user.country, label === 'A' ? 'Fransa' : 'Almanya', label + ' ülke bilgisi saklanmadı.');
+    assert.equal(data.user.gender, label === 'A' ? 'Belirtmek istemiyorum' : 'Erkek', label + ' cinsiyet bilgisi saklanmadı.');
   }
 
   const anonymousPreferences = await request('/api/account/preferences');
@@ -368,8 +368,8 @@ async function main() {
   const newPasswordLogin = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: 'ZirveNew!2026A' } });
   assert.equal(newPasswordLogin.status, 200, 'Yeni şifreyle giriş yapılamadı.');
   const newPasswordLoginData = await newPasswordLogin.json();
-  assert.equal(newPasswordLoginData.user.country, 'Türkiye', 'Yeni giriş yanıtında ülke bilgisi kayboldu.');
-  assert.equal(newPasswordLoginData.user.gender, 'Kadın', 'Yeni giriş yanıtında cinsiyet bilgisi kayboldu.');
+  assert.equal(newPasswordLoginData.user.country, 'Fransa', 'Yeni giriş yanıtında güncellenen ülke bilgisi kayboldu.');
+  assert.equal(newPasswordLoginData.user.gender, 'Belirtmek istemiyorum', 'Yeni giriş yanıtında güncellenen cinsiyet bilgisi kayboldu.');
   const cookieANewLogin = cookieFrom(newPasswordLogin);
   const testDb = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false });
   try {
