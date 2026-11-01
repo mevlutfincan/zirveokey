@@ -36,6 +36,8 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
+      - name: Test Resend webhook signature verification
+        run: npm run test:webhook
       - name: Check JavaScript syntax
         run: |
           node --check server.js
