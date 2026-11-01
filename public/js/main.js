@@ -119,24 +119,36 @@ async function loadNotifications(){
   }
 }
 async function mutateNotification(url,method){
+  const requestVersion=notificationSessionVersion;
+  const requestUserId=homeUserId;
   try{
     const response=await fetch(url,{method,credentials:'same-origin',cache:'no-store'});
     const data=await response.json().catch(()=>({}));
+    if(requestVersion!==notificationSessionVersion||requestUserId!==homeUserId||!homeSignedIn)return;
     if(!response.ok)throw new Error(data.error||'Bildirim işlemi tamamlanamadı.');
     await loadNotifications();
-  }catch(error){alert(error.message);}
+  }catch(error){
+    if(requestVersion===notificationSessionVersion&&requestUserId===homeUserId)alert(error.message);
+  }
 }
 async function saveNotificationCategories(changes){
   const status=document.getElementById('notificationSettingsStatus');
+  const requestVersion=notificationSessionVersion;
+  const requestUserId=homeUserId;
   try{
     const response=await fetch('/api/account/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:changes})});
     const data=await response.json().catch(()=>({}));
+    if(requestVersion!==notificationSessionVersion||requestUserId!==homeUserId||!homeSignedIn)return;
     if(!response.ok)throw new Error(data.error||'Bildirim ayarı kaydedilemedi.');
-    notificationState.preferences={...(notificationState.preferences||{}),...(data.preferences||{}),...changes};
+    notificationState.preferences={...(notificationState?.preferences||{}),...(data.preferences||{}),...changes};
     try{const saved=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');localStorage.setItem('zirveMemberSettings',JSON.stringify({...saved,...changes}));}catch{}
     status.textContent='Bildirim kategorileri kaydedildi.';
     renderNotifications();
-  }catch(error){status.textContent=error.message;await loadNotifications();}
+  }catch(error){
+    if(requestVersion!==notificationSessionVersion||requestUserId!==homeUserId)return;
+    status.textContent=error.message;
+    await loadNotifications();
+  }
 }
 notificationToggle?.addEventListener('click',async()=>{
   const open=notificationPanel.hidden;
@@ -146,17 +158,28 @@ notificationToggle?.addEventListener('click',async()=>{
 });
 document.getElementById('notificationClose')?.addEventListener('click',closeNotificationPanel);
 document.getElementById('notificationsEnabled')?.addEventListener('change',async event=>{
-  const checkbox=event.currentTarget;checkbox.disabled=true;
+  const checkbox=event.currentTarget;
+  const requestVersion=notificationSessionVersion;
+  const requestUserId=homeUserId;
+  const requestedValue=checkbox.checked;
+  checkbox.disabled=true;
   try{
-    const response=await fetch('/api/notifications/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:checkbox.checked})});
+    const response=await fetch('/api/notifications/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:requestedValue})});
     const data=await response.json().catch(()=>({}));
+    if(requestVersion!==notificationSessionVersion||requestUserId!==homeUserId||!homeSignedIn)return;
     if(!response.ok)throw new Error(data.error||'Bildirim tercihi kaydedilemedi.');
     notificationState.enabled=data.enabled===true;
     notificationState.preferences={...(notificationState.preferences||{}),settingNotifications:notificationState.enabled};
     try{const saved=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');localStorage.setItem('zirveMemberSettings',JSON.stringify({...saved,settingNotifications:notificationState.enabled}));}catch{}
     renderNotifications();
-  }catch(error){alert(error.message);checkbox.checked=notificationState?.enabled===true;}
-  finally{checkbox.disabled=false;}
+  }catch(error){
+    if(requestVersion===notificationSessionVersion&&requestUserId===homeUserId){
+      alert(error.message);
+      checkbox.checked=notificationState?.enabled===true;
+    }
+  }finally{
+    if(requestVersion===notificationSessionVersion&&requestUserId===homeUserId)checkbox.disabled=false;
+  }
 });
 document.querySelectorAll('[data-notification-category]').forEach(input=>input.addEventListener('change',()=>{
   const changes={[input.dataset.notificationCategory]:input.checked};
