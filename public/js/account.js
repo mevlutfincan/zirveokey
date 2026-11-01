@@ -24,6 +24,7 @@ async function loadAccount(){
   const [avatar,prefs,style]=await Promise.all([api('/api/account/avatar'),api('/api/account/preferences'),api('/api/account/chat-style')]);
   renderAvatar(avatar.avatar,me.user.username);
   preferences=prefs.preferences||{};
+  document.body.classList.toggle('soft-light',preferences.settingDarkMode===false);
   document.querySelectorAll('#preferencesForm input[name]').forEach(input=>{input.checked=preferences[input.name]===true;});
   const colors=style.chatStyle||{};
   $('#nameColor').value=colors.nameColor||'#ffffff';
@@ -57,7 +58,7 @@ $('#passwordForm').addEventListener('submit',async event=>{
 $('#preferencesForm').addEventListener('submit',async event=>{
  event.preventDefault();const changes={};event.currentTarget.querySelectorAll('input[name]').forEach(input=>changes[input.name]=input.checked);
  const button=event.currentTarget.querySelector('button');button.disabled=true;
- try{const result=await api('/api/account/preferences',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:changes})});preferences=result.preferences||{...preferences,...changes};try{localStorage.setItem('zirveMemberSettings',JSON.stringify({...JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}'),...preferences}));}catch{}setStatus($('#preferencesStatus'),'Hesap tercihlerin kaydedildi.');}
+ try{const result=await api('/api/account/preferences',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:changes})});preferences=result.preferences||{...preferences,...changes};document.body.classList.toggle('soft-light',preferences.settingDarkMode===false);try{localStorage.setItem('zirveMemberSettings',JSON.stringify({...JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}'),...preferences}));}catch{}setStatus($('#preferencesStatus'),'Hesap tercihlerin kaydedildi.');}
  catch(error){setStatus($('#preferencesStatus'),error.message,true);}
  finally{button.disabled=false;}
 });
