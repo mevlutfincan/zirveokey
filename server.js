@@ -6,6 +6,7 @@ const PgSession = require('connect-pg-simple')(session);
 const { rateLimit } = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { verifyResendWebhook } = require('./resend-webhook');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,7 +30,12 @@ app.use((_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   next();
 });
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({
+  limit: '2mb',
+  verify(req, _res, buffer) {
+    if (req.path === '/api/webhooks/resend') req.rawBody = Buffer.from(buffer);
+  }
+}));
 app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 
 const schema = `
@@ -90,6 +96,13 @@ CREATE TABLE IF NOT EXISTS user_notifications (
 );
 CREATE INDEX IF NOT EXISTS user_notifications_user_created_idx ON user_notifications(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS user_notifications_unread_idx ON user_notifications(user_id, created_at DESC) WHERE read_at IS NULL;
+CREATE TABLE IF NOT EXISTS resend_webhook_events (
+  event_id VARCHAR(100) PRIMARY KEY,
+  event_type VARCHAR(60) NOT NULL,
+  email_id VARCHAR(100),
+  received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS resend_webhook_events_received_idx ON resend_webhook_events(received_at DESC);
 `;
 
 const authLimiter = rateLimit({
@@ -111,6 +124,28 @@ const dbRequired = (_req, res, next) => {
   if (!pool || !sessionSecret) return res.status(503).json({ error: 'Hesap sistemi sunucu yapılandırması bekliyor.' });
   next();
 };
+
+app.post('/api/webhooks/resend', asyncRoute(async (req, res) => {
+  if (!pool || !process.env.RESEND_WEBHOOK_SECRET) {
+    return res.status(503).json({ error: 'E-posta olay alıcısı yapılandırılmamış.' });
+  }
+  if (!verifyResendWebhook(req, process.env.RESEND_WEBHOOK_SECRET)) {
+    return res.status(401).json({ error: 'Webhook imzası geçersiz.' });
+  }
+  const event = req.body;
+  const supportedEvents = new Set(['email.sent', 'email.delivered', 'email.delivery_delayed', 'email.bounced', 'email.complained', 'email.failed', 'email.suppressed']);
+  if (!event || !supportedEvents.has(event.type)) {
+    return res.status(400).json({ error: 'Desteklenmeyen e-posta olayı.' });
+  }
+  const emailId = typeof event.data?.email_id === 'string'
+    ? event.data.email_id
+    : (typeof event.data?.id === 'string' ? event.data.id : null);
+  await pool.query(
+    'INSERT INTO resend_webhook_events(event_id,event_type,email_id) VALUES($1,$2,$3) ON CONFLICT(event_id) DO NOTHING',
+    [req.get('svix-id'), event.type, emailId]
+  );
+  res.status(204).end();
+}));
 
 if (pool && sessionSecret) {
   app.use(session({

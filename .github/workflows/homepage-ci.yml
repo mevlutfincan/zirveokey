@@ -26,6 +26,7 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/zirveokey_test
       SESSION_SECRET: ci-only-session-secret-not-for-production
+      RESEND_WEBHOOK_SECRET: whsec_dGVzdC1yZXNlbmQtd2ViaG9vay1zZWNyZXQtMzItYnl0ZXMh
       NODE_ENV: test
     steps:
       - name: Check out repository
@@ -36,6 +37,10 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
+      - name: Test Resend webhook signature verification
+        run: npm run test:webhook
+      - name: Test Resend webhook endpoint and database idempotency
+        run: node tests/resend-webhook-integration.js
       - name: Check JavaScript syntax
         run: |
           node --check server.js
