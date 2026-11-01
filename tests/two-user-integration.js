@@ -376,6 +376,8 @@ async function main() {
   assert.equal((await currentSessionAfterPasswordChange.json()).authenticated, true, 'Şifre değişikliğinde geçerli cihazın oturumu gereksiz yere kapatıldı.');
   const otherSessionAfterPasswordChange = await request('/api/auth/me', { cookie: cookieASecond });
   assert.equal((await otherSessionAfterPasswordChange.json()).authenticated, false, 'Şifre değişikliğinde diğer cihazın oturumu kapatılmadı.');
+  const passwordChangeNotice = await (await request('/api/notifications', { cookie: cookieA })).json();
+  assert.ok(passwordChangeNotice.notifications.some(item => item.category === 'system' && item.title === 'Şifren güncellendi'), 'Şifre değişikliği güvenlik bildirimi oluşturulmadı.');
   const oldPasswordLogin = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: users[0].password } });
   assert.equal(oldPasswordLogin.status, 401, 'Eski şifreyle yeniden giriş yapılabildi.');
   const newPasswordLogin = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: 'ZirveNew!2026A' } });
@@ -416,7 +418,20 @@ async function main() {
     const cookieDNew = cookieFrom(loginD);
     const emailChangedNotifications = await (await request('/api/notifications', { cookie: cookieDNew })).json();
     assert.ok(emailChangedNotifications.notifications.some(item => item.category === 'system' && item.title === 'E-posta adresin güncellendi'), 'E-posta değişikliği sistem bildirimi oluşturulmadı.');
-    await request('/api/auth/logout', { method: 'POST', cookie: cookieDNew });
+    const resetTokenD = randomUUID().replaceAll('-', '').repeat(2);
+    await testDb.query('INSERT INTO password_reset_tokens(user_id,token_hash,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 minutes\')', [userDId.rows[0].id, require('node:crypto').createHash('sha256').update(resetTokenD).digest('hex')]);
+    const resetPasswordD = await request('/api/auth/reset-password', { method: 'POST', body: { token: resetTokenD, password: 'ZirveReset!2026D' } });
+    assert.equal(resetPasswordD.status, 200, 'Geçerli şifre sıfırlama bağlantısı çalışmadı: ' + await resetPasswordD.text());
+    const resetReplayD = await request('/api/auth/reset-password', { method: 'POST', body: { token: resetTokenD, password: 'ZirveReplay!2026D' } });
+    assert.equal(resetReplayD.status, 400, 'Şifre sıfırlama bağlantısı ikinci kez kullanılabildi.');
+    const oldEmailSessionAfterReset = await request('/api/auth/me', { cookie: cookieDNew });
+    assert.equal((await oldEmailSessionAfterReset.json()).authenticated, false, 'Şifre sıfırlama sonrası eski oturum açık kaldı.');
+    const resetLoginD = await request('/api/auth/login', { method: 'POST', body: { username: userD.username, password: 'ZirveReset!2026D' } });
+    assert.equal(resetLoginD.status, 200, 'Sıfırlanan yeni şifreyle giriş yapılamadı.');
+    const resetCookieD = cookieFrom(resetLoginD);
+    const resetNotificationsD = await (await request('/api/notifications', { cookie: resetCookieD })).json();
+    assert.ok(resetNotificationsD.notifications.some(item => item.category === 'system' && item.title === 'Şifren sıfırlandı'), 'Şifre sıfırlama güvenlik bildirimi oluşturulmadı.');
+    await request('/api/auth/logout', { method: 'POST', cookie: resetCookieD });
 
     const expiredToken = randomUUID().replaceAll('-', '').repeat(2);
     await testDb.query('INSERT INTO email_change_tokens(user_id,previous_email,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$3,$3,$4,NOW()-INTERVAL \'1 minute\')', [userDId.rows[0].id, newEmailD, 'expired-' + suffix + '@example.invalid', require('node:crypto').createHash('sha256').update(expiredToken).digest('hex')]);
