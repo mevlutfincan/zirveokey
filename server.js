@@ -283,6 +283,10 @@ app.post('/api/account/email-change/verify', dbRequired, asyncRoute(async (req, 
     await client.query('UPDATE email_change_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [found.rows[0].user_id]);
     await client.query('DELETE FROM user_sessions WHERE sess::jsonb->\'user\'->>\'id\'=$1', [String(found.rows[0].user_id)]);
     await client.query('DELETE FROM user_presence WHERE user_id=$1', [found.rows[0].user_id]);
+    await client.query(
+      "INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",
+      [found.rows[0].user_id, 'E-posta adresin güncellendi', 'Hesabının e-posta adresi başarıyla değiştirildi. Bu işlem sana ait değilse destek ekibiyle iletişime geç.']
+    );
     await client.query('COMMIT');
     res.clearCookie('zirve.sid', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
     res.json({ ok: true, message: 'E-posta adresiniz doğrulandı ve güncellendi. Yeni adresinizle tekrar giriş yapabilirsiniz.' });
