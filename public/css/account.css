@@ -6,3 +6,9 @@
 .profile-edit-form select{width:100%;min-height:42px;padding:9px 11px;border:1px solid var(--account-border,rgba(255,255,255,.16));border-radius:10px;background:var(--account-input,#101b15);color:inherit;font:inherit}
 .profile-edit-form button,.profile-edit-form .form-status{grid-column:1/-1}
 @media(max-width:600px){.profile-edit-form{grid-template-columns:1fr}}
+
+.account-subsection{margin-top:22px;padding-top:18px;border-top:1px solid var(--account-border,rgba(255,255,255,.12))}
+.account-subsection h3{margin:0 0 8px;font-size:1rem}
+.account-subsection>p{color:var(--account-muted,#aeb9b1);font-size:.88rem;line-height:1.6}
+#emailChangeForm[hidden]{display:none!important}
+#emailChangeUnavailable[hidden]{display:none!important}
