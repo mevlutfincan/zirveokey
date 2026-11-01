@@ -439,6 +439,10 @@ async function main() {
     await testDb.query('INSERT INTO email_change_tokens(user_id,previous_email,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$3,$3,$4,NOW()-INTERVAL \'1 minute\')', [userDId.rows[0].id, newEmailD, 'expired-' + suffix + '@example.invalid', require('node:crypto').createHash('sha256').update(expiredToken).digest('hex')]);
     const expiredVerify = await request('/api/account/email-change/verify', { method: 'POST', body: { token: expiredToken } });
     assert.equal(expiredVerify.status, 400, 'Süresi dolmuş e-posta doğrulama bağlantısı kabul edildi.');
+    const expiredResetToken = randomUUID().replaceAll('-', '').repeat(2);
+    await testDb.query('INSERT INTO password_reset_tokens(user_id,token_hash,expires_at) VALUES($1,$2,NOW()-INTERVAL \'1 minute\')', [userDId.rows[0].id, require('node:crypto').createHash('sha256').update(expiredResetToken).digest('hex')]);
+    const expiredReset = await request('/api/auth/reset-password', { method: 'POST', body: { token: expiredResetToken, password: 'ZirveExpired!2026D' } });
+    assert.equal(expiredReset.status, 400, 'Süresi dolmuş şifre sıfırlama bağlantısı kabul edildi.');
 
     await testDb.query('UPDATE users SET is_active=FALSE WHERE username_normalized=LOWER($1)', [users[0].username]);
     const disabledSession = await request('/api/auth/me', { cookie: cookieANewLogin });
