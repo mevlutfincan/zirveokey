@@ -275,15 +275,20 @@ app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
 }));
 app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
-  const showOnline = req.body.showOnline !== false;
-  await pool.query(`
-    INSERT INTO user_presence(user_id,last_seen_at,show_online) VALUES($1,NOW(),$2)
+  const requestedShowOnline = req.body.showOnline !== false;
+  const presence = await pool.query(`
+    INSERT INTO user_presence(user_id,last_seen_at,show_online)
+    SELECT u.id,NOW(),$2 AND COALESCE(u.member_preferences->>'settingShowOnline','true') <> 'false'
+    FROM users u WHERE u.id=$1 AND u.is_active=TRUE
     ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=EXCLUDED.show_online
-  `, [req.session.user.id, showOnline]);
+    RETURNING user_id
+  `, [req.session.user.id, requestedShowOnline]);
+  if (!presence.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
   res.status(204).end();
 }));
 
 app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
     SELECT u.id,u.username
     FROM user_presence p JOIN users u ON u.id=p.user_id
@@ -370,11 +375,12 @@ app.put('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
 }));
 
 app.get('/api/lobby/chat-styles', dbRequired, asyncRoute(async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
     SELECT u.id,u.username,u.chat_name_color,u.chat_text_color
     FROM users u
     JOIN user_presence p ON p.user_id=u.id
-    WHERE u.is_active=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
+    WHERE u.is_active=TRUE AND p.show_online=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
     ORDER BY u.id ASC
   `);
   res.json({ members: result.rows });

@@ -254,6 +254,12 @@ async function main() {
   assert.equal(receivedMessage.chat_text_color, '#1e3a8a', 'B kullanıcısı A seçtiği mesaj rengini göremedi.');
   assert.equal(receivedMessage.chat_row_color, '#dbeafe', 'B kullanıcısı A seçtiği satır rengini göremedi.');
 
+  const heartbeatAWhileHidden = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: { showOnline: true } });
+  assert.equal(heartbeatAWhileHidden.status, 204, 'A gizlilik tercihi kapalıyken heartbeat gönderemedi.');
+  const hiddenBySavedPreference = await (await request('/api/presence/online')).json();
+  assert.ok(!hiddenBySavedPreference.members.some(member => member.username === users[0].username), 'İstemcinin true heartbeat isteği kayıtlı gizlilik tercihini geçersiz kıldı.');
+  const enableOnlinePreferenceA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingShowOnline: true } } });
+  assert.equal(enableOnlinePreferenceA.status, 200, 'A çevrimiçi görünürlük tercihini tekrar açamadı.');
   const heartbeatA = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: { showOnline: true } });
   const heartbeatB = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
   assert.equal(heartbeatA.status, 204, 'A çevrimiçi heartbeat başarısız.');
@@ -263,14 +269,22 @@ async function main() {
   });
   assert.equal(styleUpdate.status, 200, 'A renk değişikliğini kaydedemedi.');
   const liveStylesResponse = await request('/api/lobby/chat-styles', { cookie: cookieB });
+  assert.equal(liveStylesResponse.headers.get('cache-control'), 'no-store', 'Canlı sohbet stil listesi önbelleğe açık.');
   assert.equal(liveStylesResponse.status, 200, 'B canlı sohbet renklerini alamadı.');
   const liveStyles = (await liveStylesResponse.json()).members;
   const liveStyleA = liveStyles.find(member => member.username === users[0].username);
   assert.ok(liveStyleA, 'B çevrimiçi A kullanıcısının renk bilgisini alamadı.');
   assert.equal(liveStyleA.chat_name_color, '#008000', 'B A kullanıcısının yeni isim rengini anlık renk akışında göremedi.');
   assert.equal(liveStyleA.chat_text_color, '#663399', 'B A kullanıcısının yeni mesaj rengini anlık renk akışında göremedi.');
+  const hideBFromChatStyles = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: false } });
+  assert.equal(hideBFromChatStyles.status, 204, 'B çevrimiçi görünürlüğünü kapatamadı.');
+  const hiddenChatStyles = await (await request('/api/lobby/chat-styles', { cookie: cookieA })).json();
+  assert.ok(!hiddenChatStyles.members.some(member => member.username === users[1].username), 'Gizli kullanıcı sohbet stil listesinde ifşa edildi.');
+  const restoreBChatVisibility = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
+  assert.equal(restoreBChatVisibility.status, 204, 'B çevrimiçi görünürlüğünü tekrar açamadı.');
 
   let onlineResponse = await request('/api/presence/online');
+  assert.equal(onlineResponse.headers.get('cache-control'), 'no-store', 'Çevrimiçi üye listesi yanıtı önbelleğe açık.');
   let online = await onlineResponse.json();
   assert.ok(online.members.some(member => member.username === users[0].username), 'A çevrimiçi listede görünmüyor.');
   assert.ok(online.members.some(member => member.username === users[1].username), 'B çevrimiçi listede görünmüyor.');
