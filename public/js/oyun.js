@@ -956,6 +956,7 @@ async function refreshGameAccount(){
   data=await r.json();
   if(data.authenticated===true&&!data.user)throw new Error('Oturum yanıtında kullanıcı bilgisi bulunamadı.');
  }catch(error){
+  if(checkSequence!==gameAuthCheckSequence)return;
   gameSignedIn=false;chatDisplayEnabled=false;
   $('#gameUsername').textContent='Misafir Oyuncu';$('#gameAccountState').textContent='Oturum doğrulanamadı';
   $('#gameAuthActions').hidden=false;$('#gameLogoutButton').hidden=true;
@@ -969,6 +970,8 @@ async function refreshGameAccount(){
  $('#gameUsername').textContent=signed?data.user.username:'Misafir Oyuncu';
  $('#gameAccountState').textContent=signed?'Üye hesabı':'Giriş yapılmadı';
  $('#gameUserAvatar').textContent=signed?data.user.username.slice(0,1).toLocaleUpperCase('tr-TR'):'M';
+ $('#gameSeatUsername').textContent=signed?data.user.username:'Misafir Oyuncu';
+ $('#gameSeatAvatar').textContent=signed?data.user.username.slice(0,1).toLocaleUpperCase('tr-TR'):'M';
  if(signed){try{await loadMemberAvatar();}catch(error){console.error('Profil avatarı yüklenemedi:',error);}}
  else paintMemberAvatar(null);
  $('#gameAuthActions').hidden=signed;$('#gameLogoutButton').hidden=!signed;
