@@ -525,7 +525,7 @@ async function notifyMember(userId,category,title,message,actionUrl=null){
   await pool.query('INSERT INTO user_notifications(user_id,category,title,message,action_url) VALUES($1,$2,$3,$4,$5)',[userId,category,title,message,actionUrl]);
 }
 function parseMemberId(value){
-  if(!/^[1-9]\\d*$/.test(String(value)))return null;
+  if(!/^[1-9]\d*$/.test(String(value)))return null;
   const id=Number(value);return Number.isSafeInteger(id)?id:null;
 }
 app.get('/api/members/:id/profile',dbRequired,asyncRoute(async(req,res)=>{
