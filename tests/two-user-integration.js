@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
+const { Pool } = require('pg');
 
 const port = Number(process.env.TEST_PORT || 3101);
 const baseUrl = 'http://127.0.0.1:' + port;
@@ -352,6 +353,20 @@ async function main() {
   const newPasswordLogin = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: 'ZirveNew!2026A' } });
   assert.equal(newPasswordLogin.status, 200, 'Yeni şifreyle giriş yapılamadı.');
   const cookieANewLogin = cookieFrom(newPasswordLogin);
+  const testDb = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false });
+  try {
+    await testDb.query('UPDATE users SET is_active=FALSE WHERE username_normalized=LOWER($1)', [users[0].username]);
+    const disabledSession = await request('/api/auth/me', { cookie: cookieANewLogin });
+    assert.equal(disabledSession.status, 200);
+    assert.equal((await disabledSession.json()).authenticated, false, 'Devre dışı hesap eski oturumla giriş yapmış görünmeye devam etti.');
+    const disabledHeartbeat = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieANewLogin, body: { showOnline: true } });
+    assert.equal(disabledHeartbeat.status, 401, 'Devre dışı hesap çevrimiçi heartbeat gönderebildi.');
+    const disabledChat = await request('/api/lobby/messages', { method: 'POST', cookie: cookieANewLogin, body: { message: 'Devre dışı hesap mesajı' } });
+    assert.equal(disabledChat.status, 401, 'Devre dışı hesap lobi sohbetine mesaj gönderebildi.');
+  } finally {
+    await testDb.query('UPDATE users SET is_active=TRUE WHERE username_normalized=LOWER($1)', [users[0].username]);
+    await testDb.end();
+  }
   const logoutNewLogin = await request('/api/auth/logout', { method: 'POST', cookie: cookieANewLogin });
   assert.equal(logoutNewLogin.status, 200, 'Yeni şifre doğrulama oturumu kapatılamadı.');
 
