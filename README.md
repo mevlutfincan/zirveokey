@@ -14,10 +14,11 @@ The account, session, profile, notification and lobby APIs require PostgreSQL an
 | `RESEND_API_KEY` | For email flows | Resend API key with permission to send from the configured domain |
 | `MAIL_FROM` | For email flows | Verified sender identity, e.g. `ZirveOkey <no-reply@your-verified-domain>` |
 | `SUPPORT_EMAIL` | For contact form | Destination inbox for contact form messages |
+| `RESEND_WEBHOOK_SECRET` | For delivery events | Signing secret for verifying Resend webhook requests |
 
 ### Password reset and email address verification
 
-Set `RESEND_API_KEY`, `MAIL_FROM` and `APP_URL` in the deployment environment. The sender domain used by `MAIL_FROM` must be verified in Resend. These values enable password reset and one-time email address verification links.
+Set `RESEND_API_KEY`, `MAIL_FROM` and `APP_URL` in the deployment environment. Set `RESEND_WEBHOOK_SECRET` to the signing secret of the configured Resend webhook to authenticate delivery events. The sender domain used by `MAIL_FROM` must be verified in Resend. These values enable password reset and one-time email address verification links.
 
 ### Contact form
 
