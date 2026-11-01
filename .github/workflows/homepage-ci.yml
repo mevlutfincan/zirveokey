@@ -67,6 +67,11 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'loadNotifications'
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'saveNotificationCategories'
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'notificationSessionVersion'
+          curl --fail --silent http://127.0.0.1:3000/api/contact/status | grep -q '"configured":false'
+          curl --fail --silent http://127.0.0.1:3000/iletisim.html | grep -q 'contactForm'
+          curl --fail --silent http://127.0.0.1:3000/iletisim.html | grep -q 'contact-form-20261101'
+          curl --fail --silent http://127.0.0.1:3000/css/pages.css | grep -q '.contact-form'
+          curl --fail --silent http://127.0.0.1:3000/yardim.html | grep -q 'Profil bilgilerini nereden güncellerim'
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q "document.visibilityState==='visible')loadNotifications()"
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'Puan Sıralaması'
           curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q '.community-card'
