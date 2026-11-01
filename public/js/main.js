@@ -304,6 +304,11 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 async function logout(){
   const buttons=[document.getElementById('logoutButton'),document.getElementById('mobileLogoutButton')].filter(Boolean);
   buttons.forEach(button=>button.disabled=true);
+  // Invalidate in-flight notification responses as soon as logout starts.
+  notificationSessionVersion++;
+  homeSignedIn=false;
+  notificationState=null;
+  closeNotificationPanel();
   try{
     const response=await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'});
     const data=await response.json().catch(()=>({}));
@@ -311,8 +316,10 @@ async function logout(){
     await refreshAuthState();
     $('#playStatus').textContent='Hesabından güvenli şekilde çıkış yaptın.';
     closeNav();
-  }catch(error){alert(error.message);}
-  finally{buttons.forEach(button=>button.disabled=false);}
+  }catch(error){
+    await refreshAuthState();
+    alert(error.message);
+  }finally{buttons.forEach(button=>button.disabled=false);}
 }
 document.getElementById('logoutButton')?.addEventListener('click',logout);
 document.getElementById('mobileLogoutButton')?.addEventListener('click',logout);
