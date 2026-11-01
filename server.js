@@ -309,6 +309,7 @@ app.post('/api/account/email-change', dbRequired, activeAccountRequired, authLim
   let verifyUrl;
   try {
     const base = new URL(process.env.APP_URL);
+    if (base.protocol !== 'https:' && process.env.NODE_ENV === 'production') throw new Error('APP_URL must use HTTPS in production');
     if (!['https:', 'http:'].includes(base.protocol)) throw new Error('Unsupported URL protocol');
     const rawToken = crypto.randomBytes(32).toString('hex');
     verifyUrl = new URL('/email-dogrula.html?token=' + encodeURIComponent(rawToken), base).toString();
@@ -663,6 +664,7 @@ app.post('/api/auth/forgot-password', dbRequired, resetLimiter, asyncRoute(async
   let appBase;
   try {
     appBase = new URL(process.env.APP_URL);
+    if (appBase.protocol !== 'https:' && process.env.NODE_ENV === 'production') throw new Error('APP_URL must use HTTPS in production');
     if (!['https:', 'http:'].includes(appBase.protocol)) throw new Error('Unsupported APP_URL protocol');
   } catch {
     return res.status(503).json({ error: 'Şifre sıfırlama e-posta hizmeti henüz yapılandırılmadı.' });
