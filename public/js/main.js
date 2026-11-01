@@ -34,6 +34,7 @@ async function refreshAuthState(){
     const notificationToggle=document.getElementById('notificationToggle');if(notificationToggle)notificationToggle.hidden=!signedIn;
     if(signedIn)loadNotifications();else closeNotificationPanel();
     ['logoutButton','mobileLogoutButton'].forEach(id=>{const button=document.getElementById(id);if(button)button.hidden=!signedIn;});
+    ['accountPageLink','mobileAccountPageLink'].forEach(id=>{const link=document.getElementById(id);if(link)link.hidden=!signedIn;});
     ['accountGreeting','mobileAccountGreeting'].forEach(id=>{const el=document.getElementById(id);if(el){el.hidden=!signedIn;el.textContent=signedIn?'Merhaba, '+data.user.username:'';}});
   }catch(error){console.warn('Oturum durumu kontrol edilemedi:',error.message);}
 }
