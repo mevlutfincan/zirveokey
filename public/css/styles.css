@@ -1271,3 +1271,6 @@ body:not(.soft-light) .community-empty{
  .site-header .header-actions .logout-button{flex:1 1 0!important;width:auto!important;min-width:0!important}
  .site-header .header-actions .notification-toggle>span:first-child svg{display:block;width:18px;height:18px}
 }
+
+.account-page-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+@media(max-width:760px){.mobile-auth .account-page-link{height:44px;display:flex;align-items:center;justify-content:center}}
