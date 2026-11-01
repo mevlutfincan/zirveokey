@@ -481,7 +481,8 @@ async function loadOnlineMembers(){
    avatar.addEventListener('click',()=>openMemberProfile(member.id));
    row.dataset.memberId=member.id;row.dataset.memberName=member.username;
    row.addEventListener('contextmenu',event=>{event.preventDefault();showMemberContextMenu(member,event.clientX,event.clientY);});
-   let holdTimer=null;row.addEventListener('pointerdown',event=>{if(event.pointerType==='touch')holdTimer=window.setTimeout(()=>showMemberContextMenu(member,event.clientX,event.clientY),550);});
+   let holdTimer=null,longPressTriggered=false;row.addEventListener('pointerdown',event=>{if(event.pointerType==='touch')holdTimer=window.setTimeout(()=>{longPressTriggered=true;showMemberContextMenu(member,event.clientX,event.clientY);},550);});
+   row.addEventListener('click',event=>{if(longPressTriggered){event.preventDefault();event.stopPropagation();longPressTriggered=false;}},true);
    ['pointerup','pointercancel','pointerleave'].forEach(type=>row.addEventListener(type,()=>{if(holdTimer)clearTimeout(holdTimer);holdTimer=null;}));
    const identity=document.createElement('span');identity.className='online-member-identity';
    const nameLine=document.createElement('span');nameLine.className='online-member-name-line';
@@ -782,7 +783,7 @@ $('#removeSettingAvatar').addEventListener('click',async()=>{
  try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:null})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaldırılamadı.');paintMemberAvatar(null);$('#settingAvatarFile').value='';$('#settingAvatarStatus').textContent='Avatar kaldırıldı.';notify('Avatar kaldırıldı.');}
  catch(error){$('#settingAvatarStatus').textContent=error.message;}
 });
-const settingsKeys=['settingNotifications','settingNotificationSound','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards'];
+const settingsKeys=['settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards'];
 let memberPreferences={};
 const preferenceDefaults={settingNotifications:true,settingNotificationSound:false,settingPresenceStatus:'online',settingFriendRequests:true,settingNotifyPlayers:true,settingNotifyGame:true,settingNotifySystem:true,settingNotifyManagement:true,settingNotifyRewards:true};
 function applyMemberSettings(values){
