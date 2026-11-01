@@ -71,6 +71,12 @@ async function main() {
   assert.equal(registerB.status, 201, 'İkinci kullanıcı kaydı başarısız: ' + await registerB.text());
   const cookieB = cookieFrom(registerB);
 
+  const contactStatusResponse = await request('/api/contact/status');
+  assert.equal(contactStatusResponse.status, 200, 'İletişim yapılandırma durumu alınamadı.');
+  assert.equal((await contactStatusResponse.json()).configured, false, 'Test ortamında destek e-posta yapılandırması beklenmiyordu.');
+  const disabledContactSend = await request('/api/contact', { method: 'POST', body: { name: 'Test Kullanıcı', email: 'test@example.invalid', subject: 'Destek talebi', message: 'Bu bir test destek mesajıdır.' } });
+  assert.equal(disabledContactSend.status, 503, 'Destek alıcısı yapılandırılmadan iletişim mesajı gönderilmiş gibi kabul edildi.');
+
   const anonymousProfileEdit = await request('/api/account/profile', { method: 'PUT', body: { country: 'Türkiye', gender: 'Kadın' } });
   assert.equal(anonymousProfileEdit.status, 401, 'Oturumsuz kullanıcı profil bilgilerini değiştirebildi.');
   const invalidProfileEdit = await request('/api/account/profile', { method: 'PUT', cookie: cookieA, body: { country: 'Mars', gender: 'Kadın' } });
@@ -161,6 +167,7 @@ async function main() {
   const notificationsA = await notificationsAResponse.json();
   assert.equal(notificationsA.enabled, true, 'Yeni hesapta bildirimler varsayılan olarak açık olmalı.');
   assert.ok(notificationsA.notifications.some(item => item.category === 'system'), 'Kayıt karşılama sistem bildirimi oluşturulmadı.');
+  assert.ok(notificationsA.notifications.some(item => item.category === 'players' && item.message.includes(users[1].username)), 'Yeni üye olayı A hesabına oyuncu bildirimi üretmedi.');
   assert.ok((notificationsA.unreadByCategory.system || 0) >= 1, 'Sistem bildirimi okunmamış sayacına eklenmedi.');
   assert.equal(notificationsA.preferences.settingNotifySystem, undefined, 'Varsayılan sistem tercihi gereksiz yere false olarak saklandı.');
   const notificationId = notificationsA.notifications.find(item => item.category === 'system').id;
@@ -223,6 +230,10 @@ async function main() {
   const userC = { username: 'TestC_' + suffix, email: 'testc-' + suffix + '@example.invalid', password: 'ZirveTest!2026C', country: 'Türkiye', gender: 'Belirtmek istemiyorum' };
   const registerC = await request('/api/auth/register', { method: 'POST', body: userC });
   assert.equal(registerC.status, 201, 'Üçüncü bildirim test hesabı oluşturulamadı: ' + await registerC.text());
+  const cAnnouncementA = await (await request('/api/notifications', { cookie: cookieA })).json();
+  const cAnnouncementB = await (await request('/api/notifications', { cookie: cookieB })).json();
+  assert.ok(!cAnnouncementA.notifications.some(item => item.category === 'players' && item.message.includes(userC.username)), 'Oyuncu bildirimleri kapalı A hesabı yeni üye bildirimi aldı.');
+  assert.ok(cAnnouncementB.notifications.some(item => item.category === 'players' && item.message.includes(userC.username)), 'Oyuncu bildirimleri açık B hesabı yeni üye bildirimi almadı.');
   let cookieC = cookieFrom(registerC);
   const initialCNotifications = await (await request('/api/notifications', { cookie: cookieC })).json();
   assert.equal(initialCNotifications.notifications.filter(item => item.category === 'system').length, 1, 'C hesabında yalnızca kayıt bildirimi bekleniyordu.');
