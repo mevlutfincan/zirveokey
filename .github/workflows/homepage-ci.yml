@@ -46,6 +46,7 @@ jobs:
           node --check tests/two-user-integration.js
       - name: Smoke-test homepage and health endpoint
         run: |
+          trap 'echo "Smoke test failed at line $LINENO"; exit 1' ERR
           npm start > /tmp/zirveokey.log 2>&1 &
           echo $! > /tmp/zirveokey.pid
           ready=0
