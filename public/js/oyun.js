@@ -194,9 +194,8 @@ document.addEventListener('click',e=>{
  }
 });
 let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=false,chatStyleAccountId=null,chatDisplayEnabled=false;
- const defaultChatStyle={nameColor:'#111111',textColor:'#111111',rowColor:'#e8efe8'};
+ const defaultChatStyle={nameColor:'#111111',textColor:'#111111',rowColor:$('#settingRowColor')?.value||defaultChatStyle.rowColor};
  function validChatRowHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
- const fixedChatRowColor='rgba(232,239,232,.92)';
  function validChatHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
  function updateChatColorPreview(){
   const name=$('#chatNameColor').value,text=$('#chatBodyColor').value;
@@ -332,7 +331,7 @@ $('#chatColorSave').addEventListener('click',async()=>{
   if(!response.ok)throw new Error(data.error||'Renkler kaydedilemedi.');
   const savedStyle=data.chatStyle||{nameColor:$('#chatNameColor').value,textColor:$('#chatBodyColor').value};
   setChatColorInputs(savedStyle);
-  if(chatStyleAccountId)applyLobbyChatStyles([{id:chatStyleAccountId,chat_name_color:savedStyle.nameColor,chat_text_color:savedStyle.textColor}]);
+  if(chatStyleAccountId)applyLobbyChatStyles([{id:chatStyleAccountId,chat_name_color:savedStyle.nameColor,chat_text_color:savedStyle.textColor,chat_row_color:savedStyle.rowColor}]);
   $('#chatColorStatus').textContent='Renk tercihlerin hesabına kaydedildi.';
   chatLastId=0;renderedChatMessageIds.clear();chatMessagesBox.replaceChildren();await loadLobbyMessages(true);
  }catch(error){$('#chatColorStatus').textContent=error.message;}
