@@ -71,6 +71,21 @@ async function main() {
   assert.equal(registerB.status, 201, 'İkinci kullanıcı kaydı başarısız: ' + await registerB.text());
   const cookieB = cookieFrom(registerB);
 
+  const anonymousProfileEdit = await request('/api/account/profile', { method: 'PUT', body: { country: 'Türkiye', gender: 'Kadın' } });
+  assert.equal(anonymousProfileEdit.status, 401, 'Oturumsuz kullanıcı profil bilgilerini değiştirebildi.');
+  const invalidProfileEdit = await request('/api/account/profile', { method: 'PUT', cookie: cookieA, body: { country: 'Mars', gender: 'Kadın' } });
+  assert.equal(invalidProfileEdit.status, 400, 'Geçersiz ülke değeri profil API tarafından kabul edildi.');
+  const profileEditA = await request('/api/account/profile', { method: 'PUT', cookie: cookieA, body: { country: 'Fransa', gender: 'Belirtmek istemiyorum' } });
+  assert.equal(profileEditA.status, 200, 'A profil bilgilerini güncelleyemedi: ' + await profileEditA.text());
+  const profileEditDataA = await profileEditA.json();
+  assert.equal(profileEditDataA.user.country, 'Fransa');
+  assert.equal(profileEditDataA.user.gender, 'Belirtmek istemiyorum');
+  const profileReadA = await (await request('/api/auth/me', { cookie: cookieA })).json();
+  assert.equal(profileReadA.user.country, 'Fransa', 'Profil ülke bilgisi oturumda güncellenmedi.');
+  const profileReadB = await (await request('/api/auth/me', { cookie: cookieB })).json();
+  assert.equal(profileReadB.user.country, 'Almanya', 'A profil güncellemesi B hesabını etkiledi.');
+  assert.equal(profileReadB.user.gender, 'Erkek', 'A profil güncellemesi B cinsiyet bilgisini etkiledi.');
+
   const newMembersResponse = await request('/api/public/new-members');
   assert.equal(newMembersResponse.status, 200, 'Anasayfa yeni üyeler listesi alınamadı.');
   const newMembers = (await newMembersResponse.json()).members;
