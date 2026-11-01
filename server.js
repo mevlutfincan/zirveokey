@@ -549,6 +549,9 @@ app.get('/api/members/:id/profile',dbRequired,asyncRoute(async(req,res)=>{
   const result=await pool.query(`
     SELECT u.id,u.username,u.membership_tier,u.created_at,
       COALESCE(u.member_preferences->>'profileBio','') AS bio,
+      COALESCE(a.active_seconds,0)::bigint AS active_seconds,
+      GREATEST(0,EXTRACT(DAY FROM NOW()-u.created_at)::int) AS member_days,
+      (SELECT COUNT(*)::int FROM member_friendships f WHERE (f.requester_id=u.id OR f.recipient_id=u.id) AND f.status='accepted') AS friend_count,
       CASE WHEN p.last_seen_at>NOW()-INTERVAL '90 seconds' THEN
         CASE WHEN u.member_preferences->>'settingPresenceStatus' IN ('away','sleeping','busy') THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END
       ELSE 'offline' END AS status,
@@ -558,7 +561,7 @@ app.get('/api/members/:id/profile',dbRequired,asyncRoute(async(req,res)=>{
       EXISTS(SELECT 1 FROM member_favorites WHERE user_id=$1 AND target_id=u.id) AS is_favorite,
       EXISTS(SELECT 1 FROM member_blocks WHERE blocker_id=$1 AND blocked_id=u.id) AS is_blocked,
       EXISTS(SELECT 1 FROM member_blocks WHERE blocker_id=u.id AND blocked_id=$1) AS blocked_by_member
-    FROM users u LEFT JOIN user_presence p ON p.user_id=u.id
+    FROM users u LEFT JOIN user_presence p ON p.user_id=u.id LEFT JOIN user_activity a ON a.user_id=u.id
     WHERE u.id=$2 AND u.is_active=TRUE
   `,[viewerId,targetId]);
   if(!result.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
