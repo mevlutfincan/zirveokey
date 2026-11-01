@@ -62,6 +62,18 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 );
 CREATE INDEX IF NOT EXISTS password_reset_user_idx ON password_reset_tokens(user_id);
 CREATE INDEX IF NOT EXISTS password_reset_expiry_idx ON password_reset_tokens(expires_at);
+CREATE TABLE IF NOT EXISTS email_change_tokens (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  new_email VARCHAR(254) NOT NULL,
+  new_email_normalized VARCHAR(254) NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS email_change_user_idx ON email_change_tokens(user_id);
+CREATE INDEX IF NOT EXISTS email_change_expiry_idx ON email_change_tokens(expires_at);
 CREATE TABLE IF NOT EXISTS user_activity (user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), active_seconds BIGINT NOT NULL DEFAULT 0);
 CREATE INDEX IF NOT EXISTS user_activity_recent_idx ON user_activity(last_seen_at DESC, active_seconds DESC);
 CREATE TABLE IF NOT EXISTS user_presence (
@@ -213,6 +225,72 @@ app.put('/api/account/profile', dbRequired, activeAccountRequired, asyncRoute(as
   req.session.user = { ...req.session.user, country: result.rows[0].country, gender: result.rows[0].gender };
   res.setHeader('Cache-Control', 'no-store');
   res.json({ ok: true, user: req.session.user });
+}));
+
+app.get('/api/account/email-change/status', dbRequired, activeAccountRequired, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ configured: Boolean(process.env.RESEND_API_KEY && process.env.MAIL_FROM && process.env.APP_URL) });
+});
+
+app.post('/api/account/email-change', dbRequired, activeAccountRequired, authLimiter, asyncRoute(async (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const currentPassword = String(req.body?.currentPassword || '');
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+  if (currentPassword.length < 10 || currentPassword.length > 72) return res.status(400).json({ error: 'Mevcut şifrenizi doğrulayın.' });
+  const account = await pool.query('SELECT email,password_hash FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
+  if (!account.rows[0] || !(await bcrypt.compare(currentPassword, account.rows[0].password_hash))) return res.status(400).json({ error: 'Mevcut şifreniz doğru değil.' });
+  if (account.rows[0].email.toLowerCase() === email) return res.status(400).json({ error: 'Yeni e-posta adresi mevcut adresinizle aynı.' });
+  if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.APP_URL) return res.status(503).json({ error: 'E-posta doğrulama hizmeti henüz yapılandırılmadı.' });
+  let verifyUrl;
+  try {
+    const base = new URL(process.env.APP_URL);
+    if (!['https:', 'http:'].includes(base.protocol)) throw new Error('Unsupported URL protocol');
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    verifyUrl = new URL('/email-dogrula.html?token=' + encodeURIComponent(rawToken), base).toString();
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const existing = await pool.query('SELECT 1 FROM users WHERE email_normalized=$1 AND id<>$2 LIMIT 1', [email, req.session.user.id]);
+    if (existing.rowCount) return res.status(202).json({ ok: true, message: 'Adres uygunsa doğrulama bağlantısı gönderilecektir.' });
+    await pool.query('UPDATE email_change_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [req.session.user.id]);
+    await pool.query('INSERT INTO email_change_tokens(user_id,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$2,$3,NOW()+INTERVAL \'30 minutes\')', [req.session.user.id, email, tokenHash]);
+    const mail = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [email], subject: 'ZirveOkey e-posta adresi doğrulama', text: 'E-posta adresinizi değiştirmek için 30 dakika içinde bu bağlantıyı açın: ' + verifyUrl })
+    });
+    if (!mail.ok) {
+      await pool.query('UPDATE email_change_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [req.session.user.id]);
+      console.error('Email change provider rejected the request:', mail.status);
+      return res.status(502).json({ error: 'Doğrulama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.' });
+    }
+    res.status(202).json({ ok: true, message: 'Adres uygunsa doğrulama bağlantısı gönderilecektir.' });
+  } catch (error) {
+    if (error.code === '23505') return res.status(202).json({ ok: true, message: 'Adres uygunsa doğrulama bağlantısı gönderilecektir.' });
+    throw error;
+  }
+}));
+
+app.post('/api/account/email-change/verify', dbRequired, asyncRoute(async (req, res) => {
+  const token = String(req.body?.token || '');
+  if (!/^[a-f0-9]{64}$/.test(token)) return res.status(400).json({ error: 'Doğrulama bağlantısı geçersiz veya süresi dolmuş.' });
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const found = await client.query('SELECT id,user_id,new_email,new_email_normalized FROM email_change_tokens WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW() FOR UPDATE', [tokenHash]);
+    if (!found.rows[0]) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Doğrulama bağlantısı geçersiz veya süresi dolmuş.' }); }
+    const updated = await client.query('UPDATE users SET email=$1,email_normalized=$2 WHERE id=$3 AND is_active=TRUE RETURNING id', [found.rows[0].new_email, found.rows[0].new_email_normalized, found.rows[0].user_id]);
+    if (!updated.rowCount) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Doğrulama bağlantısı geçersiz veya süresi dolmuş.' }); }
+    await client.query('UPDATE email_change_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [found.rows[0].user_id]);
+    await client.query('DELETE FROM user_sessions WHERE sess::jsonb->\'user\'->>\'id\'=$1', [String(found.rows[0].user_id)]);
+    await client.query('DELETE FROM user_presence WHERE user_id=$1', [found.rows[0].user_id]);
+    await client.query('COMMIT');
+    res.clearCookie('zirve.sid', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    res.json({ ok: true, message: 'E-posta adresiniz doğrulandı ve güncellendi. Yeni adresinizle tekrar giriş yapabilirsiniz.' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    if (error.code === '23505') return res.status(409).json({ error: 'Bu e-posta adresi artık kullanılamıyor. Yeni bir adresle tekrar deneyin.' });
+    throw error;
+  } finally { client.release(); }
 }));
 
 app.post('/api/auth/register', dbRequired, authLimiter, asyncRoute(async (req, res) => {
