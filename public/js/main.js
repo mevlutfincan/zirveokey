@@ -224,7 +224,7 @@ function startActivityTracking(){
   if(!document.getElementById('activeMembersList'))return;
   sendActivityHeartbeat();
   sendHomePresenceHeartbeat();
-  window.setInterval(()=>{sendActivityHeartbeat();sendHomePresenceHeartbeat();loadActiveMembers();if(homeSignedIn)loadNotifications();},60000);
+  window.setInterval(()=>{sendActivityHeartbeat();sendHomePresenceHeartbeat();loadActiveMembers();if(homeSignedIn&&document.visibilityState==='visible')loadNotifications();},60000);
 }
 loadActiveMembers();
 startActivityTracking();
