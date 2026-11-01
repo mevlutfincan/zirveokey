@@ -275,14 +275,12 @@ app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
 }));
 app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
-  const requestedShowOnline = req.body.showOnline !== false;
   const presence = await pool.query(`
     INSERT INTO user_presence(user_id,last_seen_at,show_online)
-    SELECT u.id,NOW(),$2 AND COALESCE(u.member_preferences->>'settingShowOnline','true') <> 'false'
-    FROM users u WHERE u.id=$1 AND u.is_active=TRUE
-    ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=EXCLUDED.show_online
+    SELECT u.id,NOW(),TRUE FROM users u WHERE u.id=$1 AND u.is_active=TRUE
+    ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=TRUE
     RETURNING user_id
-  `, [req.session.user.id, requestedShowOnline]);
+  `, [req.session.user.id]);
   if (!presence.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
   res.status(204).end();
 }));
@@ -290,9 +288,11 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
 app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
-    SELECT u.id,u.username
+    SELECT u.id,u.username,
+      CASE WHEN u.member_preferences->>'settingPresenceStatus' IN ('away','sleeping','busy')
+        THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END AS status
     FROM user_presence p JOIN users u ON u.id=p.user_id
-    WHERE p.show_online=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds' AND u.is_active=TRUE
+    WHERE p.last_seen_at>NOW()-INTERVAL '90 seconds' AND u.is_active=TRUE
     ORDER BY u.username_normalized ASC LIMIT 100
   `);
   res.json({ members: result.rows, count: result.rows.length });
@@ -320,9 +320,14 @@ app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
 }));
 app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarları kaydetmek için giriş yapmalısınız.' });
-  const allowed = ['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingShowOnline','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI'];
+  const allowed = ['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI','settingPresenceStatus'];
   const input = req.body?.preferences;
-  if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(key => !allowed.includes(key)) || Object.values(input).some(value => typeof value !== 'boolean')) {
+  const validPresenceStatuses = new Set(['online','away','sleeping','busy']);
+  if (!input || typeof input !== 'object' || Array.isArray(input) ||
+      Object.keys(input).some(key => !allowed.includes(key)) ||
+      Object.entries(input).some(([key,value]) => key === 'settingPresenceStatus'
+        ? typeof value !== 'string' || !validPresenceStatuses.has(value)
+        : typeof value !== 'boolean')) {
     return res.status(400).json({ error: 'Geçersiz ayar verisi.' });
   }
   const result = await pool.query(
@@ -380,7 +385,7 @@ app.get('/api/lobby/chat-styles', dbRequired, asyncRoute(async (_req, res) => {
     SELECT u.id,u.username,u.chat_name_color,u.chat_text_color
     FROM users u
     JOIN user_presence p ON p.user_id=u.id
-    WHERE u.is_active=TRUE AND p.show_online=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
+    WHERE u.is_active=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
     ORDER BY u.id ASC
   `);
   res.json({ members: result.rows });
