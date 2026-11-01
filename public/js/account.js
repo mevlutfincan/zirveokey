@@ -25,7 +25,7 @@ async function loadAccount(){
   renderAvatar(avatar.avatar,me.user.username);
   preferences=prefs.preferences||{};
   document.body.classList.toggle('soft-light',preferences.settingDarkMode===false);
-  document.querySelectorAll('#preferencesForm input[name]').forEach(input=>{input.checked=preferences[input.name]===true;});
+  document.querySelectorAll('#preferencesForm input[name]').forEach(input=>{input.checked=input.name==='settingDarkMode'?preferences.settingDarkMode!==false:preferences[input.name]===true;});
   const colors=style.chatStyle||{};
   $('#nameColor').value=colors.nameColor||'#ffffff';
   $('#textColor').value=colors.textColor||'#e9f0e8';
