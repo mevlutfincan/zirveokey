@@ -366,6 +366,14 @@ async function main() {
     assert.equal(disabledHeartbeat.status, 401, 'Devre dışı hesap çevrimiçi heartbeat gönderebildi.');
     const disabledChat = await request('/api/lobby/messages', { method: 'POST', cookie: cookieANewLogin, body: { message: 'Devre dışı hesap mesajı' } });
     assert.equal(disabledChat.status, 401, 'Devre dışı hesap lobi sohbetine mesaj gönderebildi.');
+    const disabledPreferences = await request('/api/account/preferences', { cookie: cookieANewLogin });
+    assert.equal(disabledPreferences.status, 401, 'Devre dışı hesap hesap tercihlerini okuyabildi.');
+    const disabledAvatar = await request('/api/account/avatar', { cookie: cookieANewLogin });
+    assert.equal(disabledAvatar.status, 401, 'Devre dışı hesap avatar verisini okuyabildi.');
+    const disabledChatStyle = await request('/api/account/chat-style', { cookie: cookieANewLogin });
+    assert.equal(disabledChatStyle.status, 401, 'Devre dışı hesap sohbet görünüm ayarlarını okuyabildi.');
+    const disabledPasswordChange = await request('/api/account/password', { method: 'PUT', cookie: cookieANewLogin, body: { currentPassword: 'ZirveNew!2026A', newPassword: 'ZirveNew!2026B' } });
+    assert.equal(disabledPasswordChange.status, 401, 'Devre dışı hesap şifresini değiştirebildi.');
   } finally {
     await testDb.query('UPDATE users SET is_active=TRUE WHERE username_normalized=LOWER($1)', [users[0].username]);
     await testDb.end();
