@@ -84,6 +84,7 @@
  </aside>
 </main>
 
+<dialog class="online-member-avatar-dialog" id="onlineMemberAvatarDialog" aria-label="Üye profil fotoğrafı"><button type="button" class="online-member-avatar-close" id="onlineMemberAvatarClose" aria-label="Kapat">×</button><img id="onlineMemberAvatarImage" alt="Üye profil fotoğrafı"><b id="onlineMemberAvatarName"></b></dialog>
 <dialog class="create-dialog" id="createDialog"><form method="dialog" id="createTableForm"><div class="dialog-heading"><div><span class="eyebrow">YENİ OYUN</span><h2>Masa oluştur</h2></div><button class="icon-button" value="cancel" aria-label="Kapat">×</button></div><label>Masa adı<input id="newTableName" maxlength="22" value="Klasik Okey" required></label><div class="dialog-grid"><label>Oyun türü<select id="gameType"><option>Klasik Okey</option></select></label><label>Masa düzeni<select id="tablePrivacy"><option>Açık masa</option><option>Şifreli masa</option></select></label><label class="full-field">Masa görünümü<select id="tableStyle"><option value="Standart">Standart</option><option value="Renkli">Renkli</option></select></label></div><div class="dialog-actions"><button class="subtle-button" value="cancel">Vazgeç</button><button class="primary-button" id="confirmCreateTable" value="default">Masayı oluştur</button></div><p class="dialog-note">Bu aşamada masa oluşturma yalnızca arayüz önizlemesidir; diğer oyunculara açılmaz.</p></form></dialog>
 <dialog class="settings-dialog categorized-settings-dialog" id="memberSettingsDialog">
  <div class="settings-shell">
@@ -132,7 +133,7 @@
      <div class="settings-control-group">
       <label class="setting-row" for="settingPresenceStatus"><span><b>Durumum</b><small>Diğer üyelerin göreceği durum etiketi</small></span>
        <select id="settingPresenceStatus" class="setting-select">
-        <option value="online">Çevrim İçi</option><option value="away">Dışarda</option><option value="sleeping">Uyuyorum</option><option value="busy">Şu Anda Meşgul</option>
+        <option value="online">Çevrim İçi</option><option value="away">Dışarda</option><option value="sleeping">Uyuyorum</option><option value="busy">Meşgul</option>
        </select>
       </label>
      </div>
