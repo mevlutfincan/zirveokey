@@ -250,12 +250,14 @@ app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
 app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
   const requestedShowOnline = req.body.showOnline !== false;
-  await pool.query(`
+  const presence = await pool.query(`
     INSERT INTO user_presence(user_id,last_seen_at,show_online)
     SELECT u.id,NOW(),$2 AND COALESCE(u.member_preferences->>'settingShowOnline','true') <> 'false'
     FROM users u WHERE u.id=$1 AND u.is_active=TRUE
     ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=EXCLUDED.show_online
+    RETURNING user_id
   `, [req.session.user.id, requestedShowOnline]);
+  if (!presence.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
   res.status(204).end();
 }));
 
@@ -391,9 +393,10 @@ app.post('/api/lobby/messages', dbRequired, lobbyMessageLimiter, asyncRoute(asyn
   if (!message || message.length > 300) return res.status(400).json({ error: 'Mesaj 1-300 karakter arasında olmalı.' });
   const user = req.session.user;
   const result = await pool.query(
-    'INSERT INTO lobby_messages(user_id,username,message) VALUES($1,$2,$3) RETURNING id',
-    [user.id, user.username, message]
+    'INSERT INTO lobby_messages(user_id,username,message) SELECT id,username,$2 FROM users WHERE id=$1 AND is_active=TRUE RETURNING id',
+    [user.id, message]
   );
+  if (!result.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Sohbete yazmak için yeniden giriş yapın.' });
   const decorated = await pool.query('SELECT m.id,m.user_id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id=$1', [result.rows[0].id]);
   await pool.query('DELETE FROM lobby_messages WHERE id < (SELECT GREATEST(COALESCE(MAX(id),0)-500,0) FROM lobby_messages)');
   res.status(201).json({ message: decorated.rows[0] });
@@ -511,16 +514,18 @@ app.get('/api/public/new-members', asyncRoute(async (_req, res) => {
 
 app.post('/api/activity/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Aktivite kaydı için giriş yapmalısınız.' });
-  await pool.query(`
+  const activity = await pool.query(`
     INSERT INTO user_activity(user_id,last_seen_at,active_seconds)
-    VALUES($1,NOW(),0)
+    SELECT id,NOW(),0 FROM users WHERE id=$1 AND is_active=TRUE
     ON CONFLICT(user_id) DO UPDATE SET
       active_seconds=user_activity.active_seconds + CASE
         WHEN user_activity.last_seen_at > NOW()-INTERVAL '2 minutes'
         THEN LEAST(90,GREATEST(0,EXTRACT(EPOCH FROM (NOW()-user_activity.last_seen_at))::BIGINT))
         ELSE 0 END,
       last_seen_at=NOW()
+    RETURNING user_id
   `, [req.session.user.id]);
+  if (!activity.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
   res.status(204).end();
 }));
 
