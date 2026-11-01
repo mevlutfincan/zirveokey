@@ -401,7 +401,7 @@ async function main() {
     const emailToken = randomUUID().replaceAll('-', '').repeat(2);
     const newEmailD = 'verified-' + suffix + '@example.invalid';
     const userDId = await testDb.query('SELECT id FROM users WHERE username_normalized=LOWER($1)', [userD.username]);
-    await testDb.query('INSERT INTO email_change_tokens(user_id,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$2,$3,NOW()+INTERVAL \'30 minutes\')', [userDId.rows[0].id, newEmailD, require('node:crypto').createHash('sha256').update(emailToken).digest('hex')]);
+    await testDb.query('INSERT INTO email_change_tokens(user_id,previous_email,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$3,$3,$4,NOW()+INTERVAL \'30 minutes\')', [userDId.rows[0].id, userD.email, newEmailD, require('node:crypto').createHash('node:crypto').createHash('sha256').update(emailToken).digest('hex')]);
     const verifyEmailD = await request('/api/account/email-change/verify', { method: 'POST', body: { token: emailToken } });
     assert.equal(verifyEmailD.status, 200, 'Geçerli e-posta doğrulama bağlantısı çalışmadı: ' + await verifyEmailD.text());
     const storedEmailD = await testDb.query('SELECT email FROM users WHERE id=$1', [userDId.rows[0].id]);
@@ -419,7 +419,7 @@ async function main() {
     await request('/api/auth/logout', { method: 'POST', cookie: cookieDNew });
 
     const expiredToken = randomUUID().replaceAll('-', '').repeat(2);
-    await testDb.query('INSERT INTO email_change_tokens(user_id,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$2,$3,NOW()-INTERVAL \'1 minute\')', [userDId.rows[0].id, 'expired-' + suffix + '@example.invalid', require('node:crypto').createHash('sha256').update(expiredToken).digest('hex')]);
+    await testDb.query('INSERT INTO email_change_tokens(user_id,previous_email,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$3,$3,$4,NOW()-INTERVAL \'1 minute\')', [userDId.rows[0].id, newEmailD, 'expired-' + suffix + '@example.invalid', require('node:crypto').createHash('sha256').update(expiredToken).digest('hex')]);
     const expiredVerify = await request('/api/account/email-change/verify', { method: 'POST', body: { token: expiredToken } });
     assert.equal(expiredVerify.status, 400, 'Süresi dolmuş e-posta doğrulama bağlantısı kabul edildi.');
 
