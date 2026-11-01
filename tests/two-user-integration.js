@@ -163,6 +163,16 @@ async function main() {
 
   const anonymousNotifications = await request('/api/notifications');
   assert.equal(anonymousNotifications.status, 401, 'Oturumsuz kullanıcı bildirimleri okuyabildi.');
+  const anonymousNotificationPreference = await request('/api/notifications/preferences', { method: 'PUT', body: { enabled: false } });
+  assert.equal(anonymousNotificationPreference.status, 401, 'Oturumsuz kullanıcı bildirim tercihlerini değiştirebildi.');
+  const anonymousNotificationRead = await request('/api/notifications/1/read', { method: 'POST' });
+  assert.equal(anonymousNotificationRead.status, 401, 'Oturumsuz kullanıcı bildirimleri okundu yapabildi.');
+  const anonymousNotificationReadAll = await request('/api/notifications/read-all', { method: 'POST' });
+  assert.equal(anonymousNotificationReadAll.status, 401, 'Oturumsuz kullanıcı tüm bildirimleri okundu yapabildi.');
+  const anonymousNotificationDelete = await request('/api/notifications/1', { method: 'DELETE' });
+  assert.equal(anonymousNotificationDelete.status, 401, 'Oturumsuz kullanıcı bildirim silebildi.');
+  const anonymousNotificationDeleteAll = await request('/api/notifications', { method: 'DELETE' });
+  assert.equal(anonymousNotificationDeleteAll.status, 401, 'Oturumsuz kullanıcı tüm bildirimleri silebildi.');
   const notificationsAResponse = await request('/api/notifications', { cookie: cookieA });
   assert.equal(notificationsAResponse.headers.get('cache-control'), 'no-store', 'Bildirim merkezi yanıtı önbelleğe açık.');
   assert.equal(notificationsAResponse.status, 200, 'A bildirim merkezini açamadı.');
@@ -227,6 +237,12 @@ async function main() {
   assert.equal(malformedNotificationId.status, 400, 'Geçersiz bildirim kimliği kabul edildi.');
   const notificationsBAfterIsolation = await (await request('/api/notifications', { cookie: cookieB })).json();
   assert.ok(notificationsBAfterIsolation.notifications.some(item => item.id === notificationBId && !item.read_at), 'Yetkisiz işlem B kullanıcısının bildirimini değiştirdi.');
+  const clearAllNotificationsA = await request('/api/notifications', { method: 'DELETE', cookie: cookieA });
+  assert.equal(clearAllNotificationsA.status, 200, 'A kendi bildirim merkezini temizleyemedi.');
+  const clearedNotificationsA = await (await request('/api/notifications', { cookie: cookieA })).json();
+  assert.equal(clearedNotificationsA.notifications.length, 0, 'A toplu silme işleminden sonra bildirimleri kaldı.');
+  const notificationsBAfterClearAll = await (await request('/api/notifications', { cookie: cookieB })).json();
+  assert.ok(notificationsBAfterClearAll.notifications.some(item => item.id === notificationBId), 'A toplu silme işlemi B hesabının bildirimlerini sildi.');
 
 
   const userC = { username: 'TestC_' + suffix, email: 'testc-' + suffix + '@example.invalid', password: 'ZirveTest!2026C', country: 'Türkiye', gender: 'Belirtmek istemiyorum' };
