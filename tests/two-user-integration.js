@@ -157,6 +157,8 @@ async function main() {
   assert.equal((await avatarB.json()).avatar, null, 'A kullanıcısının avatarı B hesabına sızdı.');
   const invalidAvatar = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: 'https://example.com/avatar.png' } });
   assert.equal(invalidAvatar.status, 400, 'Harici veya geçersiz avatar verisi kabul edildi.');
+  const spoofedAvatar = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: 'data:image/png;base64,SGVsbG8=' } });
+  assert.equal(spoofedAvatar.status, 400, 'PNG etiketiyle gönderilen farklı dosya içeriği avatar olarak kabul edildi.');
   const removeAvatarA = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: null } });
   assert.equal(removeAvatarA.status, 200, 'A varsayılan avatara dönemedi.');
   assert.equal((await (await request('/api/account/avatar', { cookie: cookieA })).json()).avatar, null, 'Avatar silme işlemi kalıcı değil.');
