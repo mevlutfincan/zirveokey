@@ -76,7 +76,7 @@ async function main() {
   const invalidProfileEdit = await request('/api/account/profile', { method: 'PUT', cookie: cookieA, body: { country: 'Mars', gender: 'Kadın' } });
   assert.equal(invalidProfileEdit.status, 400, 'Geçersiz ülke değeri profil API tarafından kabul edildi.');
   const profileEditA = await request('/api/account/profile', { method: 'PUT', cookie: cookieA, body: { country: 'Fransa', gender: 'Belirtmek istemiyorum' } });
-  assert.equal(profileEditA.status, 200, 'A profil bilgilerini güncelleyemedi: ' + await profileEditA.text());
+  assert.equal(profileEditA.status, 200, 'A profil bilgilerini güncelleyemedi. HTTP ' + profileEditA.status);
   const profileEditDataA = await profileEditA.json();
   assert.equal(profileEditDataA.user.country, 'Fransa');
   assert.equal(profileEditDataA.user.gender, 'Belirtmek istemiyorum');
