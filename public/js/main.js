@@ -27,9 +27,24 @@ async function refreshAuthState(){
     if(!response.ok)throw new Error('Oturum durumu alınamadı.');
     const data=await response.json();
     const signedIn=data.authenticated===true;
-    if(homeSignedIn!==signedIn){notificationSessionVersion++;if(!signedIn)notificationState=null;}
+    const nextUserId=signedIn?String(data.user?.id||''):null;
+    const identityChanged=homeSignedIn!==signedIn||homeUserId!==nextUserId;
+    if(identityChanged){
+      notificationSessionVersion++;
+      notificationState=null;
+      homePreferencesLoaded=false;
+      if(homePreferencesRetryTimer){clearTimeout(homePreferencesRetryTimer);homePreferencesRetryTimer=null;}
+      homePreferencesRetryDelay=5000;
+    }
     homeSignedIn=signedIn;
-    if(signedIn){homePreferencesLoaded=await loadHomeAccountPreferences();if(homePreferencesLoaded){applyMemberAppearance();sendHomePresenceHeartbeat();sendActivityHeartbeat();}}else{homePreferencesLoaded=false;document.body.classList.remove('soft-light');}
+    homeUserId=nextUserId;
+    if(signedIn){
+      const requestVersion=notificationSessionVersion;
+      homePreferencesLoaded=await loadHomeAccountPreferences(nextUserId,requestVersion);
+      if(requestVersion!==notificationSessionVersion||homeUserId!==nextUserId)return;
+      if(homePreferencesLoaded){applyMemberAppearance();sendHomePresenceHeartbeat();sendActivityHeartbeat();}
+      else scheduleHomePreferencesRetry(nextUserId,requestVersion);
+    }else{homePreferencesLoaded=false;document.body.classList.remove('soft-light');}
     authButtons.forEach(button=>button.hidden=signedIn);
     const notificationToggle=document.getElementById('notificationToggle');if(notificationToggle)notificationToggle.hidden=!signedIn;
     if(signedIn)loadNotifications();else closeNotificationPanel();
@@ -189,7 +204,8 @@ async function loadActiveMembers(){
   }
 }
 let activityHeartbeatBusy=false;
-let homeSignedIn=false,homePreferencesLoaded=false;
+let homeSignedIn=false,homePreferencesLoaded=false,homeUserId=null;
+let homePreferencesRetryTimer=null,homePreferencesRetryDelay=5000;
 function applyMemberAppearance(){
   try{const settings=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');document.body.classList.toggle('soft-light',settings.settingDarkMode===false);}
   catch{document.body.classList.remove('soft-light');}
@@ -200,11 +216,12 @@ function readHomeShowOnlinePreference(){
     return settings.settingShowOnline!==false;
   }catch{return true;}
 }
-async function loadHomeAccountPreferences(){
+async function loadHomeAccountPreferences(expectedUserId,expectedVersion){
   try{
     const response=await fetch('/api/account/preferences',{credentials:'same-origin',cache:'no-store'});
     if(!response.ok)throw new Error('Hesap tercihleri alınamadı.');
     const data=await response.json();
+    if(expectedVersion!==notificationSessionVersion||homeUserId!==expectedUserId||!homeSignedIn)return false;
     const current=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');
     localStorage.setItem('zirveMemberSettings',JSON.stringify({...current,...(data.preferences||{})}));
     return true;
@@ -213,16 +230,37 @@ async function loadHomeAccountPreferences(){
     return false;
   }
 }
+function scheduleHomePreferencesRetry(userId,sessionVersion){
+  if(homePreferencesRetryTimer||!homeSignedIn||homeUserId!==userId||notificationSessionVersion!==sessionVersion)return;
+  const delay=homePreferencesRetryDelay;
+  homePreferencesRetryDelay=Math.min(homePreferencesRetryDelay*2,60000);
+  homePreferencesRetryTimer=window.setTimeout(async()=>{
+    homePreferencesRetryTimer=null;
+    if(!homeSignedIn||homeUserId!==userId||notificationSessionVersion!==sessionVersion)return;
+    homePreferencesLoaded=await loadHomeAccountPreferences(userId,sessionVersion);
+    if(!homeSignedIn||homeUserId!==userId||notificationSessionVersion!==sessionVersion)return;
+    if(homePreferencesLoaded){
+      homePreferencesRetryDelay=5000;
+      applyMemberAppearance();
+      sendHomePresenceHeartbeat();
+      sendActivityHeartbeat();
+    }else scheduleHomePreferencesRetry(userId,sessionVersion);
+  },delay);
+}
 async function sendHomePresenceHeartbeat(){
   if(!homeSignedIn||!homePreferencesLoaded||document.visibilityState!=='visible')return;
-  try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:readHomeShowOnlinePreference()})});}
-  catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
+  try{
+    const response=await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:readHomeShowOnlinePreference()})});
+    if(!response.ok)throw new Error('HTTP '+response.status);
+  }catch(error){console.warn('Çevrimiçi durumu güncellenemedi:',error.message);}
 }
 async function sendActivityHeartbeat(){
   if(!homeSignedIn||activityHeartbeatBusy||document.visibilityState!=='visible')return;
   activityHeartbeatBusy=true;
-  try{await fetch('/api/activity/heartbeat',{method:'POST',credentials:'same-origin'});}
-  catch(error){console.warn('Aktivite kaydı gönderilemedi.');}
+  try{
+    const response=await fetch('/api/activity/heartbeat',{method:'POST',credentials:'same-origin'});
+    if(!response.ok)throw new Error('HTTP '+response.status);
+  }catch(error){console.warn('Aktivite kaydı gönderilemedi:',error.message);}
   finally{activityHeartbeatBusy=false;}
 }
 function startActivityTracking(){
