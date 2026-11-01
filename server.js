@@ -168,7 +168,7 @@ app.get('/api/auth/me', dbRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const userId = req.session?.user?.id;
   if (!userId) return res.json({ authenticated: false });
-  const result = await pool.query('SELECT id,username,email FROM users WHERE id=$1 AND is_active=TRUE', [userId]);
+  const result = await pool.query('SELECT id,username,email,country,gender FROM users WHERE id=$1 AND is_active=TRUE', [userId]);
   if (!result.rows[0]) {
     await new Promise(resolve => {
       if (!req.session) return resolve();
@@ -178,7 +178,7 @@ app.get('/api/auth/me', dbRequired, asyncRoute(async (req, res) => {
     return res.json({ authenticated: false });
   }
   const user = result.rows[0];
-  req.session.user = { id: user.id, username: user.username, email: user.email };
+  req.session.user = { id: user.id, username: user.username, email: user.email, country: user.country, gender: user.gender };
   res.json({ authenticated: true, user: req.session.user });
 }));
 
