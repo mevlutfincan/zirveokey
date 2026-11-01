@@ -194,7 +194,7 @@ document.addEventListener('click',e=>{
  }
 });
 let chatLastId=0,chatBusy=false,chatStyleAuthenticated=false,chatStyleSaving=false,chatStyleAccountId=null,chatDisplayEnabled=false;
- const defaultChatStyle={nameColor:'#111111',textColor:'#111111',rowColor:$('#settingRowColor')?.value||defaultChatStyle.rowColor};
+ const defaultChatStyle={nameColor:'#111111',textColor:'#111111',rowColor:'#e8efe8'};
  function validChatRowHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
  function validChatHex(value){return /^#[0-9a-f]{6}$/i.test(String(value||''));}
  function updateChatColorPreview(){
