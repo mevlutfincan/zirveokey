@@ -20,7 +20,7 @@ const port = Number(process.env.TEST_PORT || 3101);
 const baseUrl = 'http://127.0.0.1:' + port;
 const child = spawn(process.execPath, ['server.js'], {
   cwd: process.cwd(),
-  env: { ...process.env, PORT: String(port), NODE_ENV: 'test', RESEND_API_KEY: '', MAIL_FROM: '', APP_URL: '' },
+  env: { ...process.env, PORT: String(port), NODE_ENV: 'test', RESEND_API_KEY: '', MAIL_FROM: '', APP_URL: '', RESEND_WEBHOOK_SECRET: 'whsec_aW50ZWdyYXRpb24tdGVzdC1zZWNyZXQ=' },
   stdio: ['ignore', 'pipe', 'pipe']
 });
 let serverOutput = '';
@@ -64,6 +64,35 @@ async function waitForServer() {
 
 async function main() {
   await waitForServer();
+
+  const webhookEvent = { type: 'email.delivered', data: { email_id: 'ci-email-id' } };
+  const webhookBody = JSON.stringify(webhookEvent);
+  const webhookId = randomUUID();
+  const webhookTimestamp = String(Math.floor(Date.now() / 1000));
+  const webhookSignature = require('node:crypto')
+    .createHmac('sha256', Buffer.from('integration-test-secret'))
+    .update(webhookId + '.' + webhookTimestamp + '.' + webhookBody)
+    .digest('base64');
+  const webhookHeaders = {
+    'Content-Type': 'application/json',
+    'svix-id': webhookId,
+    'svix-timestamp': webhookTimestamp,
+    'svix-signature': 'v1,' + webhookSignature
+  };
+  const rejectedWebhook = await fetch(baseUrl + '/api/webhooks/resend', {
+    method: 'POST',
+    headers: { ...webhookHeaders, 'svix-signature': 'v1,invalid-signature' },
+    body: webhookBody
+  });
+  assert.equal(rejectedWebhook.status, 401, 'Geçersiz imzalı webhook kabul edildi.');
+  const acceptedWebhook = await fetch(baseUrl + '/api/webhooks/resend', {
+    method: 'POST', headers: webhookHeaders, body: webhookBody
+  });
+  assert.equal(acceptedWebhook.status, 204, 'Geçerli Resend webhook olayı kaydedilemedi.');
+  const duplicateWebhook = await fetch(baseUrl + '/api/webhooks/resend', {
+    method: 'POST', headers: webhookHeaders, body: webhookBody
+  });
+  assert.equal(duplicateWebhook.status, 204, 'Tekrarlanan webhook güvenli şekilde karşılanamadı.');
   const emptyRegister = await request('/api/auth/register', { method: 'POST' });
   assert.equal(emptyRegister.status, 400, 'Boş üyelik isteği sunucu hatasına dönüşmemeli.');
   const emptyLogin = await request('/api/auth/login', { method: 'POST' });
