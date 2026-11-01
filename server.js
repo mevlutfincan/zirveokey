@@ -260,14 +260,16 @@ app.post('/api/account/email-change', dbRequired, activeAccountRequired, authLim
     if (existing.rowCount) return res.status(202).json({ ok: true, message: 'Adres uygunsa doğrulama bağlantısı gönderilecektir.' });
     await pool.query('UPDATE email_change_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [req.session.user.id]);
     await pool.query('INSERT INTO email_change_tokens(user_id,previous_email,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$3,$3,$4,NOW()+INTERVAL \'30 minutes\')', [req.session.user.id, account.rows[0].email, email, tokenHash]);
-    const mail = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [email], subject: 'ZirveOkey e-posta adresi doğrulama', text: 'E-posta adresinizi değiştirmek için 30 dakika içinde bu bağlantıyı açın: ' + verifyUrl })
-    });
-    if (!mail.ok) {
-      await pool.query('UPDATE email_change_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [req.session.user.id]);
-      console.error('Email change provider rejected the request:', mail.status);
+    try {
+      const mail = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: process.env.MAIL_FROM, to: [email], subject: 'ZirveOkey e-posta adresi doğrulama', text: 'E-posta adresinizi değiştirmek için 30 dakika içinde bu bağlantıyı açın: ' + verifyUrl })
+      });
+      if (!mail.ok) throw new Error('Provider HTTP ' + mail.status);
+    } catch (mailError) {
+      await pool.query('UPDATE email_change_tokens SET used_at=NOW() WHERE token_hash=$1 AND used_at IS NULL', [tokenHash]);
+      console.error('Email change delivery failed:', mailError.message);
       return res.status(502).json({ error: 'Doğrulama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.' });
     }
     res.status(202).json({ ok: true, message: 'Adres uygunsa doğrulama bağlantısı gönderilecektir.' });
@@ -568,12 +570,17 @@ app.post('/api/contact', contactLimiter, asyncRoute(async (req, res) => {
   if (subject.length < 3 || subject.length > 120) return res.status(400).json({ error: 'Konu 3-120 karakter arasında olmalı.' });
   if (message.length < 10 || message.length > 3000) return res.status(400).json({ error: 'Mesaj 10-3000 karakter arasında olmalı.' });
   if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.SUPPORT_EMAIL) return res.status(503).json({ error: 'İletişim gönderim kanalı henüz yapılandırılmadı.' });
-  const mail = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: process.env.MAIL_FROM, to: [process.env.SUPPORT_EMAIL], reply_to: email, subject: '[ZirveOkey Destek] ' + subject, text: 'Gönderen: ' + name + '\nE-posta: ' + email + '\n\n' + message })
-  });
-  if (!mail.ok) { console.error('Contact email provider rejected the request:', mail.status); return res.status(502).json({ error: 'Mesaj şu anda gönderilemedi. Lütfen daha sonra tekrar deneyin.' }); }
+  try {
+    const mail = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [process.env.SUPPORT_EMAIL], reply_to: email, subject: '[ZirveOkey Destek] ' + subject, text: 'Gönderen: ' + name + '\\nE-posta: ' + email + '\\n\\n' + message })
+    });
+    if (!mail.ok) throw new Error('Provider HTTP ' + mail.status);
+  } catch (mailError) {
+    console.error('Contact email delivery failed:', mailError.message);
+    return res.status(502).json({ error: 'Mesaj şu anda gönderilemedi. Lütfen daha sonra tekrar deneyin.' });
+  }
   res.status(202).json({ ok: true, message: 'Mesajın destek ekibine iletildi.' });
 }));
 app.post('/api/auth/forgot-password', dbRequired, resetLimiter, asyncRoute(async (req, res) => {
