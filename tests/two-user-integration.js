@@ -265,6 +265,11 @@ async function main() {
   const anonymousPost = await request('/api/lobby/messages', { method: 'POST', body: { message: 'Yetkisiz test' } });
   assert.equal(anonymousPost.status, 401, 'Oturumsuz kullanıcının sohbet mesajı engellenmedi.');
 
+  const emptyLobbyMessage = await request('/api/lobby/messages', { method: 'POST', cookie: cookieA, body: { message: '   ' } });
+  assert.equal(emptyLobbyMessage.status, 400, 'Boş sohbet mesajı kabul edildi.');
+  const oversizedLobbyMessage = await request('/api/lobby/messages', { method: 'POST', cookie: cookieA, body: { message: 'x'.repeat(301) } });
+  assert.equal(oversizedLobbyMessage.status, 400, '300 karakter sınırını aşan sohbet mesajı kabul edildi.');
+
   const sent = await request('/api/lobby/messages', {
     method: 'POST', cookie: cookieA, body: { message: 'TWO-USER-' + suffix }
   });
