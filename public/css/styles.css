@@ -1211,7 +1211,7 @@ body:not(.soft-light) .community-empty{
  display:inline-flex;align-items:center;justify-content:center;gap:7px;
  min-height:40px;padding:0 12px;border:1px solid rgba(151,231,123,.25);
  border-radius:10px;background:rgba(112,237,53,.09);color:#e8f8e5;
- font:700 13px/1 inherit;white-space:nowrap;cursor:pointer;position:relative
+ font-family:inherit;font-size:13px;font-weight:700;line-height:1;white-space:nowrap;cursor:pointer;position:relative
 }
 .notification-toggle[hidden]{display:none!important}
 .notification-toggle>span:first-child{font-size:18px;line-height:1}
