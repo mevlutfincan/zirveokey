@@ -6,7 +6,7 @@
 <title>Hesabım | ZirveOkey</title>
 <link rel="stylesheet" href="/css/styles.css?v=notifications-20261101-02">
 <link rel="stylesheet" href="/css/account.css?v=account-center-20261101-02">
-<script defer src="/js/account.js?v=account-center-20261101"></script>
+<script defer src="/js/account.js?v=account-profile-edit-20261101"></script>
 </head>
 <body class="account-page">
 <header class="site-header">
@@ -20,7 +20,8 @@
 <div id="accountContent" hidden>
 <section class="account-card profile-card">
 <div class="profile-avatar-wrap"><img id="profileAvatar" alt="Profil avatarı"><span id="avatarFallback">Z</span></div>
-<div class="profile-summary"><span class="account-label">ÜYE PROFİLİ</span><h2 id="profileUsername">—</h2><p id="profileEmail">—</p><p><span id="profileCountry">—</span> · <span id="profileGender">—</span></p></div>
+<div class="profile-summary"><span class="account-label">ÜYE PROFİLİ</span><h2 id="profileUsername">—</h2><p id="profileEmail">—</p><p><span id="profileCountry">—</span> · <span id="profileGender">—</span></p>
+<form id="profileForm" class="profile-edit-form"><label>Ülke<select id="profileCountryInput" required><option value="Türkiye">Türkiye</option><option value="Almanya">Almanya</option><option value="Azerbaycan">Azerbaycan</option><option value="Belçika">Belçika</option><option value="Birleşik Krallık">Birleşik Krallık</option><option value="Fransa">Fransa</option><option value="Hollanda">Hollanda</option><option value="Kıbrıs">Kıbrıs</option><option value="ABD">ABD</option><option value="Avusturya">Avusturya</option><option value="Diğer">Diğer</option></select></label><label>Cinsiyet<select id="profileGenderInput" required><option value="Kadın">Kadın</option><option value="Erkek">Erkek</option><option value="Belirtmek istemiyorum">Belirtmek istemiyorum</option></select></label><button class="account-button" type="submit">Profil bilgilerini kaydet</button><p class="form-status" id="profileStatus" role="status"></p></form></div>
 <div class="avatar-actions"><label class="account-button" for="avatarFile">Avatar seç</label><input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" hidden><button type="button" class="account-button secondary" id="removeAvatar">Avatarı kaldır</button></div>
 </section>
 <div class="account-grid">
