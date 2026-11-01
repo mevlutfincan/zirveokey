@@ -159,6 +159,12 @@ async function main() {
   assert.equal(invalidAvatar.status, 400, 'Harici veya geçersiz avatar verisi kabul edildi.');
   const spoofedAvatar = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: 'data:image/png;base64,SGVsbG8=' } });
   assert.equal(spoofedAvatar.status, 400, 'PNG etiketiyle gönderilen farklı dosya içeriği avatar olarak kabul edildi.');
+  const malformedBase64Avatar = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: 'data:image/png;base64,iVBORw0KGgo===' } });
+  assert.equal(malformedBase64Avatar.status, 400, 'Bozuk Base64 avatar verisi kabul edildi.');
+  const oversizedAvatarBytes = Buffer.alloc(1024 * 1024 + 1);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(oversizedAvatarBytes);
+  const oversizedAvatar = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: 'data:image/png;base64,' + oversizedAvatarBytes.toString('base64') } });
+  assert.equal(oversizedAvatar.status, 400, '1 MB sınırını aşan avatar verisi kabul edildi.');
   const removeAvatarA = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: null } });
   assert.equal(removeAvatarA.status, 200, 'A varsayılan avatara dönemedi.');
   assert.equal((await (await request('/api/account/avatar', { cookie: cookieA })).json()).avatar, null, 'Avatar silme işlemi kalıcı değil.');
