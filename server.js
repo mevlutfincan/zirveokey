@@ -182,6 +182,23 @@ app.get('/api/auth/me', dbRequired, asyncRoute(async (req, res) => {
   res.json({ authenticated: true, user: req.session.user });
 }));
 
+app.put('/api/account/profile', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
+  const country = String(req.body?.country || '').trim();
+  const gender = String(req.body?.gender || '').trim();
+  const allowedCountries = ['Türkiye','Almanya','Azerbaycan','Belçika','Birleşik Krallık','Fransa','Hollanda','Kıbrıs','ABD','Avusturya','Diğer'];
+  const allowedGenders = ['Kadın','Erkek','Belirtmek istemiyorum'];
+  if (!allowedCountries.includes(country)) return res.status(400).json({ error: 'Lütfen geçerli bir ülke seçin.' });
+  if (!allowedGenders.includes(gender)) return res.status(400).json({ error: 'Lütfen geçerli bir cinsiyet seçin.' });
+  const result = await pool.query(
+    'UPDATE users SET country=$1,gender=$2 WHERE id=$3 AND is_active=TRUE RETURNING id,username,email,country,gender',
+    [country, gender, req.session.user.id]
+  );
+  if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
+  req.session.user = { ...req.session.user, country: result.rows[0].country, gender: result.rows[0].gender };
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ ok: true, user: req.session.user });
+}));
+
 app.post('/api/auth/register', dbRequired, authLimiter, asyncRoute(async (req, res) => {
   const username = String(req.body.username || '').trim();
   const email = String(req.body.email || '').trim().toLowerCase();
