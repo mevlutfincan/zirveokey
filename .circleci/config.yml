@@ -1,0 +1,92 @@
+version: 2.1
+
+jobs:
+  validate:
+    docker:
+      - image: cimg/node:20.19
+      - image: cimg/postgres:16.4
+        name: postgres
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zirveokey_test
+    resource_class: small
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/zirveokey_test
+      SESSION_SECRET: circleci-only-session-secret-not-for-production
+      NODE_ENV: test
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm install
+      - run:
+          name: Wait for PostgreSQL
+          command: |
+            node <<'NODE'
+            const { Client } = require('pg');
+            const connectionString = process.env.DATABASE_URL;
+            (async () => {
+              for (let attempt = 0; attempt < 30; attempt++) {
+                const client = new Client({ connectionString });
+                try {
+                  await client.connect();
+                  await client.query('SELECT 1');
+                  await client.end();
+                  process.exit(0);
+                } catch (error) {
+                  try { await client.end(); } catch {}
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+              }
+              console.error('PostgreSQL did not become ready in time.');
+              process.exit(1);
+            })();
+            NODE
+      - run:
+          name: Check JavaScript syntax
+          command: |
+            node --check server.js
+            node --check public/js/main.js
+            node --check public/js/account.js
+            node --check public/js/email-verify.js
+            node --check tests/two-user-integration.js
+      - run:
+          name: Smoke-test homepage and account flows
+          command: |
+            npm start > /tmp/zirveokey.log 2>&1 &
+            server_pid=$!
+            trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+            ready=0
+            for attempt in $(seq 1 30); do
+              if curl --fail --silent http://127.0.0.1:3000/health | grep -q '"status":"ok"'; then
+                ready=1
+                break
+              fi
+              sleep 1
+            done
+            if [ "$ready" -ne 1 ]; then
+              cat /tmp/zirveokey.log
+              exit 1
+            fi
+            curl --fail --silent http://127.0.0.1:3000/ | grep -q 'ZirveOkey'
+            curl --fail --silent http://127.0.0.1:3000/ | grep -q 'accountPageLink'
+            curl --fail --silent http://127.0.0.1:3000/ | grep -q 'Yeni Üyeler'
+            curl --fail --silent http://127.0.0.1:3000/ | grep -q 'En Çok Aktif Üyeler'
+            curl --fail --silent http://127.0.0.1:3000/ | grep -q 'notificationToggle'
+            curl --fail --silent http://127.0.0.1:3000/hesabim.html | grep -q 'Hesap tercihleri'
+            curl --fail --silent http://127.0.0.1:3000/hesabim.html | grep -q 'emailChangeForm'
+            curl --fail --silent http://127.0.0.1:3000/js/account.js | grep -q '/api/account/email-change'
+            curl --fail --silent http://127.0.0.1:3000/email-dogrula.html | grep -q 'E-posta doğrulama'
+            curl --fail --silent http://127.0.0.1:3000/js/email-verify.js | grep -q '/api/account/email-change/verify'
+            curl --fail --silent http://127.0.0.1:3000/css/account.css | grep -q '.account-grid'
+            curl --fail --silent http://127.0.0.1:3000/iletisim.html | grep -q 'contactForm'
+            curl --fail --silent http://127.0.0.1:3000/yardim.html | grep -q 'Profil bilgilerimi nereden güncellerim'
+      - run:
+          name: Two-user membership, chat and presence integration test
+          command: node tests/two-user-integration.js
+
+workflows:
+  validate-and-test:
+    jobs:
+      - validate
