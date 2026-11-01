@@ -473,14 +473,18 @@ async function loadOnlineMembers(){
    const row=document.createElement('div');row.className='online-member';
    const dot=document.createElement('i');dot.className='online-member-dot';
    const name=document.createElement('b');name.textContent=member.username;
-   row.append(dot,name);root.append(row);
+   const status=document.createElement('small');
+   const statusLabels={online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Şu Anda Meşgul'};
+   status.className='online-member-status status-'+(statusLabels[member.status]?member.status:'online');
+   status.textContent=statusLabels[member.status]||statusLabels.online;
+   row.append(dot,name,status);root.append(row);
   });
   if(!root.children.length){const empty=document.createElement('div');empty.className='side-empty';empty.innerHTML='<span>♙</span><b>Şu anda çevrimiçi üye yok</b>';root.append(empty);}
   updateOnlineCount(Number(data.count)||0);
  }catch(error){console.warn('Çevrimiçi üye listesi yüklenemedi.');}
 }
 async function sendPresenceHeartbeat(){
- try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:memberPreferences.settingShowOnline!==false})});}
+ try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'});}
  catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
 }
 async function sendActivityHeartbeat(){
@@ -630,17 +634,16 @@ $('#removeSettingAvatar').addEventListener('click',async()=>{
  try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:null})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaldırılamadı.');paintMemberAvatar(null);$('#settingAvatarFile').value='';$('#settingAvatarStatus').textContent='Avatar kaldırıldı.';notify('Avatar kaldırıldı.');}
  catch(error){$('#settingAvatarStatus').textContent=error.message;}
 });
-const settingsKeys=['settingNotifications','settingNotificationSound','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingShowOnline'];
+const settingsKeys=['settingNotifications','settingNotificationSound','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards'];
 let memberPreferences={};
-const preferenceDefaults={settingNotifications:true,settingNotificationSound:false,settingShowOnline:true,settingFriendRequests:true,settingNotifyPlayers:true,settingNotifyGame:true,settingNotifySystem:true,settingNotifyManagement:true,settingNotifyRewards:true};
+const preferenceDefaults={settingNotifications:true,settingNotificationSound:false,settingPresenceStatus:'online',settingFriendRequests:true,settingNotifyPlayers:true,settingNotifyGame:true,settingNotifySystem:true,settingNotifyManagement:true,settingNotifyRewards:true};
 function applyMemberSettings(values){
  notificationsEnabled=values.settingNotifications!==false;
  // Bildirim merkezi, bildirimler kapalıyken de ayarları yeniden açabilmek için erişilebilir kalır.
  $('#notificationsButton').hidden=false;
  renderNotificationPreference();
  updateNotificationBadge(visibleUnreadCount({unreadByCategory:notificationUnreadByCategory}));
- $('.user-online-count').hidden=!values.settingShowOnline;
-}
+ }
 let preferenceSaveQueue=Promise.resolve();
 async function saveMemberPreferences(patch){
  if(!chatStyleAuthenticated)throw new Error('Ayarları kaydetmek için giriş yapmalısın.');
@@ -650,9 +653,9 @@ async function saveMemberPreferences(patch){
   if(!response.ok)throw new Error(data.error||'Ayarlar kaydedilemedi.');
   memberPreferences={...preferenceDefaults,...data.preferences};
   settingsKeys.forEach(id=>{if($('#'+id))$('#'+id).checked=!!memberPreferences[id]});
+ if($('#settingPresenceStatus'))$('#settingPresenceStatus').value=memberPreferences.settingPresenceStatus||'online';
   applyMemberSettings(memberPreferences);
   if(Object.keys(patch).some(key=>key.startsWith('settingNotify')||key==='settingFriendRequests')&&!notificationsPopover.hidden)loadNotifications();
-  if(Object.prototype.hasOwnProperty.call(patch,'settingShowOnline')){sendPresenceHeartbeat();loadOnlineMembers();}
   $('#settingsSaveState').textContent='Değişiklikler hesabına kaydedildi.';
  };
  const pending=preferenceSaveQueue.then(save,save);
@@ -667,6 +670,7 @@ async function loadMemberSettings(){
   catch(error){saveState.textContent=error.message;notify(error.message);}
  }else{saveState.textContent='Ayarları hesabına kaydetmek için giriş yap.';}
  settingsKeys.forEach(id=>{if($('#'+id))$('#'+id).checked=!!memberPreferences[id]});
+ if($('#settingPresenceStatus'))$('#settingPresenceStatus').value=memberPreferences.settingPresenceStatus||'online';
  applyMemberSettings(memberPreferences);
  $('#settingsAccountName').textContent=$('#gameUsername')?.textContent||'Üye hesabı';
  $('#settingsAccountStatus').textContent=chatStyleAuthenticated?'Oturum açık · Ayarların hesabına kaydedilir.':'Misafir oturumu · Değişiklikleri kaydetmek için giriş yap.';
@@ -684,6 +688,11 @@ settingsDialog.addEventListener('close',()=>{
  ['currentPassword','newPassword','confirmNewPassword'].forEach(id=>{const input=$('#'+id);if(input){input.value='';input.type='password';}});
  Array.from(document.querySelectorAll('.password-visibility-toggle')).forEach(button=>{button.textContent='Göster';button.setAttribute('aria-label','Şifreyi göster');});
  $('#passwordChangeStatus').textContent='Şifren en az 10 karakter olmalıdır.';
+});
+$('#settingPresenceStatus').addEventListener('change',async()=>{
+ const value=$('#settingPresenceStatus').value;$('#settingsSaveState').textContent='Kaydediliyor…';
+ try{await saveMemberPreferences({settingPresenceStatus:value});sendPresenceHeartbeat();loadOnlineMembers();}
+ catch(error){$('#settingPresenceStatus').value=memberPreferences.settingPresenceStatus||'online';$('#settingsSaveState').textContent=error.message;notify(error.message);}
 });
 settingsKeys.forEach(id=>{const control=$('#'+id);if(!control)return;control.addEventListener('change',async()=>{
  const value=$('#'+id).checked;if(id==='settingNotificationSound'&&value)prepareNotificationAudio();$('#settingsSaveState').textContent='Kaydediliyor…';
