@@ -2637,3 +2637,6 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .password-form-card{padding:13px}
  .settings-primary-action{width:100%}
 }
+
+/* A hidden authentication action group must stay hidden on mobile too. */
+.header-user .game-auth-actions[hidden]{display:none!important}
