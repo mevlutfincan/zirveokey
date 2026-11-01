@@ -820,6 +820,7 @@ async function loadMemberSettings(){
  settingsKeys.forEach(id=>{if($('#'+id))$('#'+id).checked=!!memberPreferences[id]});
  if($('#settingPresenceStatus'))$('#settingPresenceStatus').value=memberPreferences.settingPresenceStatus||'online';
  applyMemberSettings(memberPreferences);
+ $('#settingProfileBio').value=memberPreferences.profileBio||'';
  $('#settingsAccountName').textContent=$('#gameUsername')?.textContent||'Üye hesabı';
  $('#settingsAccountStatus').textContent=chatStyleAuthenticated?'Oturum açık · Ayarların hesabına kaydedilir.':'Misafir oturumu · Değişiklikleri kaydetmek için giriş yap.';
 }
@@ -836,6 +837,11 @@ settingsDialog.addEventListener('close',()=>{
  ['currentPassword','newPassword','confirmNewPassword'].forEach(id=>{const input=$('#'+id);if(input){input.value='';input.type='password';}});
  Array.from(document.querySelectorAll('.password-visibility-toggle')).forEach(button=>{button.textContent='Göster';button.setAttribute('aria-label','Şifreyi göster');});
  $('#passwordChangeStatus').textContent='Şifren en az 10 karakter olmalıdır.';
+});
+$('#saveProfileBio').addEventListener('click',async()=>{
+ const bio=$('#settingProfileBio').value.trim();$('#settingsSaveState').textContent='Kaydediliyor…';
+ try{await saveMemberPreferences({profileBio:bio});$('#settingsSaveState').textContent='Profil açıklaman kaydedildi.';notify('Profil açıklaman güncellendi.');}
+ catch(error){$('#settingsSaveState').textContent=error.message;notify(error.message);}
 });
 $('#settingPresenceStatus').addEventListener('change',async()=>{
  const value=$('#settingPresenceStatus').value;$('#settingsSaveState').textContent='Kaydediliyor…';
