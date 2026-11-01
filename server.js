@@ -434,6 +434,10 @@ app.put('/api/account/password', dbRequired, activeAccountRequired, authLimiter,
     await client.query('UPDATE users SET password_hash=$1 WHERE id=$2 AND is_active=TRUE', [passwordHash, req.session.user.id]);
     await client.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [req.session.user.id]);
     await client.query(
+      "INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",
+      [req.session.user.id, 'Şifren güncellendi', 'Hesabının şifresi başarıyla değiştirildi. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.']
+    );
+    await client.query(
       "DELETE FROM user_sessions WHERE sess::jsonb->'user'->>'id'=$1 AND sid<>$2",
       [String(req.session.user.id), req.sessionID]
     );
@@ -579,19 +583,31 @@ app.post('/api/auth/forgot-password', dbRequired, resetLimiter, asyncRoute(async
   if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.APP_URL) {
     return res.status(503).json({ error: 'Şifre sıfırlama e-posta hizmeti henüz yapılandırılmadı.' });
   }
+  let appBase;
+  try {
+    appBase = new URL(process.env.APP_URL);
+    if (!['https:', 'http:'].includes(appBase.protocol)) throw new Error('Unsupported APP_URL protocol');
+  } catch {
+    return res.status(503).json({ error: 'Şifre sıfırlama e-posta hizmeti henüz yapılandırılmadı.' });
+  }
   const result = await pool.query('SELECT id,email FROM users WHERE email_normalized=$1 AND is_active=TRUE LIMIT 1', [email]);
   if (!result.rows[0]) return res.json(generic);
   const rawToken = crypto.randomBytes(32).toString('hex');
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
   await pool.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [result.rows[0].id]);
   await pool.query('INSERT INTO password_reset_tokens(user_id,token_hash,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 minutes\')', [result.rows[0].id, tokenHash]);
-  const link = new URL('/?reset=' + encodeURIComponent(rawToken), process.env.APP_URL).toString();
-  const mail = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: process.env.MAIL_FROM, to: [email], subject: 'ZirveOkey şifre sıfırlama', text: 'Şifrenizi yenilemek için 30 dakika içinde bu bağlantıyı açın: ' + link })
-  });
-  if (!mail.ok) throw new Error('Password reset email provider rejected the request');
+  const link = new URL('/?reset=' + encodeURIComponent(rawToken), appBase).toString();
+  try {
+    const mail = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [email], subject: 'ZirveOkey şifre sıfırlama', text: 'Şifrenizi yenilemek için 30 dakika içinde bu bağlantıyı açın: ' + link })
+    });
+    if (!mail.ok) throw new Error('Provider HTTP ' + mail.status);
+  } catch (error) {
+    await pool.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE token_hash=$1 AND used_at IS NULL', [tokenHash]);
+    console.error('Password reset email delivery failed:', error.message);
+  }
   res.json(generic);
 }));
 
@@ -610,6 +626,10 @@ app.post('/api/auth/reset-password', dbRequired, authLimiter, asyncRoute(async (
     await client.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, found.rows[0].user_id]);
     await client.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [found.rows[0].user_id]);
     await client.query('DELETE FROM user_sessions WHERE sess::jsonb->\'user\'->>\'id\'=$1', [String(found.rows[0].user_id)]);
+    await client.query(
+      "INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",
+      [found.rows[0].user_id, 'Şifren sıfırlandı', 'Hesabının şifresi sıfırlama bağlantısıyla değiştirildi. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.']
+    );
     await client.query('COMMIT');
     res.json({ ok: true, message: 'Şifreniz güncellendi. Yeni şifrenizle giriş yapabilirsiniz.' });
   } catch (error) { await client.query('ROLLBACK'); throw error; }
