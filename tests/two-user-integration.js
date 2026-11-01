@@ -51,6 +51,12 @@ async function waitForServer() {
 
 async function main() {
   await waitForServer();
+  const emptyRegister = await request('/api/auth/register', { method: 'POST' });
+  assert.equal(emptyRegister.status, 400, 'Boş üyelik isteği sunucu hatasına dönüşmemeli.');
+  const emptyLogin = await request('/api/auth/login', { method: 'POST' });
+  assert.equal(emptyLogin.status, 400, 'Boş giriş isteği sunucu hatasına dönüşmemeli.');
+  const emptyContact = await request('/api/contact', { method: 'POST' });
+  assert.equal(emptyContact.status, 400, 'Boş iletişim isteği sunucu hatasına dönüşmemeli.');
   const radioStatusResponse = await request('/api/radio/status');
   assert.equal(radioStatusResponse.status, 200, 'Radyo yayın durumu alınamadı.');
   const radioStatus = await radioStatusResponse.json();
