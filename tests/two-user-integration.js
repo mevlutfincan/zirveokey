@@ -368,6 +368,8 @@ async function main() {
     method: 'PUT', cookie: cookieA, body: { currentPassword: 'WrongPassword!2026', newPassword: 'ZirveNew!2026A' }
   });
   assert.equal(wrongCurrentPassword.status, 400, 'Yanlış mevcut şifreyle şifre değiştirilebildi.');
+  const enableSystemNoticeA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingNotifySystem: true } } });
+  assert.equal(enableSystemNoticeA.status, 200, 'A sistem güvenlik bildirimlerini tekrar açamadı.');
   const changePasswordA = await request('/api/account/password', {
     method: 'PUT', cookie: cookieA, body: { currentPassword: users[0].password, newPassword: 'ZirveNew!2026A' }
   });
