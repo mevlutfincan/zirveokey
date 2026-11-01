@@ -27,6 +27,10 @@ async function loadAccount(){
   const accountData=accountResults.map(result=>result.status==='fulfilled'?result.value:{});
   const [avatar,prefs,style,emailChange]=accountData;
   const partialFailure=accountResults.some(result=>result.status==='rejected');
+  $('#avatarFile').disabled=accountResults[0].status==='rejected';
+  $('#removeAvatar').disabled=accountResults[0].status==='rejected';
+  $('#preferencesForm').querySelectorAll('input,button').forEach(control=>{control.disabled=accountResults[1].status==='rejected';});
+  $('#chatStyleForm').querySelectorAll('input,button').forEach(control=>{control.disabled=accountResults[2].status==='rejected';});
   renderAvatar(avatar.avatar,me.user.username);
   preferences=prefs.preferences||{};
   document.body.classList.toggle('soft-light',preferences.settingDarkMode===false);
