@@ -115,6 +115,13 @@ const lobbyMessageLimiter = rateLimit({
   message: { error: 'Çok sık mesaj gönderiyorsunuz. Lütfen biraz bekleyin.' }
 });
 const asyncRoute = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+const activeAccountRequired = asyncRoute(async (req, res, next) => {
+  const userId = req.session?.user?.id;
+  if (!userId) return res.status(401).json({ error: 'Giriş yapmalısınız.' });
+  const result = await pool.query('SELECT 1 FROM users WHERE id=$1 AND is_active=TRUE', [userId]);
+  if (!result.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
+  next();
+});
 const dbRequired = (_req, res, next) => {
   if (!pool || !sessionSecret) return res.status(503).json({ error: 'Hesap sistemi sunucu yapılandırması bekliyor.' });
   next();
@@ -247,7 +254,7 @@ app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
     res.json({ ok: true });
   });
 }));
-app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
+app.post('/api/presence/heartbeat', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
   const requestedShowOnline = req.body.showOnline !== false;
   const presence = await pool.query(`
@@ -387,7 +394,7 @@ app.get('/api/lobby/messages', dbRequired, asyncRoute(async (req, res) => {
   res.json({ messages: result.rows });
 }));
 
-app.post('/api/lobby/messages', dbRequired, lobbyMessageLimiter, asyncRoute(async (req, res) => {
+app.post('/api/lobby/messages', dbRequired, lobbyMessageLimiter, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Sohbete yazmak için önce giriş yapmalısınız.' });
   const message = String(req.body.message || '').trim();
   if (!message || message.length > 300) return res.status(400).json({ error: 'Mesaj 1-300 karakter arasında olmalı.' });
@@ -448,7 +455,7 @@ app.post('/api/auth/reset-password', dbRequired, authLimiter, asyncRoute(async (
 }));
 
 
-app.get('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
+app.get('/api/notifications', dbRequired, activeAccountRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Bildirimleri görmek için giriş yapmalısınız.'});
   const pref=await pool.query('SELECT notifications_enabled,member_preferences FROM users WHERE id=$1',[req.session.user.id]);
   const enabled=pref.rows[0]?.notifications_enabled===true;
@@ -460,7 +467,7 @@ app.get('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
   res.setHeader('Cache-Control','no-store');
   res.json({notifications:items.rows,unreadByCategory,preferences:pref.rows[0]?.member_preferences||{},enabled});
 }));
-app.put('/api/notifications/preferences', dbRequired, asyncRoute(async(req,res)=>{
+app.put('/api/notifications/preferences', dbRequired, activeAccountRequired, asyncRoute(async(req,res)=>{
   if(!req.session.user?.id)return res.status(401).json({error:'Giriş yapmalısınız.'});
   if(typeof req.body.enabled!=='boolean')return res.status(400).json({error:'Bildirim tercihi geçersiz.'});
   const result=await pool.query(
@@ -474,7 +481,7 @@ app.put('/api/notifications/preferences', dbRequired, asyncRoute(async(req,res)=
   res.setHeader('Cache-Control','no-store');
   res.json({enabled:result.rows[0]?.notifications_enabled===true});
 }));
-app.post('/api/notifications/:id/read', dbRequired, asyncRoute(async (req,res) => {
+app.post('/api/notifications/:id/read', dbRequired, activeAccountRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
   if(!/^[1-9]\d*$/.test(req.params.id))return res.status(400).json({error:'Geçersiz bildirim.'});
   const id=Number(req.params.id);
@@ -483,12 +490,12 @@ app.post('/api/notifications/:id/read', dbRequired, asyncRoute(async (req,res) =
   if(!result.rowCount)return res.status(404).json({error:'Bildirim bulunamadı.'});
   res.json({ok:true});
 }));
-app.post('/api/notifications/read-all', dbRequired, asyncRoute(async (req,res) => {
+app.post('/api/notifications/read-all', dbRequired, activeAccountRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
   await pool.query('UPDATE user_notifications SET read_at=NOW() WHERE user_id=$1 AND read_at IS NULL',[req.session.user.id]);
   res.json({ok:true});
 }));
-app.delete('/api/notifications/:id', dbRequired, asyncRoute(async (req,res) => {
+app.delete('/api/notifications/:id', dbRequired, activeAccountRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
   if(!/^[1-9]\d*$/.test(req.params.id))return res.status(400).json({error:'Geçersiz bildirim.'});
   const id=Number(req.params.id);
@@ -497,7 +504,7 @@ app.delete('/api/notifications/:id', dbRequired, asyncRoute(async (req,res) => {
   if(!result.rowCount)return res.status(404).json({error:'Bildirim bulunamadı.'});
   res.json({ok:true});
 }));
-app.delete('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
+app.delete('/api/notifications', dbRequired, activeAccountRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
   await pool.query('DELETE FROM user_notifications WHERE user_id=$1',[req.session.user.id]);
   res.json({ok:true});
@@ -512,7 +519,7 @@ app.get('/api/public/new-members', asyncRoute(async (_req, res) => {
   res.json({ members: result.rows });
 }));
 
-app.post('/api/activity/heartbeat', dbRequired, asyncRoute(async (req, res) => {
+app.post('/api/activity/heartbeat', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Aktivite kaydı için giriş yapmalısınız.' });
   const activity = await pool.query(`
     INSERT INTO user_activity(user_id,last_seen_at,active_seconds)
