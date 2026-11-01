@@ -320,6 +320,11 @@ async function main() {
   const activeMemberPayload = await publicActiveMembers.json();
   assert.ok(Array.isArray(activeMemberPayload.members), 'Aktif üyeler yanıtı dizi döndürmedi.');
   assert.ok(activeMemberPayload.members.length <= 5, 'Aktif üyeler listesi beş kişi sınırını aştı.');
+  const newMemberPayload = await publicNewMembers.json();
+  assert.ok(Array.isArray(newMemberPayload.members), 'Yeni üyeler yanıtı dizi döndürmedi.');
+  assert.ok(newMemberPayload.members.length <= 5, 'Yeni üyeler listesi beş kişi sınırını aştı.');
+  for (const member of newMemberPayload.members) assert.deepEqual(Object.keys(member).sort(), ['created_at', 'username'], 'Yeni üyeler listesi izin verilmeyen kişisel alan döndürdü.');
+  for (const member of activeMemberPayload.members) assert.deepEqual(Object.keys(member).sort(), ['active_seconds', 'username'], 'Aktif üyeler listesi izin verilmeyen kişisel alan döndürdü.');
 
   const anonymousPost = await request('/api/lobby/messages', { method: 'POST', body: { message: 'Yetkisiz test' } });
   assert.equal(anonymousPost.status, 401, 'Oturumsuz kullanıcının sohbet mesajı engellenmedi.');
@@ -490,6 +495,10 @@ async function main() {
     assert.equal(expiredReset.status, 400, 'Süresi dolmuş şifre sıfırlama bağlantısı kabul edildi.');
 
     await testDb.query('UPDATE users SET is_active=FALSE WHERE username_normalized=LOWER($1)', [users[0].username]);
+    const inactiveNewMembers = await (await request('/api/public/new-members')).json();
+    assert.ok(!inactiveNewMembers.members.some(member => member.username === users[0].username), 'Devre dışı hesap yeni üyeler listesinde görünmeye devam etti.');
+    const inactiveActiveMembers = await (await request('/api/public/active-members')).json();
+    assert.ok(!inactiveActiveMembers.members.some(member => member.username === users[0].username), 'Devre dışı hesap aktif üyeler listesinde görünmeye devam etti.');
     const disabledSession = await request('/api/auth/me', { cookie: cookieANewLogin });
     assert.equal(disabledSession.status, 200);
     assert.equal((await disabledSession.json()).authenticated, false, 'Devre dışı hesap eski oturumla giriş yapmış görünmeye devam etti.');
