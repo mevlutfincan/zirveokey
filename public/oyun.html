@@ -79,11 +79,37 @@
  </section>
 
  <aside class="right-column">
-  <section class="side-panel online-panel"><div class="side-heading"><div><span class="eyebrow">TOPLULUK</span><h2>Çevrimiçi oyuncular</h2></div><span class="online-badge"><i></i> 0</span></div><div class="online-list" id="onlineList"><div class="side-empty"><span>♙</span><b>Oyuncu listesi bekleniyor</b><small>Canlı oyuncu bağlantısı henüz etkin değil.</small></div></div></section>
+  <section class="side-panel online-panel"><div class="side-heading"><div><span class="eyebrow">TOPLULUK</span><h2>Çevrimiçi oyuncular</h2></div><div class="online-panel-actions"><button type="button" id="openSocialCenter">Arkadaşlar</button><button type="button" id="openPrivateInbox">Mesajlar</button><span class="online-badge"><i></i> 0</span></div></div><div class="online-list" id="onlineList"><div class="side-empty"><span>♙</span><b>Oyuncu listesi bekleniyor</b><small>Canlı oyuncu bağlantısı henüz etkin değil.</small></div></div></section>
 
  </aside>
 </main>
 
+<dialog class="member-social-dialog" id="memberProfileDialog" aria-labelledby="memberProfileName">
+ <button type="button" class="member-social-close" data-close-dialog="memberProfileDialog" aria-label="Kapat">×</button>
+ <div class="member-profile-head"><img id="memberProfileAvatar" alt=""><div><h2 id="memberProfileName">Üye profili</h2><span id="memberProfileTier"></span><small id="memberProfileStatus"></small></div></div>
+ <p id="memberProfileBio" class="member-profile-bio">Henüz profil açıklaması eklenmemiş.</p>
+ <div id="memberProfileStats" class="member-profile-stats"></div><div id="memberProfileAchievements" class="member-profile-achievements"></div>
+ <div id="memberProfileActions" class="member-profile-actions"></div><small id="memberProfileFeedback" aria-live="polite"></small>
+</dialog>
+<dialog class="member-social-dialog member-message-dialog" id="privateMessageDialog" aria-labelledby="privateMessageTitle">
+ <button type="button" class="member-social-close" data-close-dialog="privateMessageDialog" aria-label="Kapat">×</button>
+ <h2 id="privateMessageTitle">Özel Mesaj</h2><div class="private-message-history" id="privateMessageHistory" aria-live="polite"></div>
+ <form id="privateMessageForm"><input id="privateMessageInput" maxlength="1000" placeholder="Mesajını yaz..." autocomplete="off" required><button class="primary-button" type="submit">Gönder</button></form>
+</dialog>
+<dialog class="member-social-dialog" id="socialCenterDialog" aria-labelledby="socialCenterTitle">
+ <button type="button" class="member-social-close" data-close-dialog="socialCenterDialog" aria-label="Kapat">×</button>
+ <h2 id="socialCenterTitle">Arkadaşlarım ve Mesajlarım</h2>
+ <div class="social-center-tabs"><button type="button" data-social-tab="friends" class="active">Arkadaşlar</button><button type="button" data-social-tab="requests">İstekler</button><button type="button" data-social-tab="favorites">Favoriler</button><button type="button" data-social-tab="messages">Mesajlar</button><button type="button" data-social-tab="blocked">Engelliler</button></div>
+ <div id="socialCenterList" class="social-center-list"></div>
+</dialog>
+<dialog class="member-social-dialog" id="memberReportDialog" aria-labelledby="memberReportTitle">
+ <button type="button" class="member-social-close" data-close-dialog="memberReportDialog" aria-label="Kapat">×</button>
+ <h2 id="memberReportTitle">Üyeyi şikâyet et</h2><form id="memberReportForm">
+ <label>Şikâyet nedeni<select id="memberReportReason" required><option value="">Seçin</option><option>Spam</option><option>Hakaret veya taciz</option><option>Uygunsuz profil</option><option>Dolandırıcılık</option><option>Diğer</option></select></label>
+ <label>Açıklama<textarea id="memberReportDetails" minlength="10" maxlength="500" required placeholder="Durumu en az 10 karakterle açıklayın."></textarea></label>
+ <small id="memberReportFeedback" aria-live="polite"></small><button type="submit" class="primary-button">Şikâyeti gönder</button></form>
+</dialog>
+<div class="member-context-menu" id="memberContextMenu" role="menu" hidden></div>
 <dialog class="online-member-avatar-dialog" id="onlineMemberAvatarDialog" aria-label="Üye profil fotoğrafı"><button type="button" class="online-member-avatar-close" id="onlineMemberAvatarClose" aria-label="Kapat">×</button><img id="onlineMemberAvatarImage" alt="Üye profil fotoğrafı"><b id="onlineMemberAvatarName"></b></dialog>
 <dialog class="create-dialog" id="createDialog"><form method="dialog" id="createTableForm"><div class="dialog-heading"><div><span class="eyebrow">YENİ OYUN</span><h2>Masa oluştur</h2></div><button class="icon-button" value="cancel" aria-label="Kapat">×</button></div><label>Masa adı<input id="newTableName" maxlength="22" value="Klasik Okey" required></label><div class="dialog-grid"><label>Oyun türü<select id="gameType"><option>Klasik Okey</option></select></label><label>Masa düzeni<select id="tablePrivacy"><option>Açık masa</option><option>Şifreli masa</option></select></label><label class="full-field">Masa görünümü<select id="tableStyle"><option value="Standart">Standart</option><option value="Renkli">Renkli</option></select></label></div><div class="dialog-actions"><button class="subtle-button" value="cancel">Vazgeç</button><button class="primary-button" id="confirmCreateTable" value="default">Masayı oluştur</button></div><p class="dialog-note">Bu aşamada masa oluşturma yalnızca arayüz önizlemesidir; diğer oyunculara açılmaz.</p></form></dialog>
 <dialog class="settings-dialog categorized-settings-dialog" id="memberSettingsDialog">
@@ -130,7 +156,9 @@
     </section>
     <section class="settings-page" data-settings-page="privacy" hidden>
      <span class="eyebrow">ÜYE DURUMU</span><h3>Çevrim İçi Durumum</h3><p>Çevrim içi listesinde adın her zaman görünür. Buradan o anki durumunu seçebilirsin.</p>
+     <label class="member-bio-setting">Profil açıklamam<textarea id="settingProfileBio" maxlength="160" rows="3" placeholder="Kendinden kısaca bahset..."></textarea><small>En fazla 160 karakter. Profilinde diğer üyelere görünür.</small><button type="button" class="settings-action-button" id="saveProfileBio">Açıklamayı kaydet</button></label>
      <div class="settings-control-group">
+      <label class="setting-row"><span><b>Özel mesajları kabul et</b><small>Diğer üyeler sana özel mesaj gönderebilsin</small></span><input type="checkbox" id="settingPrivateMessages" checked></label>
       <label class="setting-row" for="settingPresenceStatus"><span><b>Durumum</b><small>Diğer üyelerin göreceği durum etiketi</small></span>
        <select id="settingPresenceStatus" class="setting-select">
         <option value="online">Çevrim İçi</option><option value="away">Dışarda</option><option value="sleeping">Uyuyorum</option><option value="busy">Meşgul</option>

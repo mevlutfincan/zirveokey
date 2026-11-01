@@ -97,6 +97,53 @@ CREATE TABLE IF NOT EXISTS user_notifications (
 );
 CREATE INDEX IF NOT EXISTS user_notifications_user_created_idx ON user_notifications(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS user_notifications_unread_idx ON user_notifications(user_id, created_at DESC) WHERE read_at IS NULL;
+CREATE TABLE IF NOT EXISTS member_friendships (
+  id BIGSERIAL PRIMARY KEY,
+  requester_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  recipient_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status VARCHAR(12) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','declined')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (requester_id <> recipient_id),
+  UNIQUE(requester_id,recipient_id)
+);
+CREATE INDEX IF NOT EXISTS member_friendships_recipient_idx ON member_friendships(recipient_id,status,created_at DESC);
+CREATE TABLE IF NOT EXISTS member_favorites (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  target_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY(user_id,target_id),
+  CHECK(user_id <> target_id)
+);
+CREATE TABLE IF NOT EXISTS member_blocks (
+  blocker_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY(blocker_id,blocked_id),
+  CHECK(blocker_id <> blocked_id)
+);
+CREATE TABLE IF NOT EXISTS member_reports (
+  id BIGSERIAL PRIMARY KEY,
+  reporter_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  target_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason VARCHAR(60) NOT NULL,
+  details VARCHAR(500) NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'open' CHECK(status IN ('open','reviewing','closed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK(reporter_id <> target_id)
+);
+CREATE INDEX IF NOT EXISTS member_reports_status_idx ON member_reports(status,created_at DESC);
+CREATE TABLE IF NOT EXISTS private_messages (
+  id BIGSERIAL PRIMARY KEY,
+  sender_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  recipient_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  message VARCHAR(1000) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  read_at TIMESTAMPTZ,
+  CHECK(sender_id <> recipient_id)
+);
+CREATE INDEX IF NOT EXISTS private_messages_pair_idx ON private_messages(sender_id,recipient_id,id DESC);
+CREATE INDEX IF NOT EXISTS private_messages_recipient_idx ON private_messages(recipient_id,read_at,id DESC);
 CREATE TABLE IF NOT EXISTS resend_webhook_events (
   event_id VARCHAR(100) PRIMARY KEY,
   event_type VARCHAR(60) NOT NULL,
@@ -112,6 +159,13 @@ const authLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Çok fazla deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin.' }
+});
+const socialLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Çok sık üye işlemi yapıldı. Lütfen daha sonra tekrar deneyin.' }
 });
 const resetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -286,7 +340,7 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   res.status(204).end();
 }));
 
-app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
+app.get('/api/presence/online', dbRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
     SELECT u.id,u.username,u.membership_tier,
@@ -294,8 +348,9 @@ app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
         THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END AS status
     FROM user_presence p JOIN users u ON u.id=p.user_id
     WHERE p.last_seen_at>NOW()-INTERVAL '90 seconds' AND u.is_active=TRUE
+      AND ($1::bigint IS NULL OR NOT EXISTS(SELECT 1 FROM member_blocks b WHERE b.blocker_id=$1 AND b.blocked_id=u.id))
     ORDER BY u.username_normalized ASC LIMIT 100
-  `);
+  `,[req.session.user?.id||null]);
   res.json({ members: result.rows, count: result.rows.length });
 }));
 
@@ -321,14 +376,16 @@ app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
 }));
 app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarları kaydetmek için giriş yapmalısınız.' });
-  const allowed = ['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI','settingPresenceStatus'];
+  const allowed = ['profileBio','settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI','settingPresenceStatus'];
   const input = req.body?.preferences;
   const validPresenceStatuses = new Set(['online','away','sleeping','busy']);
   if (!input || typeof input !== 'object' || Array.isArray(input) ||
       Object.keys(input).some(key => !allowed.includes(key)) ||
-      Object.entries(input).some(([key,value]) => key === 'settingPresenceStatus'
-        ? typeof value !== 'string' || !validPresenceStatuses.has(value)
-        : typeof value !== 'boolean')) {
+      Object.entries(input).some(([key,value]) => key === 'profileBio'
+        ? typeof value !== 'string' || value.trim().length > 160
+        : key === 'settingPresenceStatus'
+          ? typeof value !== 'string' || !validPresenceStatuses.has(value)
+          : typeof value !== 'boolean')) {
     return res.status(400).json({ error: 'Geçersiz ayar verisi.' });
   }
   const result = await pool.query(
@@ -469,6 +526,151 @@ app.post('/api/auth/reset-password', dbRequired, authLimiter, asyncRoute(async (
   finally { client.release(); }
 }));
 
+
+function requireMemberSession(req,res){
+  if(!req.session.user?.id){res.status(401).json({error:'Bu işlem için giriş yapmalısınız.'});return null;}
+  return Number(req.session.user.id);
+}
+async function notifyMember(userId,category,title,message,actionUrl=null){
+  const preferenceKey={friendship:'settingFriendRequests',players:'settingNotifyPlayers',game:'settingNotifyGame',system:'settingNotifySystem',management:'settingNotifyManagement',rewards:'settingNotifyRewards'}[category];
+  await pool.query(`INSERT INTO user_notifications(user_id,category,title,message,action_url)
+    SELECT id,$2,$3,$4,$5 FROM users
+    WHERE id=$1 AND notifications_enabled=TRUE
+      AND COALESCE(member_preferences->>$6,'true')<>'false'`,
+  [userId,category,title,message,actionUrl,preferenceKey||'']);
+}
+function parseMemberId(value){
+  if(!/^[1-9]\d*$/.test(String(value)))return null;
+  const id=Number(value);return Number.isSafeInteger(id)?id:null;
+}
+app.get('/api/members/:id/profile',dbRequired,asyncRoute(async(req,res)=>{
+  const viewerId=requireMemberSession(req,res);if(!viewerId)return;
+  const targetId=parseMemberId(req.params.id);if(!targetId)return res.status(400).json({error:'Geçersiz üye.'});
+  const result=await pool.query(`
+    SELECT u.id,u.username,u.membership_tier,u.created_at,
+      COALESCE(u.member_preferences->>'profileBio','') AS bio,
+      COALESCE(a.active_seconds,0)::bigint AS active_seconds,
+      GREATEST(0,EXTRACT(DAY FROM NOW()-u.created_at)::int) AS member_days,
+      (SELECT COUNT(*)::int FROM member_friendships f WHERE (f.requester_id=u.id OR f.recipient_id=u.id) AND f.status='accepted') AS friend_count,
+      CASE WHEN p.last_seen_at>NOW()-INTERVAL '90 seconds' THEN
+        CASE WHEN u.member_preferences->>'settingPresenceStatus' IN ('away','sleeping','busy') THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END
+      ELSE 'offline' END AS status,
+      EXISTS(SELECT 1 FROM member_friendships f WHERE ((f.requester_id=$1 AND f.recipient_id=u.id) OR (f.requester_id=u.id AND f.recipient_id=$1)) AND f.status='accepted') AS is_friend,
+      EXISTS(SELECT 1 FROM member_friendships f WHERE f.requester_id=u.id AND f.recipient_id=$1 AND f.status='pending') AS incoming_request,
+      EXISTS(SELECT 1 FROM member_friendships f WHERE f.requester_id=$1 AND f.recipient_id=u.id AND f.status='pending') AS outgoing_request,
+      EXISTS(SELECT 1 FROM member_favorites WHERE user_id=$1 AND target_id=u.id) AS is_favorite,
+      EXISTS(SELECT 1 FROM member_blocks WHERE blocker_id=$1 AND blocked_id=u.id) AS is_blocked,
+      EXISTS(SELECT 1 FROM member_blocks WHERE blocker_id=u.id AND blocked_id=$1) AS blocked_by_member
+    FROM users u LEFT JOIN user_presence p ON p.user_id=u.id LEFT JOIN user_activity a ON a.user_id=u.id
+    WHERE u.id=$2 AND u.is_active=TRUE
+  `,[viewerId,targetId]);
+  if(!result.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
+  if(result.rows[0].blocked_by_member)return res.status(403).json({error:'Bu üyenin profili sana açık değil.'});
+  res.json({profile:result.rows[0]});
+}));
+app.get('/api/social/summary',dbRequired,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;
+  const [friends,incoming,favorites,blocked]=await Promise.all([
+    pool.query("SELECT u.id,u.username,u.membership_tier FROM member_friendships f JOIN users u ON u.id=CASE WHEN f.requester_id=$1 THEN f.recipient_id ELSE f.requester_id END WHERE (f.requester_id=$1 OR f.recipient_id=$1) AND f.status='accepted' ORDER BY u.username_normalized",[userId]),
+    pool.query("SELECT u.id,u.username FROM member_friendships f JOIN users u ON u.id=f.requester_id WHERE f.recipient_id=$1 AND f.status='pending' ORDER BY f.created_at DESC",[userId]),
+    pool.query('SELECT u.id,u.username,u.membership_tier FROM member_favorites f JOIN users u ON u.id=f.target_id WHERE f.user_id=$1 ORDER BY f.created_at DESC',[userId]),
+    pool.query('SELECT u.id,u.username FROM member_blocks b JOIN users u ON u.id=b.blocked_id WHERE b.blocker_id=$1 ORDER BY b.created_at DESC',[userId])
+  ]);
+  res.json({friends:friends.rows,incoming:incoming.rows,favorites:favorites.rows,blocked:blocked.rows});
+}));
+app.post('/api/social/friends/:id',dbRequired,socialLimiter,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);
+  if(!targetId||targetId===userId)return res.status(400).json({error:'Geçerli bir üye seçin.'});
+  const target=await pool.query('SELECT username FROM users WHERE id=$1 AND is_active=TRUE',[targetId]);if(!target.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
+  const blocked=await pool.query('SELECT 1 FROM member_blocks WHERE (blocker_id=$1 AND blocked_id=$2) OR (blocker_id=$2 AND blocked_id=$1)',[userId,targetId]);
+  if(blocked.rowCount)return res.status(403).json({error:'Engellenmiş üyeler arasında arkadaşlık kurulamaz.'});
+  const existing=await pool.query('SELECT id,status FROM member_friendships WHERE requester_id=$2 AND recipient_id=$1',[userId,targetId]);
+  if(existing.rows[0]?.status==='pending'){
+    await pool.query("UPDATE member_friendships SET status='accepted',updated_at=NOW() WHERE id=$1",[existing.rows[0].id]);
+    await notifyMember(targetId,'friendship','Arkadaşlık isteği kabul edildi',req.session.user.username+' arkadaşlık isteğini kabul etti.');
+    return res.json({ok:true,status:'accepted'});
+  }
+  const result=await pool.query(`INSERT INTO member_friendships(requester_id,recipient_id) VALUES($1,$2)
+    ON CONFLICT(requester_id,recipient_id) DO UPDATE SET status='pending',updated_at=NOW()
+    WHERE member_friendships.status='declined' RETURNING id`,[userId,targetId]);
+  if(!result.rowCount)return res.status(409).json({error:'Bu üyeye zaten arkadaşlık isteği gönderdin.'});
+  await notifyMember(targetId,'friendship','Yeni arkadaşlık isteği',req.session.user.username+' sana arkadaşlık isteği gönderdi.','/oyun?social=friends');
+  res.status(201).json({ok:true,status:'pending'});
+}));
+app.put('/api/social/friends/:id',dbRequired,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;const requesterId=parseMemberId(req.params.id);
+  if(!requesterId||requesterId===userId||!['accepted','declined'].includes(req.body.status))return res.status(400).json({error:'İstek bilgisi geçersiz.'});
+  const result=await pool.query("UPDATE member_friendships SET status=$1,updated_at=NOW() WHERE requester_id=$2 AND recipient_id=$3 AND status='pending' RETURNING id",[req.body.status,requesterId,userId]);
+  if(!result.rowCount)return res.status(404).json({error:'Bekleyen arkadaşlık isteği bulunamadı.'});
+  if(req.body.status==='accepted')await notifyMember(requesterId,'friendship','Arkadaşlık isteğin kabul edildi',req.session.user.username+' arkadaşlık isteğini kabul etti.');
+  res.json({ok:true,status:req.body.status});
+}));
+app.delete('/api/social/friends/:id',dbRequired,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);if(!targetId)return res.status(400).json({error:'Geçersiz üye.'});
+  await pool.query('DELETE FROM member_friendships WHERE (requester_id=$1 AND recipient_id=$2) OR (requester_id=$2 AND recipient_id=$1)',[userId,targetId]);res.json({ok:true});
+}));
+app.post('/api/social/favorites/:id',dbRequired,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);
+  if(!targetId||targetId===userId)return res.status(400).json({error:'Geçerli bir üye seçin.'});
+  const exists=await pool.query('SELECT 1 FROM users WHERE id=$1 AND is_active=TRUE',[targetId]);if(!exists.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
+  await pool.query('INSERT INTO member_favorites(user_id,target_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[userId,targetId]);res.json({ok:true,favorite:true});
+}));
+app.delete('/api/social/favorites/:id',dbRequired,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);if(!targetId)return res.status(400).json({error:'Geçersiz üye.'});
+  await pool.query('DELETE FROM member_favorites WHERE user_id=$1 AND target_id=$2',[userId,targetId]);res.json({ok:true,favorite:false});
+}));
+app.post('/api/social/blocks/:id',dbRequired,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);
+  if(!targetId||targetId===userId)return res.status(400).json({error:'Geçerli bir üye seçin.'});
+  const exists=await pool.query('SELECT 1 FROM users WHERE id=$1 AND is_active=TRUE',[targetId]);if(!exists.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
+  await pool.query('INSERT INTO member_blocks(blocker_id,blocked_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[userId,targetId]);
+  await pool.query('DELETE FROM member_friendships WHERE (requester_id=$1 AND recipient_id=$2) OR (requester_id=$2 AND recipient_id=$1)',[userId,targetId]);
+  res.json({ok:true,blocked:true});
+}));
+app.delete('/api/social/blocks/:id',dbRequired,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);if(!targetId)return res.status(400).json({error:'Geçersiz üye.'});
+  await pool.query('DELETE FROM member_blocks WHERE blocker_id=$1 AND blocked_id=$2',[userId,targetId]);res.json({ok:true,blocked:false});
+}));
+app.post('/api/social/reports/:id',dbRequired,socialLimiter,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);
+  const reason=String(req.body.reason||'').trim(),details=String(req.body.details||'').trim();
+  if(!targetId||targetId===userId||!['Spam','Hakaret veya taciz','Uygunsuz profil','Dolandırıcılık','Diğer'].includes(reason)||details.length<10||details.length>500)return res.status(400).json({error:'Şikâyet nedeni ve 10-500 karakter açıklama girin.'});
+  const exists=await pool.query('SELECT 1 FROM users WHERE id=$1 AND is_active=TRUE',[targetId]);if(!exists.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
+  const duplicate=await pool.query("SELECT 1 FROM member_reports WHERE reporter_id=$1 AND target_id=$2 AND status<>'closed' AND created_at>NOW()-INTERVAL '24 hours'",[userId,targetId]);
+  if(duplicate.rowCount)return res.status(409).json({error:'Bu üye için son 24 saat içinde açık bir şikâyetin bulunuyor.'});
+  await pool.query('INSERT INTO member_reports(reporter_id,target_id,reason,details) VALUES($1,$2,$3,$4)',[userId,targetId,reason,details]);
+  res.status(201).json({ok:true});
+}));
+app.get('/api/private-messages/:id',dbRequired,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id),afterId=Math.max(0,Number.parseInt(req.query.after||'0',10)||0);
+  if(!targetId||targetId===userId)return res.status(400).json({error:'Geçerli bir konuşma seçin.'});
+  const blocked=await pool.query('SELECT 1 FROM member_blocks WHERE (blocker_id=$1 AND blocked_id=$2) OR (blocker_id=$2 AND blocked_id=$1)',[userId,targetId]);if(blocked.rowCount)return res.status(403).json({error:'Engellenmiş üyeler arasında mesajlaşma kapalı.'});
+  const privacy=await pool.query("SELECT COALESCE(member_preferences->>'settingPrivateMessages','true')<>'false' AS allowed FROM users WHERE id=$1",[targetId]);if(!privacy.rows[0]?.allowed)return res.status(403).json({error:'Bu üye özel mesajları kabul etmiyor.'});
+  const result=await pool.query(`SELECT id,sender_id,recipient_id,message,created_at,read_at FROM private_messages
+    WHERE ((sender_id=$1 AND recipient_id=$2) OR (sender_id=$2 AND recipient_id=$1)) AND id>$3 ORDER BY id ASC LIMIT 100`,[userId,targetId,afterId]);
+  await pool.query('UPDATE private_messages SET read_at=COALESCE(read_at,NOW()) WHERE sender_id=$1 AND recipient_id=$2 AND read_at IS NULL',[targetId,userId]);
+  res.json({messages:result.rows});
+}));
+app.post('/api/private-messages/:id',dbRequired,socialLimiter,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id),message=String(req.body.message||'').trim();
+  if(!targetId||targetId===userId||!message||message.length>1000)return res.status(400).json({error:'Mesaj 1-1000 karakter arasında olmalı.'});
+  const target=await pool.query('SELECT username FROM users WHERE id=$1 AND is_active=TRUE',[targetId]);if(!target.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
+  const blocked=await pool.query('SELECT 1 FROM member_blocks WHERE (blocker_id=$1 AND blocked_id=$2) OR (blocker_id=$2 AND blocked_id=$1)',[userId,targetId]);if(blocked.rowCount)return res.status(403).json({error:'Engellenmiş üyeler arasında mesajlaşma kapalı.'});
+  const privacy=await pool.query("SELECT COALESCE(member_preferences->>'settingPrivateMessages','true')<>'false' AS allowed FROM users WHERE id=$1",[targetId]);if(!privacy.rows[0]?.allowed)return res.status(403).json({error:'Bu üye özel mesajları kabul etmiyor.'});
+  const result=await pool.query('INSERT INTO private_messages(sender_id,recipient_id,message) VALUES($1,$2,$3) RETURNING id,sender_id,recipient_id,message,created_at,read_at',[userId,targetId,message]);
+  await notifyMember(targetId,'players','Yeni özel mesaj',req.session.user.username+' sana özel mesaj gönderdi.','/oyun?social=messages');
+  res.status(201).json({message:result.rows[0]});
+}));
+app.get('/api/private-messages',dbRequired,asyncRoute(async(req,res)=>{
+  const userId=requireMemberSession(req,res);if(!userId)return;
+  const result=await pool.query(`SELECT DISTINCT ON (peer.id) peer.id,peer.username,last.message,last.created_at,
+    (SELECT COUNT(*)::int FROM private_messages unread WHERE unread.sender_id=peer.id AND unread.recipient_id=$1 AND unread.read_at IS NULL) AS unread
+    FROM (SELECT CASE WHEN sender_id=$1 THEN recipient_id ELSE sender_id END AS peer_id,MAX(id) AS last_id FROM private_messages WHERE sender_id=$1 OR recipient_id=$1 GROUP BY 1) pairs
+    JOIN users peer ON peer.id=pairs.peer_id JOIN private_messages last ON last.id=pairs.last_id
+    WHERE NOT EXISTS(SELECT 1 FROM member_blocks b WHERE (b.blocker_id=$1 AND b.blocked_id=peer.id) OR (b.blocker_id=peer.id AND b.blocked_id=$1))
+    ORDER BY peer.id,last.created_at DESC LIMIT 50`,[userId]);
+  res.json({conversations:result.rows});
+}));
 
 app.get('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Bildirimleri görmek için giriş yapmalısınız.'});

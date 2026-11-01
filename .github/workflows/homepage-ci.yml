@@ -47,6 +47,7 @@ jobs:
           node --check public/js/main.js
           node --check public/js/oyun.js
           node --check tests/two-user-integration.js
+          node --check tests/resend-webhook-integration.js
       - name: Smoke-test homepage and health endpoint
         run: |
           npm start > /tmp/zirveokey.log 2>&1 &
