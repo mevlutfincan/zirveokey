@@ -89,6 +89,8 @@ async function main() {
   assert.equal(prefsA.settingDarkMode, false, 'A tema tercihi kalıcı değil.');
   assert.equal(prefsA.settingPresenceStatus, 'away', 'A durum tercihi kalıcı değil.');
   assert.equal(prefsA.settingAutoArrange, true, 'A oyun tercihi kalıcı değil.');
+  const bioSave = await request('/api/account/preferences',{method:'PUT',cookie:cookieA,body:{preferences:{profileBio:'Profil açıklaması testi'}}});
+  assert.equal(bioSave.status,200,'Profil açıklaması kaydedilemedi.');
   const prefsB = (await (await request('/api/account/preferences', { cookie: cookieB })).json()).preferences;
   assert.equal(prefsB.settingDarkMode, undefined, 'A kullanıcısının ayarı B hesabına sızdı.');
   const invalidPreferences = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { isAdmin: true } } });
@@ -317,6 +319,10 @@ async function main() {
   assert.equal(addFavorite.status, 200, 'A B kullanıcısını favoriye ekleyemedi.');
   const profileBFromA = await (await request('/api/members/' + profileBId + '/profile',{cookie:cookieA})).json();
   assert.equal(profileBFromA.profile.is_favorite,true,'Favori ilişkisi profil API yanıtında görünmüyor.');
+  await request('/api/account/preferences',{method:'PUT',cookie:cookieB,body:{preferences:{settingPrivateMessages:false}}});
+  const privateDenied = await request('/api/private-messages/'+profileBId,{method:'POST',cookie:cookieA,body:{message:'Gizlilik testi'}});
+  assert.equal(privateDenied.status,403,'Özel mesaj tercihi kapalıyken mesaj kabul edildi.');
+  await request('/api/account/preferences',{method:'PUT',cookie:cookieB,body:{preferences:{settingPrivateMessages:true}}});
   const sendPrivate = await request('/api/private-messages/' + profileBId, { method:'POST', cookie:cookieA, body:{message:'Özel mesaj entegrasyon testi '+suffix} });
   assert.equal(sendPrivate.status,201,'Özel mesaj gönderilemedi: '+await sendPrivate.text());
   const readPrivate = await request('/api/private-messages/' + (await (await request('/api/auth/me',{cookie:cookieA})).json()).user.id,{cookie:cookieB});
