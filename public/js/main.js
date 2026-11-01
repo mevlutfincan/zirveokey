@@ -19,6 +19,7 @@ document.addEventListener('click',e=>{
 const backdrop=$('#backdrop'),email=$('#email'),authForm=$('#authForm');
 const username=$('#username'),password=$('#password'),loginOptions=$('#loginOptions');
 let lastTrigger=null,authMode='login';
+let notificationSessionVersion=0;
 const authButtons=[...document.querySelectorAll('[data-modal="login"],[data-modal="register"]')];
 async function refreshAuthState(){
   try{
@@ -26,6 +27,7 @@ async function refreshAuthState(){
     if(!response.ok)throw new Error('Oturum durumu alınamadı.');
     const data=await response.json();
     const signedIn=data.authenticated===true;
+    if(homeSignedIn!==signedIn){notificationSessionVersion++;if(!signedIn)notificationState=null;}
     homeSignedIn=signedIn;
     if(signedIn){homePreferencesLoaded=await loadHomeAccountPreferences();if(homePreferencesLoaded){sendHomePresenceHeartbeat();sendActivityHeartbeat();}}else{homePreferencesLoaded=false;}
     authButtons.forEach(button=>button.hidden=signedIn);
@@ -83,16 +85,22 @@ function renderNotifications(){
 }
 async function loadNotifications(){
   if(!homeSignedIn||notificationBusy)return;
+  const requestVersion=notificationSessionVersion;
   notificationBusy=true;
   try{
     const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});
     const data=await response.json().catch(()=>({}));
+    if(requestVersion!==notificationSessionVersion||!homeSignedIn)return;
     if(!response.ok)throw new Error(data.error||'Bildirimler alınamadı.');
     notificationState=data;renderNotifications();
   }catch(error){
+    if(requestVersion!==notificationSessionVersion||!homeSignedIn)return;
     const items=document.getElementById('notificationItems');
     if(items){const message=document.createElement('p');message.className='notification-empty';message.textContent=error.message;items.replaceChildren(message);}
-  }finally{notificationBusy=false;}
+  }finally{
+    notificationBusy=false;
+    if(homeSignedIn&&requestVersion!==notificationSessionVersion)loadNotifications();
+  }
 }
 async function mutateNotification(url,method){
   try{
@@ -216,11 +224,11 @@ function startActivityTracking(){
   if(!document.getElementById('activeMembersList'))return;
   sendActivityHeartbeat();
   sendHomePresenceHeartbeat();
-  window.setInterval(()=>{sendActivityHeartbeat();sendHomePresenceHeartbeat();loadActiveMembers();},60000);
+  window.setInterval(()=>{sendActivityHeartbeat();sendHomePresenceHeartbeat();loadActiveMembers();if(homeSignedIn)loadNotifications();},60000);
 }
 loadActiveMembers();
 startActivityTracking();
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){sendActivityHeartbeat();sendHomePresenceHeartbeat();}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){sendActivityHeartbeat();sendHomePresenceHeartbeat();if(homeSignedIn)loadNotifications();}});
 
 async function logout(){
   const buttons=[document.getElementById('logoutButton'),document.getElementById('mobileLogoutButton')].filter(Boolean);
