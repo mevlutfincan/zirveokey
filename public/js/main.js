@@ -131,24 +131,29 @@ async function mutateNotification(url,method){
     if(requestVersion===notificationSessionVersion&&requestUserId===homeUserId)alert(error.message);
   }
 }
-async function saveNotificationCategories(changes){
-  const status=document.getElementById('notificationSettingsStatus');
+let notificationPreferenceQueue=Promise.resolve();
+function saveNotificationCategories(changes){
   const requestVersion=notificationSessionVersion;
   const requestUserId=homeUserId;
-  try{
-    const response=await fetch('/api/account/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:changes})});
-    const data=await response.json().catch(()=>({}));
+  notificationPreferenceQueue=notificationPreferenceQueue.catch(()=>{}).then(async()=>{
     if(requestVersion!==notificationSessionVersion||requestUserId!==homeUserId||!homeSignedIn)return;
-    if(!response.ok)throw new Error(data.error||'Bildirim ayarı kaydedilemedi.');
-    notificationState.preferences={...(notificationState?.preferences||{}),...(data.preferences||{}),...changes};
-    try{const saved=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');localStorage.setItem('zirveMemberSettings',JSON.stringify({...saved,...changes}));}catch{}
-    status.textContent='Bildirim kategorileri kaydedildi.';
-    renderNotifications();
-  }catch(error){
-    if(requestVersion!==notificationSessionVersion||requestUserId!==homeUserId)return;
-    status.textContent=error.message;
-    await loadNotifications();
-  }
+    const status=document.getElementById('notificationSettingsStatus');
+    try{
+      const response=await fetch('/api/account/preferences',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:changes})});
+      const data=await response.json().catch(()=>({}));
+      if(requestVersion!==notificationSessionVersion||requestUserId!==homeUserId||!homeSignedIn)return;
+      if(!response.ok)throw new Error(data.error||'Bildirim ayarı kaydedilemedi.');
+      notificationState.preferences={...(notificationState?.preferences||{}),...(data.preferences||{}),...changes};
+      try{const saved=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');localStorage.setItem('zirveMemberSettings',JSON.stringify({...saved,...changes}));}catch{}
+      status.textContent='Bildirim kategorileri kaydedildi.';
+      renderNotifications();
+    }catch(error){
+      if(requestVersion!==notificationSessionVersion||requestUserId!==homeUserId)return;
+      status.textContent=error.message;
+      await loadNotifications();
+    }
+  });
+  return notificationPreferenceQueue;
 }
 notificationToggle?.addEventListener('click',async()=>{
   const open=notificationPanel.hidden;
