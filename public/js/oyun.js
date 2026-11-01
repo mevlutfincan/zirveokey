@@ -389,8 +389,7 @@ $('#chatTextGrow').addEventListener('click',()=>{
   const author=document.createElement('b');author.className='chat-message-author';author.textContent=String(message.username||'Üye')+' :';
   const nameColor=validChatHex(message.chat_name_color)?message.chat_name_color:defaultChatStyle.nameColor;
   const textColor=validChatHex(message.chat_text_color)?message.chat_text_color:defaultChatStyle.textColor;
-  item.style.setProperty('--chat-author-color',nameColor);item.style.setProperty('--chat-body-color',textColor);
-    item.style.setProperty('--chat-row-color',rowColor);item.style.setProperty('--chat-row-color',validChatRowHex(message.chat_row_color)?message.chat_row_color:defaultChatStyle.rowColor);
+  item.style.setProperty('--chat-author-color',nameColor);item.style.setProperty('--chat-body-color',textColor);item.style.setProperty('--chat-row-color',validChatRowHex(message.chat_row_color)?message.chat_row_color:defaultChatStyle.rowColor);
   const body=document.createElement('span');body.className='chat-message-body';
   const messageText=String(message.message||'');
   if(typeof Intl!=='undefined'&&Intl.Segmenter){
