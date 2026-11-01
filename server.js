@@ -235,7 +235,7 @@ app.get('/api/account/email-change/status', dbRequired, activeAccountRequired, (
 app.post('/api/account/email-change', dbRequired, activeAccountRequired, authLimiter, asyncRoute(async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
   const currentPassword = String(req.body?.currentPassword || '');
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
   if (currentPassword.length < 10 || currentPassword.length > 72) return res.status(400).json({ error: 'Mevcut şifrenizi doğrulayın.' });
   const account = await pool.query('SELECT email,password_hash FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!account.rows[0] || !(await bcrypt.compare(currentPassword, account.rows[0].password_hash))) return res.status(400).json({ error: 'Mevcut şifreniz doğru değil.' });
