@@ -23,7 +23,7 @@ async function loadAccount(){
   $('#profileGender').textContent=me.user.gender||'';
   $('#profileCountryInput').value=me.user.country||'Türkiye';
   $('#profileGenderInput').value=me.user.gender||'Belirtmek istemiyorum';
-  const [avatar,prefs,style]=await Promise.all([api('/api/account/avatar'),api('/api/account/preferences'),api('/api/account/chat-style')]);
+  const [avatar,prefs,style,emailChange]=await Promise.all([api('/api/account/avatar'),api('/api/account/preferences'),api('/api/account/chat-style'),api('/api/account/email-change/status')]);
   renderAvatar(avatar.avatar,me.user.username);
   preferences=prefs.preferences||{};
   document.body.classList.toggle('soft-light',preferences.settingDarkMode===false);
@@ -32,9 +32,17 @@ async function loadAccount(){
   $('#nameColor').value=colors.nameColor||'#ffffff';
   $('#textColor').value=colors.textColor||'#e9f0e8';
   $('#rowColor').value=colors.rowColor||'#102016';
+  $('#emailChangeForm').hidden=emailChange.configured!==true;
+  $('#emailChangeUnavailable').hidden=emailChange.configured===true;
   content.hidden=false;status.hidden=true;
  }catch(error){setStatus(status,error.message,true);}
 }
+$('#emailChangeForm').addEventListener('submit',async event=>{
+ event.preventDefault();const button=event.currentTarget.querySelector('button');button.disabled=true;
+ try{const result=await api('/api/account/email-change',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('#newEmail').value,currentPassword:$('#emailCurrentPassword').value})});$('#emailCurrentPassword').value='';setStatus($('#emailChangeStatus'),result.message||'Adres uygunsa doğrulama bağlantısı gönderilecektir.');}
+ catch(error){setStatus($('#emailChangeStatus'),error.message,true);}
+ finally{button.disabled=false;}
+});
 $('#profileForm').addEventListener('submit',async event=>{
  event.preventDefault();const button=event.currentTarget.querySelector('button');button.disabled=true;
  try{const result=await api('/api/account/profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({country:$('#profileCountryInput').value,gender:$('#profileGenderInput').value})});$('#profileCountry').textContent=result.user.country;$('#profileGender').textContent=result.user.gender;setStatus($('#profileStatus'),'Profil bilgilerin güncellendi.');}
