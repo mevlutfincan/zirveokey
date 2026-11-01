@@ -656,7 +656,6 @@ async function saveMemberPreferences(patch){
  if($('#settingPresenceStatus'))$('#settingPresenceStatus').value=memberPreferences.settingPresenceStatus||'online';
   applyMemberSettings(memberPreferences);
   if(Object.keys(patch).some(key=>key.startsWith('settingNotify')||key==='settingFriendRequests')&&!notificationsPopover.hidden)loadNotifications();
-  if(Object.prototype.hasOwnProperty.call(patch,'settingShowOnline')){sendPresenceHeartbeat();loadOnlineMembers();}
   $('#settingsSaveState').textContent='Değişiklikler hesabına kaydedildi.';
  };
  const pending=preferenceSaveQueue.then(save,save);
