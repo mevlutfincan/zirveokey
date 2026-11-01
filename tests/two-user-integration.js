@@ -384,8 +384,43 @@ async function main() {
   assert.equal(newPasswordLoginData.user.country, 'Fransa', 'Yeni giriş yanıtında güncellenen ülke bilgisi kayboldu.');
   assert.equal(newPasswordLoginData.user.gender, 'Belirtmek istemiyorum', 'Yeni giriş yanıtında güncellenen cinsiyet bilgisi kayboldu.');
   const cookieANewLogin = cookieFrom(newPasswordLogin);
+  const emailChangeStatus = await request('/api/account/email-change/status', { cookie: cookieANewLogin });
+  assert.equal(emailChangeStatus.status, 200, 'E-posta doğrulama yapılandırma durumu alınamadı.');
+  assert.equal((await emailChangeStatus.json()).configured, false, 'Test ortamında e-posta gönderim yapılandırması beklenmiyordu.');
+  const invalidEmailChange = await request('/api/account/email-change', { method: 'POST', cookie: cookieANewLogin, body: { email: 'invalid-address', currentPassword: 'ZirveNew!2026A' } });
+  assert.equal(invalidEmailChange.status, 400, 'Geçersiz yeni e-posta adresi kabul edildi.');
+  const disabledEmailChange = await request('/api/account/email-change', { method: 'POST', cookie: cookieANewLogin, body: { email: 'new-' + suffix + '@example.invalid', currentPassword: 'ZirveNew!2026A' } });
+  assert.equal(disabledEmailChange.status, 503, 'E-posta gönderim yapılandırması olmadan adres değişikliği başlatılmış gibi kabul edildi.');
+
+  const userD = { username: 'TestD_' + suffix, email: 'testd-' + suffix + '@example.invalid', password: 'ZirveTest!2026D', country: 'Türkiye', gender: 'Belirtmek istemiyorum' };
+  const registerD = await request('/api/auth/register', { method: 'POST', body: userD });
+  assert.equal(registerD.status, 201, 'E-posta doğrulama test hesabı oluşturulamadı.');
+  const cookieD = cookieFrom(registerD);
   const testDb = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false });
   try {
+    const emailToken = randomUUID().replaceAll('-', '').repeat(2);
+    const newEmailD = 'verified-' + suffix + '@example.invalid';
+    const userDId = await testDb.query('SELECT id FROM users WHERE username_normalized=LOWER($1)', [userD.username]);
+    await testDb.query('INSERT INTO email_change_tokens(user_id,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$2,$3,NOW()+INTERVAL \'30 minutes\')', [userDId.rows[0].id, newEmailD, require('node:crypto').createHash('sha256').update(emailToken).digest('hex')]);
+    const verifyEmailD = await request('/api/account/email-change/verify', { method: 'POST', body: { token: emailToken } });
+    assert.equal(verifyEmailD.status, 200, 'Geçerli e-posta doğrulama bağlantısı çalışmadı: ' + await verifyEmailD.text());
+    const storedEmailD = await testDb.query('SELECT email FROM users WHERE id=$1', [userDId.rows[0].id]);
+    assert.equal(storedEmailD.rows[0].email, newEmailD, 'Doğrulanan yeni e-posta hesaba kaydedilmedi.');
+    const oldSessionD = await request('/api/auth/me', { cookie: cookieD });
+    assert.equal((await oldSessionD.json()).authenticated, false, 'E-posta değişiminden sonra eski oturum açık kaldı.');
+    const replayEmailD = await request('/api/account/email-change/verify', { method: 'POST', body: { token: emailToken } });
+    assert.equal(replayEmailD.status, 400, 'E-posta doğrulama bağlantısı ikinci kez kullanılabildi.');
+    const loginD = await request('/api/auth/login', { method: 'POST', body: { username: userD.username, password: userD.password } });
+    assert.equal(loginD.status, 200, 'Doğrulama sonrası kullanıcı yeniden giriş yapamadı.');
+    assert.equal((await loginD.json()).user.email, newEmailD, 'Yeni e-posta adresi girişte kullanılmadı.');
+    const cookieDNew = cookieFrom(loginD);
+    await request('/api/auth/logout', { method: 'POST', cookie: cookieDNew });
+
+    const expiredToken = randomUUID().replaceAll('-', '').repeat(2);
+    await testDb.query('INSERT INTO email_change_tokens(user_id,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$2,$3,NOW()-INTERVAL \'1 minute\')', [userDId.rows[0].id, 'expired-' + suffix + '@example.invalid', require('node:crypto').createHash('sha256').update(expiredToken).digest('hex')]);
+    const expiredVerify = await request('/api/account/email-change/verify', { method: 'POST', body: { token: expiredToken } });
+    assert.equal(expiredVerify.status, 400, 'Süresi dolmuş e-posta doğrulama bağlantısı kabul edildi.');
+
     await testDb.query('UPDATE users SET is_active=FALSE WHERE username_normalized=LOWER($1)', [users[0].username]);
     const disabledSession = await request('/api/auth/me', { cookie: cookieANewLogin });
     assert.equal(disabledSession.status, 200);
