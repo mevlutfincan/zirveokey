@@ -460,14 +460,14 @@ app.post('/api/contact', contactLimiter, asyncRoute(async (req, res) => {
   const subject = String(req.body?.subject || '').trim();
   const message = String(req.body?.message || '').trim();
   if (name.length < 2 || name.length > 80) return res.status(400).json({ error: 'Ad alanı 2-80 karakter arasında olmalı.' });
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
   if (subject.length < 3 || subject.length > 120) return res.status(400).json({ error: 'Konu 3-120 karakter arasında olmalı.' });
   if (message.length < 10 || message.length > 3000) return res.status(400).json({ error: 'Mesaj 10-3000 karakter arasında olmalı.' });
   if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.SUPPORT_EMAIL) return res.status(503).json({ error: 'İletişim gönderim kanalı henüz yapılandırılmadı.' });
   const mail = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: process.env.MAIL_FROM, to: [process.env.SUPPORT_EMAIL], reply_to: email, subject: '[ZirveOkey Destek] ' + subject, text: 'Gönderen: ' + name + '\\nE-posta: ' + email + '\\n\\n' + message })
+    body: JSON.stringify({ from: process.env.MAIL_FROM, to: [process.env.SUPPORT_EMAIL], reply_to: email, subject: '[ZirveOkey Destek] ' + subject, text: 'Gönderen: ' + name + '\nE-posta: ' + email + '\n\n' + message })
   });
   if (!mail.ok) { console.error('Contact email provider rejected the request:', mail.status); return res.status(502).json({ error: 'Mesaj şu anda gönderilemedi. Lütfen daha sonra tekrar deneyin.' }); }
   res.status(202).json({ ok: true, message: 'Mesajın destek ekibine iletildi.' });
