@@ -1,0 +1,70 @@
+name: ZirveOkey CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zirveokey_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d zirveokey_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/zirveokey_test
+      SESSION_SECRET: ci-only-session-secret-not-for-production
+      NODE_ENV: test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Check JavaScript syntax
+        run: |
+          node --check server.js
+          node --check public/js/main.js
+          node --check public/js/account.js
+          node --check public/js/email-verify.js
+          node --check public/js/oyun.js
+          node --check tests/two-user-integration.js
+      - name: Smoke-test homepage and account pages
+        run: |
+          npm start > /tmp/zirveokey.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/health | grep -q '"status":"ok"'; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then cat /tmp/zirveokey.log; exit 1; fi
+          curl --fail --silent http://127.0.0.1:3000/ | grep -q 'ZirveOkey'
+          curl --fail --silent http://127.0.0.1:3000/ | grep -q 'Yeni Üyeler'
+          curl --fail --silent http://127.0.0.1:3000/ | grep -q 'En Çok Aktif Üyeler'
+          curl --fail --silent http://127.0.0.1:3000/hesabim.html | grep -q 'Hesap tercihleri'
+          curl --fail --silent http://127.0.0.1:3000/email-dogrula.html | grep -q 'E-posta doğrulama'
+          curl --fail --silent http://127.0.0.1:3000/iletisim.html | grep -q 'contactForm'
+          curl --fail --silent http://127.0.0.1:3000/yardim.html | grep -q 'Profil bilgilerimi nereden güncellerim'
+      - name: Two-user membership and account integration tests
+        run: node tests/two-user-integration.js
