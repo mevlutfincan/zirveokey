@@ -1266,3 +1266,8 @@ body:not(.soft-light) .community-empty{
  .notification-panel{padding:12px}
  .notification-category-list{grid-template-columns:1fr}
 }
+
+@media(max-width:760px){
+ .site-header .header-actions .logout-button{flex:1 1 0!important;width:auto!important;min-width:0!important}
+ .site-header .header-actions .notification-toggle>span:first-child svg{display:block;width:18px;height:18px}
+}
