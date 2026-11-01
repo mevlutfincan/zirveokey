@@ -21,6 +21,8 @@ async function loadAccount(){
   $('#profileEmail').textContent=me.user.email||'';
   $('#profileCountry').textContent=me.user.country||'';
   $('#profileGender').textContent=me.user.gender||'';
+  $('#profileCountryInput').value=me.user.country||'Türkiye';
+  $('#profileGenderInput').value=me.user.gender||'Belirtmek istemiyorum';
   const [avatar,prefs,style]=await Promise.all([api('/api/account/avatar'),api('/api/account/preferences'),api('/api/account/chat-style')]);
   renderAvatar(avatar.avatar,me.user.username);
   preferences=prefs.preferences||{};
@@ -33,6 +35,12 @@ async function loadAccount(){
   content.hidden=false;status.hidden=true;
  }catch(error){setStatus(status,error.message,true);}
 }
+$('#profileForm').addEventListener('submit',async event=>{
+ event.preventDefault();const button=event.currentTarget.querySelector('button');button.disabled=true;
+ try{const result=await api('/api/account/profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({country:$('#profileCountryInput').value,gender:$('#profileGenderInput').value})});$('#profileCountry').textContent=result.user.country;$('#profileGender').textContent=result.user.gender;setStatus($('#profileStatus'),'Profil bilgilerin güncellendi.');}
+ catch(error){setStatus($('#profileStatus'),error.message,true);}
+ finally{button.disabled=false;}
+});
 $('#avatarFile').addEventListener('change',async event=>{
  const file=event.target.files?.[0];if(!file)return;
  if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>1024*1024){setStatus(status,'PNG, JPG veya WebP biçiminde en fazla 1 MB bir görsel seç.',true);event.target.value='';return;}
