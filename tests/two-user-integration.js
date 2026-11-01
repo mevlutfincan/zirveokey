@@ -74,6 +74,8 @@ async function main() {
   const contactStatusResponse = await request('/api/contact/status');
   assert.equal(contactStatusResponse.status, 200, 'İletişim yapılandırma durumu alınamadı.');
   assert.equal((await contactStatusResponse.json()).configured, false, 'Test ortamında destek e-posta yapılandırması beklenmiyordu.');
+  const invalidContactSend = await request('/api/contact', { method: 'POST', body: { name: 'A', email: 'not-an-email', subject: 'x', message: 'short' } });
+  assert.equal(invalidContactSend.status, 400, 'Geçersiz iletişim formu verisi kabul edildi.');
   const disabledContactSend = await request('/api/contact', { method: 'POST', body: { name: 'Test Kullanıcı', email: 'test@example.invalid', subject: 'Destek talebi', message: 'Bu bir test destek mesajıdır.' } });
   assert.equal(disabledContactSend.status, 503, 'Destek alıcısı yapılandırılmadan iletişim mesajı gönderilmiş gibi kabul edildi.');
 
