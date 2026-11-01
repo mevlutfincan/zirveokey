@@ -140,6 +140,7 @@ async function main() {
   const anonymousNotifications = await request('/api/notifications');
   assert.equal(anonymousNotifications.status, 401, 'Oturumsuz kullanıcı bildirimleri okuyabildi.');
   const notificationsAResponse = await request('/api/notifications', { cookie: cookieA });
+  assert.equal(notificationsAResponse.headers.get('cache-control'), 'no-store', 'Bildirim merkezi yanıtı önbelleğe açık.');
   assert.equal(notificationsAResponse.status, 200, 'A bildirim merkezini açamadı.');
   const notificationsA = await notificationsAResponse.json();
   assert.equal(notificationsA.enabled, true, 'Yeni hesapta bildirimler varsayılan olarak açık olmalı.');
