@@ -285,6 +285,7 @@ async function main() {
   assert.ok(liveStyleA, 'B çevrimiçi A kullanıcısının renk bilgisini alamadı.');
   assert.equal(liveStyleA.chat_name_color, '#008000', 'B A kullanıcısının yeni isim rengini anlık renk akışında göremedi.');
   assert.equal(liveStyleA.chat_text_color, '#663399', 'B A kullanıcısının yeni mesaj rengini anlık renk akışında göremedi.');
+  assert.equal(liveStyleA.chat_row_color, '#dbeafe', 'B A kullanıcısının sohbet satırı arka plan rengini anlık renk akışında göremedi.');
   const alwaysVisibleChatStyles = await (await request('/api/lobby/chat-styles', { cookie: cookieA })).json();
   assert.ok(alwaysVisibleChatStyles.members.some(member => member.username === users[1].username), 'B kullanıcısının adı durum seçimi nedeniyle listeden kayboldu.');
 

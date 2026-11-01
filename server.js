@@ -452,7 +452,7 @@ app.put('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
 app.get('/api/lobby/chat-styles', dbRequired, asyncRoute(async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
-    SELECT u.id,u.username,u.chat_name_color,u.chat_text_color
+    SELECT u.id,u.username,u.chat_name_color,u.chat_text_color,u.chat_row_color
     FROM users u
     JOIN user_presence p ON p.user_id=u.id
     WHERE u.is_active=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
