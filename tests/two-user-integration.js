@@ -15,6 +15,7 @@ if (testDatabaseUrl.pathname.slice(1) !== 'zirveokey_test' ||
   throw new Error('Refusing to run integration tests against a non-local zirveokey_test database.');
 }
 const cleanupUsernames = [];
+const cleanupWebhookIds = [];
 
 const port = Number(process.env.TEST_PORT || 3101);
 const baseUrl = 'http://127.0.0.1:' + port;
@@ -68,6 +69,7 @@ async function main() {
   const webhookEvent = { type: 'email.delivered', data: { email_id: 'ci-email-id' } };
   const webhookBody = JSON.stringify(webhookEvent);
   const webhookId = randomUUID();
+  cleanupWebhookIds.push(webhookId);
   const webhookTimestamp = String(Math.floor(Date.now() / 1000));
   const webhookSignature = require('node:crypto')
     .createHmac('sha256', Buffer.from('integration-test-secret'))
@@ -93,6 +95,16 @@ async function main() {
     method: 'POST', headers: webhookHeaders, body: webhookBody
   });
   assert.equal(duplicateWebhook.status, 204, 'Tekrarlanan webhook güvenli şekilde karşılanamadı.');
+  const webhookDb = new Pool({ connectionString: process.env.DATABASE_URL });
+  try {
+    const storedWebhook = await webhookDb.query(
+      'SELECT COUNT(*)::int AS count FROM resend_webhook_events WHERE event_id=$1',
+      [webhookId]
+    );
+    assert.equal(storedWebhook.rows[0].count, 1, 'Tekrarlanan webhook olayı veritabanına birden fazla kez kaydedildi.');
+  } finally {
+    await webhookDb.end();
+  }
   const emptyRegister = await request('/api/auth/register', { method: 'POST' });
   assert.equal(emptyRegister.status, 400, 'Boş üyelik isteği sunucu hatasına dönüşmemeli.');
   const emptyLogin = await request('/api/auth/login', { method: 'POST' });
@@ -312,6 +324,7 @@ async function main() {
 
 
   const userC = { username: 'TestC_' + suffix, email: 'testc-' + suffix + '@example.invalid', password: 'ZirveTest!2026C', country: 'Türkiye', gender: 'Belirtmek istemiyorum' };
+  cleanupUsernames.push(userC.username);
   const registerC = await request('/api/auth/register', { method: 'POST', body: userC });
   assert.equal(registerC.status, 201, 'Üçüncü bildirim test hesabı oluşturulamadı: ' + await registerC.text());
   const cAnnouncementA = await (await request('/api/notifications', { cookie: cookieA })).json();
@@ -620,7 +633,12 @@ main().catch(error => {
   if (cleanupUsernames.length) {
     const cleanupPool = new Pool({ connectionString: process.env.DATABASE_URL });
     try {
-      await cleanupPool.query('DELETE FROM users WHERE username = ANY($1::text[])', [cleanupUsernames]);
+      if (cleanupWebhookIds.length) {
+        await cleanupPool.query('DELETE FROM resend_webhook_events WHERE event_id = ANY($1::text[])', [cleanupWebhookIds]);
+      }
+      if (cleanupUsernames.length) {
+        await cleanupPool.query('DELETE FROM users WHERE username = ANY($1::text[])', [cleanupUsernames]);
+      }
     } catch (cleanupError) {
       console.error('Test-user cleanup failed:', cleanupError.message);
       process.exitCode = 1;
