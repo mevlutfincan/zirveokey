@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06110b"><meta name="description" content="ZirveOkey hesap ve profil ayarları.">
+<title>Hesabım | ZirveOkey</title>
+<link rel="stylesheet" href="/css/styles.css?v=notifications-20261101-02">
+<link rel="stylesheet" href="/css/account.css?v=account-email-change-20261101">
+<script defer src="/js/account.js?v=account-profile-edit-20261101"></script>
+</head>
+<body class="account-page">
+<header class="site-header">
+<a class="brand" href="/" aria-label="ZirveOkey Anasayfa"><span class="crown">♛</span><span><b>Zirve</b>Okey</span></a>
+<nav class="account-nav"><a href="/">Anasayfa</a><a href="/siralama.html">Sıralama</a><a href="/yardim.html">Yardım</a></nav>
+<a class="account-back" href="/">← Anasayfaya dön</a>
+</header>
+<main class="account-main">
+<section class="account-heading"><p class="account-kicker">ZİRVEOKEY • HESAP MERKEZİ</p><h1>Hesabım</h1><p>Profilini, güvenlik tercihlerini ve kişisel ayarlarını buradan yönetebilirsin.</p></section>
+<div id="accountStatus" class="account-status" role="status" aria-live="polite">Hesap bilgileri yükleniyor…</div>
+<div id="accountContent" hidden>
+<section class="account-card profile-card">
+<div class="profile-avatar-wrap"><img id="profileAvatar" alt="Profil avatarı"><span id="avatarFallback">Z</span></div>
+<div class="profile-summary"><span class="account-label">ÜYE PROFİLİ</span><h2 id="profileUsername">—</h2><p id="profileEmail">—</p><p><span id="profileCountry">—</span> · <span id="profileGender">—</span></p>
+<form id="profileForm" class="profile-edit-form"><label>Ülke<select id="profileCountryInput" required><option value="Türkiye">Türkiye</option><option value="Almanya">Almanya</option><option value="Azerbaycan">Azerbaycan</option><option value="Belçika">Belçika</option><option value="Birleşik Krallık">Birleşik Krallık</option><option value="Fransa">Fransa</option><option value="Hollanda">Hollanda</option><option value="Kıbrıs">Kıbrıs</option><option value="ABD">ABD</option><option value="Avusturya">Avusturya</option><option value="Diğer">Diğer</option></select></label><label>Cinsiyet<select id="profileGenderInput" required><option value="Kadın">Kadın</option><option value="Erkek">Erkek</option><option value="Belirtmek istemiyorum">Belirtmek istemiyorum</option></select></label><button class="account-button" type="submit">Profil bilgilerini kaydet</button><p class="form-status" id="profileStatus" role="status"></p></form></div>
+<div class="avatar-actions"><label class="account-button" for="avatarFile">Avatar seç</label><input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" hidden><button type="button" class="account-button secondary" id="removeAvatar">Avatarı kaldır</button></div>
+</section>
+<div class="account-grid">
+<section class="account-card"><div class="account-card-head"><div><span class="account-label">GÜVENLİK</span><h2>Şifre değiştir</h2></div></div>
+<form id="passwordForm" class="account-form"><label>Mevcut şifre<input id="currentPassword" type="password" autocomplete="current-password" minlength="10" maxlength="72" required></label><label>Yeni şifre<input id="newPassword" type="password" autocomplete="new-password" minlength="10" maxlength="72" required></label><label>Yeni şifre tekrar<input id="confirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="72" required></label><button class="account-button" type="submit">Şifreyi güncelle</button><p class="form-status" id="passwordStatus" role="status"></p></form>
+<div class="account-subsection"><h3>E-posta adresini değiştir</h3><p>Yeni adresine doğrulama bağlantısı gönderilir. Bağlantı 30 dakika geçerlidir.</p>
+<form id="emailChangeForm" class="account-form" hidden><label>Yeni e-posta adresi<input id="newEmail" type="email" autocomplete="email" maxlength="254" required></label><label>Mevcut şifre<input id="emailCurrentPassword" type="password" autocomplete="current-password" minlength="10" maxlength="72" required></label><button class="account-button" type="submit">Doğrulama bağlantısı gönder</button><p class="form-status" id="emailChangeStatus" role="status" aria-live="polite"></p></form>
+<p class="form-status" id="emailChangeUnavailable" role="status">E-posta doğrulama hizmeti henüz yapılandırılmadı.</p></div></section>
+<section class="account-card"><div class="account-card-head"><div><span class="account-label">KİŞİSELLEŞTİRME</span><h2>Hesap tercihleri</h2></div></div>
+<form id="preferencesForm" class="preferences-list">
+<label><span><b>Koyu görünüm</b><small>Hesap arayüzünde koyu temayı kullan.</small></span><input type="checkbox" name="settingDarkMode"></label>
+<label><span><b>Çevrimiçi görün</b><small>Üye listelerinde çevrimiçi durumunu göster.</small></span><input type="checkbox" name="settingShowOnline"></label>
+<button class="account-button" type="submit">Tercihleri kaydet</button><p class="form-status" id="preferencesStatus" role="status"></p>
+</form></section>
+<section class="account-card"><div class="account-card-head"><div><span class="account-label">SOHBET GÖRÜNÜMÜ</span><h2>Yazı ve isim renkleri</h2></div></div>
+<form id="chatStyleForm" class="color-form"><label>İsim rengi<input id="nameColor" type="color" value="#ffffff"></label><label>Mesaj rengi<input id="textColor" type="color" value="#e9f0e8"></label><label>Satır rengi<input id="rowColor" type="color" value="#102016"></label><button class="account-button" type="submit">Renkleri kaydet</button><p class="form-status" id="chatStyleStatus" role="status"></p></form></section>
+<section class="account-card account-info-card"><span class="account-label">HESAP BİLGİSİ</span><h2>Güvenli hesap yönetimi</h2><p>Şifre değiştirildiğinde diğer açık oturumlar güvenlik amacıyla kapatılır. Avatar ve tercihlerin hesabına kaydedilir.</p><a href="/yardim.html">Yardım merkezini görüntüle →</a></section>
+</div>
+</div>
+</main>
+<footer class="account-footer"><a href="/">ZirveOkey</a><span>© 2026 ZirveOkey</span></footer>
+</body></html>

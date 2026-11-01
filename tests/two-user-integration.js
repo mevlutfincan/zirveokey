@@ -1,12 +1,27 @@
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
+const { Pool } = require('pg');
+
+if (process.env.NODE_ENV !== 'test') {
+  throw new Error('Integration tests are restricted to NODE_ENV=test.');
+}
+if (!process.env.DATABASE_URL) {
+  throw new Error('Integration tests require a dedicated test DATABASE_URL.');
+}
+const testDatabaseUrl = new URL(process.env.DATABASE_URL);
+if (testDatabaseUrl.pathname.slice(1) !== 'zirveokey_test' ||
+    !['localhost', '127.0.0.1', '::1'].includes(testDatabaseUrl.hostname)) {
+  throw new Error('Refusing to run integration tests against a non-local zirveokey_test database.');
+}
+const cleanupUsernames = [];
+const cleanupWebhookIds = [];
 
 const port = Number(process.env.TEST_PORT || 3101);
 const baseUrl = 'http://127.0.0.1:' + port;
 const child = spawn(process.execPath, ['server.js'], {
   cwd: process.cwd(),
-  env: { ...process.env, PORT: String(port), NODE_ENV: 'test' },
+  env: { ...process.env, PORT: String(port), NODE_ENV: 'test', RESEND_API_KEY: '', MAIL_FROM: '', APP_URL: '', RESEND_WEBHOOK_SECRET: 'whsec_aW50ZWdyYXRpb24tdGVzdC1zZWNyZXQ=' },
   stdio: ['ignore', 'pipe', 'pipe']
 });
 let serverOutput = '';
@@ -50,6 +65,52 @@ async function waitForServer() {
 
 async function main() {
   await waitForServer();
+
+  const webhookEvent = { type: 'email.delivered', data: { email_id: 'ci-email-id' } };
+  const webhookBody = JSON.stringify(webhookEvent);
+  const webhookId = randomUUID();
+  cleanupWebhookIds.push(webhookId);
+  const webhookTimestamp = String(Math.floor(Date.now() / 1000));
+  const webhookSignature = require('node:crypto')
+    .createHmac('sha256', Buffer.from('integration-test-secret'))
+    .update(webhookId + '.' + webhookTimestamp + '.' + webhookBody)
+    .digest('base64');
+  const webhookHeaders = {
+    'Content-Type': 'application/json',
+    'svix-id': webhookId,
+    'svix-timestamp': webhookTimestamp,
+    'svix-signature': 'v1,' + webhookSignature
+  };
+  const rejectedWebhook = await fetch(baseUrl + '/api/webhooks/resend', {
+    method: 'POST',
+    headers: { ...webhookHeaders, 'svix-signature': 'v1,invalid-signature' },
+    body: webhookBody
+  });
+  assert.equal(rejectedWebhook.status, 401, 'Geçersiz imzalı webhook kabul edildi.');
+  const acceptedWebhook = await fetch(baseUrl + '/api/webhooks/resend', {
+    method: 'POST', headers: webhookHeaders, body: webhookBody
+  });
+  assert.equal(acceptedWebhook.status, 204, 'Geçerli Resend webhook olayı kaydedilemedi.');
+  const duplicateWebhook = await fetch(baseUrl + '/api/webhooks/resend', {
+    method: 'POST', headers: webhookHeaders, body: webhookBody
+  });
+  assert.equal(duplicateWebhook.status, 204, 'Tekrarlanan webhook güvenli şekilde karşılanamadı.');
+  const webhookDb = new Pool({ connectionString: process.env.DATABASE_URL });
+  try {
+    const storedWebhook = await webhookDb.query(
+      'SELECT COUNT(*)::int AS count FROM resend_webhook_events WHERE event_id=$1',
+      [webhookId]
+    );
+    assert.equal(storedWebhook.rows[0].count, 1, 'Tekrarlanan webhook olayı veritabanına birden fazla kez kaydedildi.');
+  } finally {
+    await webhookDb.end();
+  }
+  const emptyRegister = await request('/api/auth/register', { method: 'POST' });
+  assert.equal(emptyRegister.status, 400, 'Boş üyelik isteği sunucu hatasına dönüşmemeli.');
+  const emptyLogin = await request('/api/auth/login', { method: 'POST' });
+  assert.equal(emptyLogin.status, 400, 'Boş giriş isteği sunucu hatasına dönüşmemeli.');
+  const emptyContact = await request('/api/contact', { method: 'POST' });
+  assert.equal(emptyContact.status, 400, 'Boş iletişim isteği sunucu hatasına dönüşmemeli.');
   const radioStatusResponse = await request('/api/radio/status');
   assert.equal(radioStatusResponse.status, 200, 'Radyo yayın durumu alınamadı.');
   const radioStatus = await radioStatusResponse.json();
@@ -62,6 +123,7 @@ async function main() {
     { username: 'TestA_' + suffix, email: 'testa-' + suffix + '@example.invalid', password: 'ZirveTest!2026A', country: 'Türkiye', gender: 'Kadın' },
     { username: 'TestB_' + suffix, email: 'testb-' + suffix + '@example.invalid', password: 'ZirveTest!2026B', country: 'Almanya', gender: 'Erkek' }
   ];
+  cleanupUsernames.push(...users.map(user => user.username));
 
   const registerA = await request('/api/auth/register', { method: 'POST', body: users[0] });
   assert.equal(registerA.status, 201, 'Birinci kullanıcı kaydı başarısız: ' + await registerA.text());
@@ -70,14 +132,63 @@ async function main() {
   assert.equal(registerB.status, 201, 'İkinci kullanıcı kaydı başarısız: ' + await registerB.text());
   const cookieB = cookieFrom(registerB);
 
+  const contactStatusResponse = await request('/api/contact/status');
+  assert.equal(contactStatusResponse.status, 200, 'İletişim yapılandırma durumu alınamadı.');
+  assert.equal((await contactStatusResponse.json()).configured, false, 'Test ortamında destek e-posta yapılandırması beklenmiyordu.');
+  const invalidContactSend = await request('/api/contact', { method: 'POST', body: { name: 'A', email: 'not-an-email', subject: 'x', message: 'short' } });
+  assert.equal(invalidContactSend.status, 400, 'Geçersiz iletişim formu verisi kabul edildi.');
+  const disabledContactSend = await request('/api/contact', { method: 'POST', body: { name: 'Test Kullanıcı', email: 'test@example.invalid', subject: 'Destek talebi', message: 'Bu bir test destek mesajıdır.' } });
+  assert.equal(disabledContactSend.status, 503, 'Destek alıcısı yapılandırılmadan iletişim mesajı gönderilmiş gibi kabul edildi.');
+
+  const anonymousProfileEdit = await request('/api/account/profile', { method: 'PUT', body: { country: 'Türkiye', gender: 'Kadın' } });
+  assert.equal(anonymousProfileEdit.status, 401, 'Oturumsuz kullanıcı profil bilgilerini değiştirebildi.');
+  const invalidProfileEdit = await request('/api/account/profile', { method: 'PUT', cookie: cookieA, body: { country: 'Mars', gender: 'Kadın' } });
+  assert.equal(invalidProfileEdit.status, 400, 'Geçersiz ülke değeri profil API tarafından kabul edildi.');
+  const profileEditA = await request('/api/account/profile', { method: 'PUT', cookie: cookieA, body: { country: 'Fransa', gender: 'Belirtmek istemiyorum' } });
+  assert.equal(profileEditA.status, 200, 'A profil bilgilerini güncelleyemedi. HTTP ' + profileEditA.status);
+  const profileEditDataA = await profileEditA.json();
+  assert.equal(profileEditDataA.user.country, 'Fransa');
+  assert.equal(profileEditDataA.user.gender, 'Belirtmek istemiyorum');
+  const profileReadA = await (await request('/api/auth/me', { cookie: cookieA })).json();
+  assert.equal(profileReadA.user.country, 'Fransa', 'Profil ülke bilgisi oturumda güncellenmedi.');
+  const profileReadB = await (await request('/api/auth/me', { cookie: cookieB })).json();
+  assert.equal(profileReadB.user.country, 'Almanya', 'A profil güncellemesi B hesabını etkiledi.');
+  assert.equal(profileReadB.user.gender, 'Erkek', 'A profil güncellemesi B cinsiyet bilgisini etkiledi.');
+
+  const newMembersResponse = await request('/api/public/new-members');
+  assert.equal(newMembersResponse.status, 200, 'Anasayfa yeni üyeler listesi alınamadı.');
+  const newMembers = (await newMembersResponse.json()).members;
+  assert.ok(newMembers.some(member => member.username === users[0].username), 'A yeni üyeler listesinde görünmüyor.');
+  assert.ok(newMembers.some(member => member.username === users[1].username), 'B yeni üyeler listesinde görünmüyor.');
+  assert.equal(newMembers.find(member => member.username === users[0].username).email, undefined, 'Yeni üyeler API e-posta adresini herkese açık döndürdü.');
+  const anonymousActivity = await request('/api/activity/heartbeat', { method: 'POST' });
+  assert.equal(anonymousActivity.status, 401, 'Oturumsuz aktivite heartbeat kabul edildi.');
+  const activityA = await request('/api/activity/heartbeat', { method: 'POST', cookie: cookieA });
+  const activityB = await request('/api/activity/heartbeat', { method: 'POST', cookie: cookieB });
+  assert.equal(activityA.status, 204, 'A anasayfa aktivite kaydı oluşturamadı.');
+  assert.equal(activityB.status, 204, 'B anasayfa aktivite kaydı oluşturamadı.');
+  const activeMembersResponse = await request('/api/public/active-members');
+  assert.equal(activeMembersResponse.status, 200, 'Anasayfa aktif üyeler listesi alınamadı.');
+  const activeMembers = (await activeMembersResponse.json()).members;
+  assert.ok(activeMembers.some(member => member.username === users[0].username), 'A aktif üyeler listesinde görünmüyor.');
+  assert.ok(activeMembers.some(member => member.username === users[1].username), 'B aktif üyeler listesinde görünmüyor.');
+  assert.ok(activeMembers.every(member => Number.isFinite(Number(member.active_seconds))), 'Aktiflik süresi sayısal değil.');
+
+  const resetKnownEmail = await request('/api/auth/forgot-password', { method: 'POST', body: { email: users[0].email } });
+  const resetUnknownEmail = await request('/api/auth/forgot-password', { method: 'POST', body: { email: 'not-registered-' + suffix + '@example.invalid' } });
+  assert.equal(resetKnownEmail.status, 503, 'E-posta hizmeti yapılandırılmadığında kayıtlı adres için beklenen yapılandırma hatası dönmedi.');
+  assert.equal(resetUnknownEmail.status, resetKnownEmail.status, 'E-posta hizmeti kapalıyken kayıtlı olmayan adres farklı HTTP durumu döndürdü.');
+  assert.deepEqual(await resetKnownEmail.json(), await resetUnknownEmail.json(), 'E-posta hizmeti kapalıyken yanıt içeriği e-posta kaydını açığa çıkardı.');
+
   for (const [label, cookie, expected] of [['A', cookieA, users[0].username], ['B', cookieB, users[1].username]]) {
     const me = await request('/api/auth/me', { cookie });
     assert.equal(me.status, 200, label + ' oturum kontrolü başarısız.');
+    assert.equal(me.headers.get('cache-control'), 'no-store', label + ' oturum yanıtı önbelleğe açık.');
     const data = await me.json();
     assert.equal(data.authenticated, true, label + ' oturumu doğrulanmadı.');
     assert.equal(data.user.username, expected, label + ' yanlış kullanıcıya bağlandı.');
-    assert.equal(data.user.country, label === 'A' ? 'Türkiye' : 'Almanya', label + ' ülke bilgisi saklanmadı.');
-    assert.equal(data.user.gender, label === 'A' ? 'Kadın' : 'Erkek', label + ' cinsiyet bilgisi saklanmadı.');
+    assert.equal(data.user.country, label === 'A' ? 'Fransa' : 'Almanya', label + ' ülke bilgisi saklanmadı.');
+    assert.equal(data.user.gender, label === 'A' ? 'Belirtmek istemiyorum' : 'Erkek', label + ' cinsiyet bilgisi saklanmadı.');
   }
 
   const anonymousPreferences = await request('/api/account/preferences');
@@ -85,6 +196,7 @@ async function main() {
   const savePreferencesA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingDarkMode: false, settingShowOnline: false, settingAutoArrange: true } } });
   assert.equal(savePreferencesA.status, 200, 'A kendi ayarlarını kaydedemedi.');
   const readPreferencesA = await request('/api/account/preferences', { cookie: cookieA });
+  assert.equal(readPreferencesA.headers.get('cache-control'), 'no-store', 'Hesap tercihleri yanıtı önbelleğe açık.');
   const prefsA = (await readPreferencesA.json()).preferences;
   assert.equal(prefsA.settingDarkMode, false, 'A tema tercihi kalıcı değil.');
   assert.equal(prefsA.settingShowOnline, false, 'A gizlilik tercihi kalıcı değil.');
@@ -100,22 +212,43 @@ async function main() {
   assert.equal(saveAvatarA.status, 200, 'A avatarını kaydedemedi.');
   assert.equal((await saveAvatarA.json()).avatar, avatarData, 'Avatar kaydetme yanıtı farklı veri döndürdü.');
   const savedAvatarA = await request('/api/account/avatar', { cookie: cookieA });
+  assert.equal(savedAvatarA.headers.get('cache-control'), 'no-store', 'Avatar yanıtı önbelleğe açık.');
   assert.equal((await savedAvatarA.json()).avatar, avatarData, 'Avatar oturum sonrası kalıcı değil.');
   const avatarB = await request('/api/account/avatar', { cookie: cookieB });
   assert.equal((await avatarB.json()).avatar, null, 'A kullanıcısının avatarı B hesabına sızdı.');
   const invalidAvatar = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: 'https://example.com/avatar.png' } });
   assert.equal(invalidAvatar.status, 400, 'Harici veya geçersiz avatar verisi kabul edildi.');
+  const spoofedAvatar = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: 'data:image/png;base64,SGVsbG8=' } });
+  assert.equal(spoofedAvatar.status, 400, 'PNG etiketiyle gönderilen farklı dosya içeriği avatar olarak kabul edildi.');
+  const malformedBase64Avatar = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: 'data:image/png;base64,iVBORw0KGgo===' } });
+  assert.equal(malformedBase64Avatar.status, 400, 'Bozuk Base64 avatar verisi kabul edildi.');
+  const oversizedAvatarBytes = Buffer.alloc(1024 * 1024 + 1);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(oversizedAvatarBytes);
+  const oversizedAvatar = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: 'data:image/png;base64,' + oversizedAvatarBytes.toString('base64') } });
+  assert.equal(oversizedAvatar.status, 400, '1 MB sınırını aşan avatar verisi kabul edildi.');
   const removeAvatarA = await request('/api/account/avatar', { method: 'PUT', cookie: cookieA, body: { avatar: null } });
   assert.equal(removeAvatarA.status, 200, 'A varsayılan avatara dönemedi.');
   assert.equal((await (await request('/api/account/avatar', { cookie: cookieA })).json()).avatar, null, 'Avatar silme işlemi kalıcı değil.');
 
   const anonymousNotifications = await request('/api/notifications');
   assert.equal(anonymousNotifications.status, 401, 'Oturumsuz kullanıcı bildirimleri okuyabildi.');
+  const anonymousNotificationPreference = await request('/api/notifications/preferences', { method: 'PUT', body: { enabled: false } });
+  assert.equal(anonymousNotificationPreference.status, 401, 'Oturumsuz kullanıcı bildirim tercihlerini değiştirebildi.');
+  const anonymousNotificationRead = await request('/api/notifications/1/read', { method: 'POST' });
+  assert.equal(anonymousNotificationRead.status, 401, 'Oturumsuz kullanıcı bildirimleri okundu yapabildi.');
+  const anonymousNotificationReadAll = await request('/api/notifications/read-all', { method: 'POST' });
+  assert.equal(anonymousNotificationReadAll.status, 401, 'Oturumsuz kullanıcı tüm bildirimleri okundu yapabildi.');
+  const anonymousNotificationDelete = await request('/api/notifications/1', { method: 'DELETE' });
+  assert.equal(anonymousNotificationDelete.status, 401, 'Oturumsuz kullanıcı bildirim silebildi.');
+  const anonymousNotificationDeleteAll = await request('/api/notifications', { method: 'DELETE' });
+  assert.equal(anonymousNotificationDeleteAll.status, 401, 'Oturumsuz kullanıcı tüm bildirimleri silebildi.');
   const notificationsAResponse = await request('/api/notifications', { cookie: cookieA });
+  assert.equal(notificationsAResponse.headers.get('cache-control'), 'no-store', 'Bildirim merkezi yanıtı önbelleğe açık.');
   assert.equal(notificationsAResponse.status, 200, 'A bildirim merkezini açamadı.');
   const notificationsA = await notificationsAResponse.json();
   assert.equal(notificationsA.enabled, true, 'Yeni hesapta bildirimler varsayılan olarak açık olmalı.');
   assert.ok(notificationsA.notifications.some(item => item.category === 'system'), 'Kayıt karşılama sistem bildirimi oluşturulmadı.');
+  assert.ok(notificationsA.notifications.some(item => item.category === 'players' && item.message.includes(users[1].username)), 'Yeni üye olayı A hesabına oyuncu bildirimi üretmedi.');
   assert.ok((notificationsA.unreadByCategory.system || 0) >= 1, 'Sistem bildirimi okunmamış sayacına eklenmedi.');
   assert.equal(notificationsA.preferences.settingNotifySystem, undefined, 'Varsayılan sistem tercihi gereksiz yere false olarak saklandı.');
   const notificationId = notificationsA.notifications.find(item => item.category === 'system').id;
@@ -132,6 +265,15 @@ async function main() {
   assert.equal(storedNotificationCategories.settingNotifySystem, false, 'Sistem bildirimi tercihi kalıcı değil.');
   assert.equal(storedNotificationCategories.settingNotifyManagement, false, 'Yönetim bildirimi tercihi kalıcı değil.');
   assert.equal(storedNotificationCategories.settingNotifyRewards, true, 'Ödül bildirimi tercihi kalıcı değil.');
+  const concurrentCategoryWrites = await Promise.all([
+    request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingNotifyPlayers: true } } }),
+    request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingNotifyGame: false } } })
+  ]);
+  assert.ok(concurrentCategoryWrites.every(response => response.status === 200), 'Eşzamanlı bildirim kategori kayıtlarından biri başarısız oldu.');
+  const afterConcurrentCategoryWrites = (await (await request('/api/account/preferences', { cookie: cookieA })).json()).preferences;
+  assert.equal(afterConcurrentCategoryWrites.settingNotifyPlayers, true, 'Eşzamanlı kayıt oyuncu bildirimi tercihini kaybetti.');
+  assert.equal(afterConcurrentCategoryWrites.settingNotifyGame, false, 'Eşzamanlı kayıt oyun bildirimi tercihini kaybetti.');
+
   const notificationsAfterCategorySave = await (await request('/api/notifications', { cookie: cookieA })).json();
   assert.equal(notificationsAfterCategorySave.preferences.settingNotifySystem, false, 'Bildirim API kategori tercihlerini güncel döndürmüyor.');
   assert.ok(notificationsAfterCategorySave.notifications.some(item => item.id === notificationId), 'Kategori tercihi geçmiş bildirimi silmemeli.');
@@ -173,11 +315,22 @@ async function main() {
   assert.equal(malformedNotificationId.status, 400, 'Geçersiz bildirim kimliği kabul edildi.');
   const notificationsBAfterIsolation = await (await request('/api/notifications', { cookie: cookieB })).json();
   assert.ok(notificationsBAfterIsolation.notifications.some(item => item.id === notificationBId && !item.read_at), 'Yetkisiz işlem B kullanıcısının bildirimini değiştirdi.');
+  const clearAllNotificationsA = await request('/api/notifications', { method: 'DELETE', cookie: cookieA });
+  assert.equal(clearAllNotificationsA.status, 200, 'A kendi bildirim merkezini temizleyemedi.');
+  const clearedNotificationsA = await (await request('/api/notifications', { cookie: cookieA })).json();
+  assert.equal(clearedNotificationsA.notifications.length, 0, 'A toplu silme işleminden sonra bildirimleri kaldı.');
+  const notificationsBAfterClearAll = await (await request('/api/notifications', { cookie: cookieB })).json();
+  assert.ok(notificationsBAfterClearAll.notifications.some(item => item.id === notificationBId), 'A toplu silme işlemi B hesabının bildirimlerini sildi.');
 
 
   const userC = { username: 'TestC_' + suffix, email: 'testc-' + suffix + '@example.invalid', password: 'ZirveTest!2026C', country: 'Türkiye', gender: 'Belirtmek istemiyorum' };
+  cleanupUsernames.push(userC.username);
   const registerC = await request('/api/auth/register', { method: 'POST', body: userC });
   assert.equal(registerC.status, 201, 'Üçüncü bildirim test hesabı oluşturulamadı: ' + await registerC.text());
+  const cAnnouncementA = await (await request('/api/notifications', { cookie: cookieA })).json();
+  const cAnnouncementB = await (await request('/api/notifications', { cookie: cookieB })).json();
+  assert.ok(cAnnouncementA.notifications.some(item => item.category === 'players' && item.message.includes(userC.username)), 'Oyuncu bildirimleri açık A hesabı yeni üye bildirimi almadı.');
+  assert.ok(cAnnouncementB.notifications.some(item => item.category === 'players' && item.message.includes(userC.username)), 'Oyuncu bildirimleri açık B hesabı yeni üye bildirimi almadı.');
   let cookieC = cookieFrom(registerC);
   const initialCNotifications = await (await request('/api/notifications', { cookie: cookieC })).json();
   assert.equal(initialCNotifications.notifications.filter(item => item.category === 'system').length, 1, 'C hesabında yalnızca kayıt bildirimi bekleniyordu.');
@@ -205,6 +358,7 @@ async function main() {
   const anonymousStyle = await request('/api/account/chat-style');
   assert.equal(anonymousStyle.status, 401, 'Oturumsuz kullanıcının renk tercihleri okunabildi.');
   const defaultStyleResponse = await request('/api/account/chat-style', { cookie: cookieA });
+  assert.equal(defaultStyleResponse.headers.get('cache-control'), 'no-store', 'Sohbet görünüm ayarları yanıtı önbelleğe açık.');
   assert.equal(defaultStyleResponse.status, 200, 'A varsayılan sohbet renklerini alamadı.');
   const defaultStyle = (await defaultStyleResponse.json()).chatStyle;
   assert.equal(defaultStyle.nameColor, '#111111', 'Varsayılan isim rengi beklenenden farklı.');
@@ -232,8 +386,32 @@ async function main() {
   });
   assert.equal(restoredStyleResponse.status, 200, 'Açık renklerden sonra renkler yeniden değiştirilemedi.');
 
+  const anonymousActivityHeartbeat = await request('/api/activity/heartbeat', { method: 'POST' });
+  assert.equal(anonymousActivityHeartbeat.status, 401, 'Oturumsuz kullanıcı aktiflik kaydı oluşturabildi.');
+  const anonymousPresenceHeartbeat = await request('/api/presence/heartbeat', { method: 'POST', body: { showOnline: true } });
+  assert.equal(anonymousPresenceHeartbeat.status, 401, 'Oturumsuz kullanıcı çevrimiçi durumunu değiştirebildi.');
+  const publicNewMembers = await request('/api/public/new-members');
+  assert.equal(publicNewMembers.status, 200, 'Anasayfa yeni üyeler listesi alınamadı.');
+  assert.equal(publicNewMembers.headers.get('cache-control'), 'public, max-age=60', 'Yeni üyeler listesi önbellek politikası beklenmiyor.');
+  const publicActiveMembers = await request('/api/public/active-members');
+  assert.equal(publicActiveMembers.status, 200, 'Anasayfa aktif üyeler listesi alınamadı.');
+  assert.equal(publicActiveMembers.headers.get('cache-control'), 'public, max-age=60', 'Aktif üyeler listesi önbellek politikası beklenmiyor.');
+  const activeMemberPayload = await publicActiveMembers.json();
+  assert.ok(Array.isArray(activeMemberPayload.members), 'Aktif üyeler yanıtı dizi döndürmedi.');
+  assert.ok(activeMemberPayload.members.length <= 5, 'Aktif üyeler listesi beş kişi sınırını aştı.');
+  const newMemberPayload = await publicNewMembers.json();
+  assert.ok(Array.isArray(newMemberPayload.members), 'Yeni üyeler yanıtı dizi döndürmedi.');
+  assert.ok(newMemberPayload.members.length <= 5, 'Yeni üyeler listesi beş kişi sınırını aştı.');
+  for (const member of newMemberPayload.members) assert.deepEqual(Object.keys(member).sort(), ['created_at', 'username'], 'Yeni üyeler listesi izin verilmeyen kişisel alan döndürdü.');
+  for (const member of activeMemberPayload.members) assert.deepEqual(Object.keys(member).sort(), ['active_seconds', 'username'], 'Aktif üyeler listesi izin verilmeyen kişisel alan döndürdü.');
+
   const anonymousPost = await request('/api/lobby/messages', { method: 'POST', body: { message: 'Yetkisiz test' } });
   assert.equal(anonymousPost.status, 401, 'Oturumsuz kullanıcının sohbet mesajı engellenmedi.');
+
+  const emptyLobbyMessage = await request('/api/lobby/messages', { method: 'POST', cookie: cookieA, body: { message: '   ' } });
+  assert.equal(emptyLobbyMessage.status, 400, 'Boş sohbet mesajı kabul edildi.');
+  const oversizedLobbyMessage = await request('/api/lobby/messages', { method: 'POST', cookie: cookieA, body: { message: 'x'.repeat(301) } });
+  assert.equal(oversizedLobbyMessage.status, 400, '300 karakter sınırını aşan sohbet mesajı kabul edildi.');
 
   const sent = await request('/api/lobby/messages', {
     method: 'POST', cookie: cookieA, body: { message: 'TWO-USER-' + suffix }
@@ -246,6 +424,7 @@ async function main() {
   assert.equal(sentData.message.chat_row_color, '#dbeafe', 'Gönderilen mesajda satır rengi bulunmuyor.');
 
   const received = await request('/api/lobby/messages?after=' + (messageId - 1), { cookie: cookieB });
+  assert.equal(received.headers.get('cache-control'), 'no-store', 'Lobi mesajları yanıtı önbelleğe açık.');
   assert.equal(received.status, 200, 'B kullanıcısı sohbeti okuyamadı.');
   const receivedData = await received.json();
   const receivedMessage = receivedData.messages.find(message => message.id === messageId && message.username === users[0].username && message.message === 'TWO-USER-' + suffix);
@@ -254,6 +433,19 @@ async function main() {
   assert.equal(receivedMessage.chat_text_color, '#1e3a8a', 'B kullanıcısı A seçtiği mesaj rengini göremedi.');
   assert.equal(receivedMessage.chat_row_color, '#dbeafe', 'B kullanıcısı A seçtiği satır rengini göremedi.');
 
+  const hiddenBySavedPreference = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: { showOnline: true } });
+  assert.equal(hiddenBySavedPreference.status, 204, 'A kayıtlı gizlilik tercihiyle heartbeat gönderemedi.');
+  let savedPreferenceOnline = await (await request('/api/presence/online')).json();
+  assert.ok(!savedPreferenceOnline.members.some(member => member.username === users[0].username), 'Veritabanında çevrimiçi görünme kapalıyken istemcinin true isteği kullanıcıyı görünür yaptı.');
+  const enableOnlinePreference = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingShowOnline: true } } });
+  assert.equal(enableOnlinePreference.status, 200, 'A çevrimiçi görünürlük tercihini tekrar açamadı.');
+  const activityHeartbeatA = await request('/api/activity/heartbeat', { method: 'POST', cookie: cookieA });
+  const activityHeartbeatB = await request('/api/activity/heartbeat', { method: 'POST', cookie: cookieB });
+  assert.equal(activityHeartbeatA.status, 204, 'A aktiflik heartbeat gönderemedi.');
+  assert.equal(activityHeartbeatB.status, 204, 'B aktiflik heartbeat gönderemedi.');
+  const activeMembersAfterHeartbeat = await (await request('/api/public/active-members')).json();
+  assert.ok(activeMembersAfterHeartbeat.members.some(member => member.username === users[0].username), 'Aktiflik heartbeat sonrası A anasayfa aktif üyeler listesine girmedi.');
+  assert.ok(activeMembersAfterHeartbeat.members.some(member => member.username === users[1].username), 'Aktiflik heartbeat sonrası B anasayfa aktif üyeler listesine girmedi.');
   const heartbeatA = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: { showOnline: true } });
   const heartbeatB = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
   assert.equal(heartbeatA.status, 204, 'A çevrimiçi heartbeat başarısız.');
@@ -263,14 +455,22 @@ async function main() {
   });
   assert.equal(styleUpdate.status, 200, 'A renk değişikliğini kaydedemedi.');
   const liveStylesResponse = await request('/api/lobby/chat-styles', { cookie: cookieB });
+  assert.equal(liveStylesResponse.headers.get('cache-control'), 'no-store', 'Canlı sohbet stil listesi yanıtı önbelleğe açık.');
   assert.equal(liveStylesResponse.status, 200, 'B canlı sohbet renklerini alamadı.');
   const liveStyles = (await liveStylesResponse.json()).members;
   const liveStyleA = liveStyles.find(member => member.username === users[0].username);
+  const hideBFromLobby = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: false } });
+  assert.equal(hideBFromLobby.status, 204, 'B çevrimiçi görünürlüğünü kapatamadı.');
+  const hiddenChatStyles = await (await request('/api/lobby/chat-styles', { cookie: cookieA })).json();
+  assert.ok(!hiddenChatStyles.members.some(member => member.username === users[1].username), 'Çevrimiçi görünürlüğünü kapatan B, sohbet stil listesinde ifşa edildi.');
+  const restoreBVisibility = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
+  assert.equal(restoreBVisibility.status, 204, 'B çevrimiçi görünürlüğünü tekrar açamadı.');
   assert.ok(liveStyleA, 'B çevrimiçi A kullanıcısının renk bilgisini alamadı.');
   assert.equal(liveStyleA.chat_name_color, '#008000', 'B A kullanıcısının yeni isim rengini anlık renk akışında göremedi.');
   assert.equal(liveStyleA.chat_text_color, '#663399', 'B A kullanıcısının yeni mesaj rengini anlık renk akışında göremedi.');
 
   let onlineResponse = await request('/api/presence/online');
+  assert.equal(onlineResponse.headers.get('cache-control'), 'no-store', 'Çevrimiçi üye listesi yanıtı önbelleğe açık.');
   let online = await onlineResponse.json();
   assert.ok(online.members.some(member => member.username === users[0].username), 'A çevrimiçi listede görünmüyor.');
   assert.ok(online.members.some(member => member.username === users[1].username), 'B çevrimiçi listede görünmüyor.');
@@ -281,6 +481,125 @@ async function main() {
   online = await onlineResponse.json();
   assert.ok(!online.members.some(member => member.username === users[0].username), 'Gizli görünürlükte A online listede kaldı.');
   assert.ok(online.members.some(member => member.username === users[1].username), 'A gizlenince B de online listesinden kayboldu.');
+
+  const secondLoginA = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: users[0].password } });
+  assert.equal(secondLoginA.status, 200, 'A ikinci cihaz oturumu açamadı.');
+  const cookieASecond = cookieFrom(secondLoginA);
+  const wrongCurrentPassword = await request('/api/account/password', {
+    method: 'PUT', cookie: cookieA, body: { currentPassword: 'WrongPassword!2026', newPassword: 'ZirveNew!2026A' }
+  });
+  assert.equal(wrongCurrentPassword.status, 400, 'Yanlış mevcut şifreyle şifre değiştirilebildi.');
+  const enableSystemNoticeA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingNotifySystem: true } } });
+  assert.equal(enableSystemNoticeA.status, 200, 'A sistem güvenlik bildirimlerini tekrar açamadı.');
+  const changePasswordA = await request('/api/account/password', {
+    method: 'PUT', cookie: cookieA, body: { currentPassword: users[0].password, newPassword: 'ZirveNew!2026A' }
+  });
+  assert.equal(changePasswordA.status, 200, 'A şifresini değiştiremedi: ' + await changePasswordA.text());
+  const currentSessionAfterPasswordChange = await request('/api/auth/me', { cookie: cookieA });
+  assert.equal((await currentSessionAfterPasswordChange.json()).authenticated, true, 'Şifre değişikliğinde geçerli cihazın oturumu gereksiz yere kapatıldı.');
+  const otherSessionAfterPasswordChange = await request('/api/auth/me', { cookie: cookieASecond });
+  assert.equal((await otherSessionAfterPasswordChange.json()).authenticated, false, 'Şifre değişikliğinde diğer cihazın oturumu kapatılmadı.');
+  const passwordChangeNotice = await (await request('/api/notifications', { cookie: cookieA })).json();
+  assert.ok(passwordChangeNotice.notifications.some(item => item.category === 'system' && item.title === 'Şifren güncellendi'), 'Şifre değişikliği güvenlik bildirimi oluşturulmadı.');
+  const oldPasswordLogin = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: users[0].password } });
+  assert.equal(oldPasswordLogin.status, 401, 'Eski şifreyle yeniden giriş yapılabildi.');
+  const newPasswordLogin = await request('/api/auth/login', { method: 'POST', body: { username: users[0].username, password: 'ZirveNew!2026A' } });
+  assert.equal(newPasswordLogin.status, 200, 'Yeni şifreyle giriş yapılamadı.');
+  const newPasswordLoginData = await newPasswordLogin.json();
+  assert.equal(newPasswordLoginData.user.country, 'Fransa', 'Yeni giriş yanıtında güncellenen ülke bilgisi kayboldu.');
+  assert.equal(newPasswordLoginData.user.gender, 'Belirtmek istemiyorum', 'Yeni giriş yanıtında güncellenen cinsiyet bilgisi kayboldu.');
+  const cookieANewLogin = cookieFrom(newPasswordLogin);
+  const emailChangeStatus = await request('/api/account/email-change/status', { cookie: cookieANewLogin });
+  assert.equal(emailChangeStatus.status, 200, 'E-posta doğrulama yapılandırma durumu alınamadı.');
+  assert.equal((await emailChangeStatus.json()).configured, false, 'Test ortamında e-posta gönderim yapılandırması beklenmiyordu.');
+  const invalidEmailChange = await request('/api/account/email-change', { method: 'POST', cookie: cookieANewLogin, body: { email: 'invalid-address', currentPassword: 'ZirveNew!2026A' } });
+  assert.equal(invalidEmailChange.status, 400, 'Geçersiz yeni e-posta adresi kabul edildi.');
+  const disabledEmailChange = await request('/api/account/email-change', { method: 'POST', cookie: cookieANewLogin, body: { email: 'new-' + suffix + '@example.invalid', currentPassword: 'ZirveNew!2026A' } });
+  assert.equal(disabledEmailChange.status, 503, 'E-posta gönderim yapılandırması olmadan adres değişikliği başlatılmış gibi kabul edildi.');
+
+  const userD = { username: 'TestD_' + suffix, email: 'testd-' + suffix + '@example.invalid', password: 'ZirveTest!2026D', country: 'Türkiye', gender: 'Belirtmek istemiyorum' };
+  cleanupUsernames.push(userD.username);
+  const registerD = await request('/api/auth/register', { method: 'POST', body: userD });
+  assert.equal(registerD.status, 201, 'E-posta doğrulama test hesabı oluşturulamadı.');
+  const cookieD = cookieFrom(registerD);
+  const testDb = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false });
+  try {
+    const emailToken = randomUUID().replaceAll('-', '').repeat(2);
+    const newEmailD = 'verified-' + suffix + '@example.invalid';
+    const userDId = await testDb.query('SELECT id FROM users WHERE username_normalized=LOWER($1)', [userD.username]);
+    const userBId = await testDb.query('SELECT id FROM users WHERE username_normalized=LOWER($1)', [users[1].username]);
+    await testDb.query("UPDATE user_presence SET last_seen_at=NOW()-INTERVAL '2 minutes' WHERE user_id=$1", [userBId.rows[0].id]);
+    const stalePresenceResponse = await request('/api/presence/online');
+    assert.equal(stalePresenceResponse.status, 200, 'Eski çevrimiçi kayıtları sorgulanamadı.');
+    const stalePresenceMembers = (await stalePresenceResponse.json()).members;
+    assert.ok(!stalePresenceMembers.some(member => member.username === users[1].username), '90 saniyeyi aşan hareketsiz kullanıcı çevrimiçi listede kaldı.');
+    const restorePresenceB = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieB, body: { showOnline: true } });
+    assert.equal(restorePresenceB.status, 204, 'Eski presence kaydı test sonrası yenilenemedi.');
+    await testDb.query('INSERT INTO email_change_tokens(user_id,previous_email,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$3,$3,$4,NOW()+INTERVAL \'30 minutes\')', [userDId.rows[0].id, userD.email, newEmailD, require('node:crypto').createHash('sha256').update(emailToken).digest('hex')]);
+    const verifyEmailD = await request('/api/account/email-change/verify', { method: 'POST', body: { token: emailToken } });
+    assert.equal(verifyEmailD.status, 200, 'Geçerli e-posta doğrulama bağlantısı çalışmadı: ' + await verifyEmailD.text());
+    const storedEmailD = await testDb.query('SELECT email FROM users WHERE id=$1', [userDId.rows[0].id]);
+    assert.equal(storedEmailD.rows[0].email, newEmailD, 'Doğrulanan yeni e-posta hesaba kaydedilmedi.');
+    const oldSessionD = await request('/api/auth/me', { cookie: cookieD });
+    assert.equal((await oldSessionD.json()).authenticated, false, 'E-posta değişiminden sonra eski oturum açık kaldı.');
+    const replayEmailD = await request('/api/account/email-change/verify', { method: 'POST', body: { token: emailToken } });
+    assert.equal(replayEmailD.status, 400, 'E-posta doğrulama bağlantısı ikinci kez kullanılabildi.');
+    const loginD = await request('/api/auth/login', { method: 'POST', body: { username: userD.username, password: userD.password } });
+    assert.equal(loginD.status, 200, 'Doğrulama sonrası kullanıcı yeniden giriş yapamadı.');
+    assert.equal((await loginD.json()).user.email, newEmailD, 'Yeni e-posta adresi girişte kullanılmadı.');
+    const cookieDNew = cookieFrom(loginD);
+    const emailChangedNotifications = await (await request('/api/notifications', { cookie: cookieDNew })).json();
+    assert.ok(emailChangedNotifications.notifications.some(item => item.category === 'system' && item.title === 'E-posta adresin güncellendi'), 'E-posta değişikliği sistem bildirimi oluşturulmadı.');
+    const resetTokenD = randomUUID().replaceAll('-', '').repeat(2);
+    await testDb.query('INSERT INTO password_reset_tokens(user_id,token_hash,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 minutes\')', [userDId.rows[0].id, require('node:crypto').createHash('sha256').update(resetTokenD).digest('hex')]);
+    const resetPasswordD = await request('/api/auth/reset-password', { method: 'POST', body: { token: resetTokenD, password: 'ZirveReset!2026D' } });
+    assert.equal(resetPasswordD.status, 200, 'Geçerli şifre sıfırlama bağlantısı çalışmadı: ' + await resetPasswordD.text());
+    const resetReplayD = await request('/api/auth/reset-password', { method: 'POST', body: { token: resetTokenD, password: 'ZirveReplay!2026D' } });
+    assert.equal(resetReplayD.status, 400, 'Şifre sıfırlama bağlantısı ikinci kez kullanılabildi.');
+    const oldEmailSessionAfterReset = await request('/api/auth/me', { cookie: cookieDNew });
+    assert.equal((await oldEmailSessionAfterReset.json()).authenticated, false, 'Şifre sıfırlama sonrası eski oturum açık kaldı.');
+    const resetLoginD = await request('/api/auth/login', { method: 'POST', body: { username: userD.username, password: 'ZirveReset!2026D' } });
+    assert.equal(resetLoginD.status, 200, 'Sıfırlanan yeni şifreyle giriş yapılamadı.');
+    const resetCookieD = cookieFrom(resetLoginD);
+    const resetNotificationsD = await (await request('/api/notifications', { cookie: resetCookieD })).json();
+    assert.ok(resetNotificationsD.notifications.some(item => item.category === 'system' && item.title === 'Şifren sıfırlandı'), 'Şifre sıfırlama güvenlik bildirimi oluşturulmadı.');
+    await request('/api/auth/logout', { method: 'POST', cookie: resetCookieD });
+
+    const expiredToken = randomUUID().replaceAll('-', '').repeat(2);
+    await testDb.query('INSERT INTO email_change_tokens(user_id,previous_email,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$3,$3,$4,NOW()-INTERVAL \'1 minute\')', [userDId.rows[0].id, newEmailD, 'expired-' + suffix + '@example.invalid', require('node:crypto').createHash('sha256').update(expiredToken).digest('hex')]);
+    const expiredVerify = await request('/api/account/email-change/verify', { method: 'POST', body: { token: expiredToken } });
+    assert.equal(expiredVerify.status, 400, 'Süresi dolmuş e-posta doğrulama bağlantısı kabul edildi.');
+    const expiredResetToken = randomUUID().replaceAll('-', '').repeat(2);
+    await testDb.query('INSERT INTO password_reset_tokens(user_id,token_hash,expires_at) VALUES($1,$2,NOW()-INTERVAL \'1 minute\')', [userDId.rows[0].id, require('node:crypto').createHash('sha256').update(expiredResetToken).digest('hex')]);
+    const expiredReset = await request('/api/auth/reset-password', { method: 'POST', body: { token: expiredResetToken, password: 'ZirveExpired!2026D' } });
+    assert.equal(expiredReset.status, 400, 'Süresi dolmuş şifre sıfırlama bağlantısı kabul edildi.');
+
+    await testDb.query('UPDATE users SET is_active=FALSE WHERE username_normalized=LOWER($1)', [users[0].username]);
+    const inactiveNewMembers = await (await request('/api/public/new-members')).json();
+    assert.ok(!inactiveNewMembers.members.some(member => member.username === users[0].username), 'Devre dışı hesap yeni üyeler listesinde görünmeye devam etti.');
+    const inactiveActiveMembers = await (await request('/api/public/active-members')).json();
+    assert.ok(!inactiveActiveMembers.members.some(member => member.username === users[0].username), 'Devre dışı hesap aktif üyeler listesinde görünmeye devam etti.');
+    const disabledSession = await request('/api/auth/me', { cookie: cookieANewLogin });
+    assert.equal(disabledSession.status, 200);
+    assert.equal((await disabledSession.json()).authenticated, false, 'Devre dışı hesap eski oturumla giriş yapmış görünmeye devam etti.');
+    const disabledHeartbeat = await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieANewLogin, body: { showOnline: true } });
+    assert.equal(disabledHeartbeat.status, 401, 'Devre dışı hesap çevrimiçi heartbeat gönderebildi.');
+    const disabledChat = await request('/api/lobby/messages', { method: 'POST', cookie: cookieANewLogin, body: { message: 'Devre dışı hesap mesajı' } });
+    assert.equal(disabledChat.status, 401, 'Devre dışı hesap lobi sohbetine mesaj gönderebildi.');
+    const disabledPreferences = await request('/api/account/preferences', { cookie: cookieANewLogin });
+    assert.equal(disabledPreferences.status, 401, 'Devre dışı hesap hesap tercihlerini okuyabildi.');
+    const disabledAvatar = await request('/api/account/avatar', { cookie: cookieANewLogin });
+    assert.equal(disabledAvatar.status, 401, 'Devre dışı hesap avatar verisini okuyabildi.');
+    const disabledChatStyle = await request('/api/account/chat-style', { cookie: cookieANewLogin });
+    assert.equal(disabledChatStyle.status, 401, 'Devre dışı hesap sohbet görünüm ayarlarını okuyabildi.');
+    const disabledPasswordChange = await request('/api/account/password', { method: 'PUT', cookie: cookieANewLogin, body: { currentPassword: 'ZirveNew!2026A', newPassword: 'ZirveNew!2026B' } });
+    assert.equal(disabledPasswordChange.status, 401, 'Devre dışı hesap şifresini değiştirebildi.');
+  } finally {
+    await testDb.query('UPDATE users SET is_active=TRUE WHERE username_normalized=LOWER($1)', [users[0].username]);
+    await testDb.end();
+  }
+  const logoutNewLogin = await request('/api/auth/logout', { method: 'POST', cookie: cookieANewLogin });
+  assert.equal(logoutNewLogin.status, 200, 'Yeni şifre doğrulama oturumu kapatılamadı.');
 
   const logoutA = await request('/api/auth/logout', { method: 'POST', cookie: cookieA });
   assert.equal(logoutA.status, 200, 'A çıkış yapamadı.');
@@ -311,6 +630,22 @@ main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 }).finally(async () => {
+  if (cleanupUsernames.length) {
+    const cleanupPool = new Pool({ connectionString: process.env.DATABASE_URL });
+    try {
+      if (cleanupWebhookIds.length) {
+        await cleanupPool.query('DELETE FROM resend_webhook_events WHERE event_id = ANY($1::text[])', [cleanupWebhookIds]);
+      }
+      if (cleanupUsernames.length) {
+        await cleanupPool.query('DELETE FROM users WHERE username = ANY($1::text[])', [cleanupUsernames]);
+      }
+    } catch (cleanupError) {
+      console.error('Test-user cleanup failed:', cleanupError.message);
+      process.exitCode = 1;
+    } finally {
+      await cleanupPool.end();
+    }
+  }
   child.kill('SIGTERM');
   await new Promise(resolve => {
     if (child.exitCode !== null) return resolve();

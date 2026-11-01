@@ -29,8 +29,17 @@ app.use((_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   next();
 });
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({
+  limit: '2mb',
+  verify(req, _res, buffer) {
+    if (req.path === '/api/webhooks/resend') req.rawBody = Buffer.from(buffer);
+  }
+}));
 app.use(express.urlencoded({ extended: false, limit: '20kb' }));
+app.use((req, _res, next) => {
+  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) req.body = {};
+  next();
+});
 
 const schema = `
 CREATE TABLE IF NOT EXISTS users (
@@ -62,6 +71,19 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 );
 CREATE INDEX IF NOT EXISTS password_reset_user_idx ON password_reset_tokens(user_id);
 CREATE INDEX IF NOT EXISTS password_reset_expiry_idx ON password_reset_tokens(expires_at);
+CREATE TABLE IF NOT EXISTS email_change_tokens (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  new_email VARCHAR(254) NOT NULL,
+  new_email_normalized VARCHAR(254) NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE email_change_tokens ADD COLUMN IF NOT EXISTS previous_email VARCHAR(254);
+CREATE INDEX IF NOT EXISTS email_change_user_idx ON email_change_tokens(user_id);
+CREATE INDEX IF NOT EXISTS email_change_expiry_idx ON email_change_tokens(expires_at);
 CREATE TABLE IF NOT EXISTS user_activity (user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), active_seconds BIGINT NOT NULL DEFAULT 0);
 CREATE INDEX IF NOT EXISTS user_activity_recent_idx ON user_activity(last_seen_at DESC, active_seconds DESC);
 CREATE TABLE IF NOT EXISTS user_presence (
@@ -90,11 +112,19 @@ CREATE TABLE IF NOT EXISTS user_notifications (
 );
 CREATE INDEX IF NOT EXISTS user_notifications_user_created_idx ON user_notifications(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS user_notifications_unread_idx ON user_notifications(user_id, created_at DESC) WHERE read_at IS NULL;
+CREATE TABLE IF NOT EXISTS resend_webhook_events (
+  event_id VARCHAR(100) PRIMARY KEY,
+  event_type VARCHAR(60) NOT NULL,
+  email_id VARCHAR(100),
+  received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS resend_webhook_events_received_idx ON resend_webhook_events(received_at DESC);
 `;
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
+  // Keep production throttling strict; integration tests share one localhost IP.
+  limit: process.env.NODE_ENV === 'test' ? 100 : 10,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Çok fazla deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin.' }
@@ -106,7 +136,85 @@ const resetLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Çok fazla istek yapıldı. Daha sonra tekrar deneyin.' }
 });
+const lobbyMessageLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Çok sık mesaj gönderiyorsunuz. Lütfen biraz bekleyin.' }
+});
 const asyncRoute = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
+function verifyResendWebhook(req) {
+  const secret = process.env.RESEND_WEBHOOK_SECRET;
+  const messageId = req.get('svix-id');
+  const timestamp = req.get('svix-timestamp');
+  const signatures = req.get('svix-signature');
+  if (!secret || !messageId || !timestamp || !signatures || !Buffer.isBuffer(req.rawBody)) return false;
+  const timestampNumber = Number(timestamp);
+  if (!Number.isInteger(timestampNumber) || Math.abs(Date.now() / 1000 - timestampNumber) > 300) return false;
+  const encodedSecret = secret.startsWith('whsec_') ? secret.slice(6) : secret;
+  const key = Buffer.from(encodedSecret, 'base64');
+  if (!key.length) return false;
+  const signedPayload = messageId + '.' + timestamp + '.' + req.rawBody.toString('utf8');
+  const expected = crypto.createHmac('sha256', key).update(signedPayload).digest();
+  return signatures.split(' ').some(entry => {
+    const parts = entry.split(',');
+    if (parts.length !== 2 || parts[0] !== 'v1') return false;
+    const supplied = Buffer.from(parts[1], 'base64');
+    return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
+  });
+}
+
+app.post('/api/webhooks/resend', asyncRoute(async (req, res) => {
+  if (!pool || !process.env.RESEND_WEBHOOK_SECRET) {
+    return res.status(503).json({ error: 'E-posta olay alıcısı yapılandırılmamış.' });
+  }
+  if (!verifyResendWebhook(req)) return res.status(401).json({ error: 'Webhook imzası geçersiz.' });
+  const event = req.body;
+  const supportedEvents = new Set(['email.sent', 'email.delivered', 'email.delivery_delayed', 'email.bounced', 'email.complained', 'email.failed', 'email.suppressed']);
+  if (!event || !supportedEvents.has(event.type)) {
+    return res.status(400).json({ error: 'Desteklenmeyen e-posta olayı.' });
+  }
+  const emailId = typeof event.data?.email_id === 'string'
+    ? event.data.email_id
+    : (typeof event.data?.id === 'string' ? event.data.id : null);
+  await pool.query(
+    'INSERT INTO resend_webhook_events(event_id,event_type,email_id) VALUES($1,$2,$3) ON CONFLICT(event_id) DO NOTHING',
+    [req.get('svix-id'), event.type, emailId]
+  );
+  res.status(204).end();
+}));
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Çok fazla iletişim isteği gönderdiniz. Lütfen daha sonra tekrar deneyin.' }
+});
+const emailVerifyLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Çok fazla doğrulama denemesi yapıldı. Daha sonra tekrar deneyin.' }
+});
+const notificationPreferenceByCategory = { friendship: 'settingFriendRequests', players: 'settingNotifyPlayers', game: 'settingNotifyGame', system: 'settingNotifySystem', management: 'settingNotifyManagement', rewards: 'settingNotifyRewards' };
+async function createUserNotification(userId, category, title, message, actionUrl = null) {
+  const preferenceKey = notificationPreferenceByCategory[category];
+  if (!preferenceKey) throw new Error('Unsupported notification category');
+  return pool.query(
+    'INSERT INTO user_notifications(user_id,category,title,message,action_url) SELECT id,$2,$3,$4,$5 FROM users WHERE id=$1 AND is_active=TRUE AND notifications_enabled=TRUE AND COALESCE(member_preferences->>$6,\'true\') <> \'false\'',
+    [userId, category, title, message, actionUrl, preferenceKey]
+  );
+}
+const activeAccountRequired = asyncRoute(async (req, res, next) => {
+  const userId = req.session?.user?.id;
+  if (!userId) return res.status(401).json({ error: 'Giriş yapmalısınız.' });
+  const result = await pool.query('SELECT 1 FROM users WHERE id=$1 AND is_active=TRUE', [userId]);
+  if (!result.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
+  next();
+});
 const dbRequired = (_req, res, next) => {
   if (!pool || !sessionSecret) return res.status(503).json({ error: 'Hesap sistemi sunucu yapılandırması bekliyor.' });
   next();
@@ -149,20 +257,123 @@ app.get('/health', asyncRoute(async (_req, res) => {
   });
 }));
 
-app.get('/api/auth/me', dbRequired, (req, res) => {
-  const hasSessionCookie = String(req.headers.cookie || '').split(';').some(part => part.trim().startsWith('zirve.sid='));
-  const authenticated = Boolean(req.session?.user?.id);
-  console.info('[auth-session-check]', JSON.stringify({
-    path: req.path,
-    host: req.get('host'),
-    secure: req.secure,
-    hasSessionCookie,
-    sessionLoaded: Boolean(req.session),
-    authenticated
-  }));
-  if (!authenticated) return res.json({ authenticated: false });
+app.get('/api/auth/me', dbRequired, asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const userId = req.session?.user?.id;
+  if (!userId) return res.json({ authenticated: false });
+  const result = await pool.query('SELECT id,username,email,country,gender FROM users WHERE id=$1 AND is_active=TRUE', [userId]);
+  if (!result.rows[0]) {
+    await new Promise(resolve => {
+      if (!req.session) return resolve();
+      req.session.destroy(() => resolve());
+    });
+    res.clearCookie('zirve.sid', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    return res.json({ authenticated: false });
+  }
+  const user = result.rows[0];
+  req.session.user = { id: user.id, username: user.username, email: user.email, country: user.country, gender: user.gender };
   res.json({ authenticated: true, user: req.session.user });
+}));
+
+app.put('/api/account/profile', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
+  const country = String(req.body?.country || '').trim();
+  const gender = String(req.body?.gender || '').trim();
+  const allowedCountries = ['Türkiye','Almanya','Azerbaycan','Belçika','Birleşik Krallık','Fransa','Hollanda','Kıbrıs','ABD','Avusturya','Diğer'];
+  const allowedGenders = ['Kadın','Erkek','Belirtmek istemiyorum'];
+  if (!allowedCountries.includes(country)) return res.status(400).json({ error: 'Lütfen geçerli bir ülke seçin.' });
+  if (!allowedGenders.includes(gender)) return res.status(400).json({ error: 'Lütfen geçerli bir cinsiyet seçin.' });
+  const result = await pool.query(
+    'UPDATE users SET country=$1,gender=$2 WHERE id=$3 AND is_active=TRUE RETURNING id,username,email,country,gender',
+    [country, gender, req.session.user.id]
+  );
+  if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
+  req.session.user = { ...req.session.user, country: result.rows[0].country, gender: result.rows[0].gender };
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ ok: true, user: req.session.user });
+}));
+
+app.get('/api/account/email-change/status', dbRequired, activeAccountRequired, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ configured: Boolean(process.env.RESEND_API_KEY && process.env.MAIL_FROM && process.env.APP_URL) });
 });
+
+app.post('/api/account/email-change', dbRequired, activeAccountRequired, authLimiter, asyncRoute(async (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const currentPassword = String(req.body?.currentPassword || '');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+  if (currentPassword.length < 10 || currentPassword.length > 72) return res.status(400).json({ error: 'Mevcut şifrenizi doğrulayın.' });
+  const account = await pool.query('SELECT email,password_hash FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
+  if (!account.rows[0] || !(await bcrypt.compare(currentPassword, account.rows[0].password_hash))) return res.status(400).json({ error: 'Mevcut şifreniz doğru değil.' });
+  if (account.rows[0].email.toLowerCase() === email) return res.status(400).json({ error: 'Yeni e-posta adresi mevcut adresinizle aynı.' });
+  if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.APP_URL) return res.status(503).json({ error: 'E-posta doğrulama hizmeti henüz yapılandırılmadı.' });
+  let verifyUrl;
+  try {
+    const base = new URL(process.env.APP_URL);
+    if (base.protocol !== 'https:' && process.env.NODE_ENV === 'production') throw new Error('APP_URL must use HTTPS in production');
+    if (!['https:', 'http:'].includes(base.protocol)) throw new Error('Unsupported URL protocol');
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    verifyUrl = new URL('/email-dogrula.html?token=' + encodeURIComponent(rawToken), base).toString();
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const existing = await pool.query('SELECT 1 FROM users WHERE email_normalized=$1 AND id<>$2 LIMIT 1', [email, req.session.user.id]);
+    if (existing.rowCount) return res.status(202).json({ ok: true, message: 'Adres uygunsa doğrulama bağlantısı gönderilecektir.' });
+    await pool.query('UPDATE email_change_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [req.session.user.id]);
+    await pool.query('INSERT INTO email_change_tokens(user_id,previous_email,new_email,new_email_normalized,token_hash,expires_at) VALUES($1,$2,$3,$3,$4,NOW()+INTERVAL \'30 minutes\')', [req.session.user.id, account.rows[0].email, email, tokenHash]);
+    try {
+      const mail = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: process.env.MAIL_FROM, to: [email], subject: 'ZirveOkey e-posta adresi doğrulama', text: 'E-posta adresinizi değiştirmek için 30 dakika içinde bu bağlantıyı açın: ' + verifyUrl })
+      });
+      if (!mail.ok) throw new Error('Provider HTTP ' + mail.status);
+    } catch (mailError) {
+      await pool.query('UPDATE email_change_tokens SET used_at=NOW() WHERE token_hash=$1 AND used_at IS NULL', [tokenHash]);
+      console.error('Email change delivery failed:', mailError.message);
+      return res.status(502).json({ error: 'Doğrulama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.' });
+    }
+    res.status(202).json({ ok: true, message: 'Adres uygunsa doğrulama bağlantısı gönderilecektir.' });
+  } catch (error) {
+    if (error.code === '23505') return res.status(202).json({ ok: true, message: 'Adres uygunsa doğrulama bağlantısı gönderilecektir.' });
+    throw error;
+  }
+}));
+
+app.post('/api/account/email-change/verify', dbRequired, emailVerifyLimiter, asyncRoute(async (req, res) => {
+  const token = String(req.body?.token || '');
+  if (!/^[a-f0-9]{64}$/.test(token)) return res.status(400).json({ error: 'Doğrulama bağlantısı geçersiz veya süresi dolmuş.' });
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const found = await client.query('SELECT id,user_id,previous_email,new_email,new_email_normalized FROM email_change_tokens WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW() FOR UPDATE', [tokenHash]);
+    if (!found.rows[0]) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Doğrulama bağlantısı geçersiz veya süresi dolmuş.' }); }
+    const updated = await client.query('UPDATE users SET email=$1,email_normalized=$2 WHERE id=$3 AND is_active=TRUE RETURNING id', [found.rows[0].new_email, found.rows[0].new_email_normalized, found.rows[0].user_id]);
+    if (!updated.rowCount) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Doğrulama bağlantısı geçersiz veya süresi dolmuş.' }); }
+    await client.query('UPDATE email_change_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [found.rows[0].user_id]);
+    await client.query('DELETE FROM user_sessions WHERE sess::jsonb->\'user\'->>\'id\'=$1', [String(found.rows[0].user_id)]);
+    await client.query('DELETE FROM user_presence WHERE user_id=$1', [found.rows[0].user_id]);
+    await client.query(
+      "INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",
+      [found.rows[0].user_id, 'E-posta adresin güncellendi', 'Hesabının e-posta adresi başarıyla değiştirildi. Bu işlem sana ait değilse destek ekibiyle iletişime geç.']
+    );
+    await client.query('COMMIT');
+    res.clearCookie('zirve.sid', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    if (found.rows[0].previous_email && process.env.RESEND_API_KEY && process.env.MAIL_FROM) {
+      try {
+        const notice = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: process.env.MAIL_FROM, to: [found.rows[0].previous_email], subject: 'ZirveOkey e-posta adresi değiştirildi', text: 'ZirveOkey hesabınızın e-posta adresi doğrulama işlemiyle değiştirildi. Bu işlemi siz yapmadıysanız derhal hesabınızın güvenliğini sağlayın ve destek ekibiyle iletişime geçin.' })
+        });
+        if (!notice.ok) console.error('Previous email security notice rejected:', notice.status);
+      } catch (noticeError) { console.error('Previous email security notice failed:', noticeError.message); }
+    }
+    res.json({ ok: true, message: 'E-posta adresiniz doğrulandı ve güncellendi. Yeni adresinizle tekrar giriş yapabilirsiniz.' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    if (error.code === '23505') return res.status(409).json({ error: 'Bu e-posta adresi artık kullanılamıyor. Yeni bir adresle tekrar deneyin.' });
+    throw error;
+  } finally { client.release(); }
+}));
 
 app.post('/api/auth/register', dbRequired, authLimiter, asyncRoute(async (req, res) => {
   const username = String(req.body.username || '').trim();
@@ -184,7 +395,11 @@ app.post('/api/auth/register', dbRequired, authLimiter, asyncRoute(async (req, r
       [username, username.toLocaleLowerCase('tr-TR'), email, email, hash, country, gender]
     );
     const user = result.rows[0];
-    await pool.query("INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",[user.id,'ZirveOkey’e hoş geldin','Hesabın başarıyla oluşturuldu. Oyun lobisinde seni bekliyoruz.']);
+    await createUserNotification(user.id, 'system', 'ZirveOkey’e hoş geldin', 'Hesabın başarıyla oluşturuldu. Oyun lobisinde seni bekliyoruz.');
+    await pool.query(
+      "INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'players',$2,$3 FROM users WHERE id<>$1 AND is_active=TRUE AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifyPlayers','true') <> 'false'",
+      [user.id, 'Yeni üye aramızda', user.username + ' ZirveOkey ailesine katıldı.']
+    );
     await new Promise((resolve, reject) => {
       req.session.regenerate(error => error ? reject(error) : resolve());
     });
@@ -206,17 +421,17 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
   if (!identifier || !password || password.length > 72) return res.status(400).json({ error: 'Kullanıcı adı/e-posta ve şifre gerekli.' });
   const normalized = identifier.includes('@') ? identifier.toLowerCase() : identifier.toLocaleLowerCase('tr-TR');
   const result = await pool.query(
-    'SELECT id, username, email, password_hash FROM users WHERE (username_normalized=$1 OR email_normalized=$1) AND is_active=TRUE LIMIT 1',
+    'SELECT id, username, email, country, gender, password_hash FROM users WHERE (username_normalized=$1 OR email_normalized=$1) AND is_active=TRUE LIMIT 1',
     [normalized]
   );
   const user = result.rows[0];
   const valid = user ? await bcrypt.compare(password, user.password_hash) : await bcrypt.compare(password, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
   if (!user || !valid) return res.status(401).json({ error: 'Giriş bilgileri hatalı.' });
-  await pool.query("INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",[user.id,'Hesabına giriş yapıldı','ZirveOkey hesabına yeni bir oturum açıldı. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.']);
+  await createUserNotification(user.id, 'system', 'Hesabına giriş yapıldı', 'ZirveOkey hesabına yeni bir oturum açıldı. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.');
   await pool.query('UPDATE users SET last_login_at=NOW() WHERE id=$1', [user.id]);
   req.session.regenerate(err => {
     if (err) return res.status(500).json({ error: 'Oturum açılamadı.' });
-    req.session.user = { id: user.id, username: user.username, email: user.email };
+    req.session.user = { id: user.id, username: user.username, email: user.email, country: user.country, gender: user.gender };
     req.session.cookie.maxAge = req.body.rememberMe === true ? 30 * 24 * 60 * 60 * 1000 : null;
     req.session.save(saveErr => {
       if (saveErr) return res.status(500).json({ error: 'Oturum kaydedilemedi.' });
@@ -238,17 +453,22 @@ app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
     res.json({ ok: true });
   });
 }));
-app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
+app.post('/api/presence/heartbeat', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
-  const showOnline = req.body.showOnline !== false;
-  await pool.query(`
-    INSERT INTO user_presence(user_id,last_seen_at,show_online) VALUES($1,NOW(),$2)
+  const requestedShowOnline = req.body.showOnline !== false;
+  const presence = await pool.query(`
+    INSERT INTO user_presence(user_id,last_seen_at,show_online)
+    SELECT u.id,NOW(),$2 AND COALESCE(u.member_preferences->>'settingShowOnline','true') <> 'false'
+    FROM users u WHERE u.id=$1 AND u.is_active=TRUE
     ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=EXCLUDED.show_online
-  `, [req.session.user.id, showOnline]);
+    RETURNING user_id
+  `, [req.session.user.id, requestedShowOnline]);
+  if (!presence.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
   res.status(204).end();
 }));
 
 app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
     SELECT u.id,u.username
     FROM user_presence p JOIN users u ON u.id=p.user_id
@@ -258,7 +478,7 @@ app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
   res.json({ members: result.rows, count: result.rows.length });
 }));
 
-app.put('/api/account/password', dbRequired, authLimiter, asyncRoute(async (req, res) => {
+app.put('/api/account/password', dbRequired, activeAccountRequired, authLimiter, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Şifre değiştirmek için giriş yapmalısınız.' });
   const currentPassword = String(req.body.currentPassword || '');
   const newPassword = String(req.body.newPassword || '');
@@ -268,17 +488,37 @@ app.put('/api/account/password', dbRequired, authLimiter, asyncRoute(async (req,
   const found = await pool.query('SELECT password_hash FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!found.rows[0] || !(await bcrypt.compare(currentPassword, found.rows[0].password_hash))) return res.status(400).json({ error: 'Mevcut şifren doğru değil.' });
   const passwordHash = await bcrypt.hash(newPassword, 12);
-  await pool.query('UPDATE users SET password_hash=$1 WHERE id=$2', [passwordHash, req.session.user.id]);
-  res.json({ ok: true, message: 'Şifren başarıyla güncellendi.' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE users SET password_hash=$1 WHERE id=$2 AND is_active=TRUE', [passwordHash, req.session.user.id]);
+    await client.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [req.session.user.id]);
+    await client.query(
+      "INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",
+      [req.session.user.id, 'Şifren güncellendi', 'Hesabının şifresi başarıyla değiştirildi. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.']
+    );
+    await client.query(
+      "DELETE FROM user_sessions WHERE sess::jsonb->'user'->>'id'=$1 AND sid<>$2",
+      [String(req.session.user.id), req.sessionID]
+    );
+    await client.query('COMMIT');
+    res.json({ ok: true, message: 'Şifren başarıyla güncellendi. Diğer oturumların güvenlik için kapatıldı.' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }));
 
-app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
+app.get('/api/account/preferences', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarlar için giriş yapmalısınız.' });
   const result = await pool.query('SELECT member_preferences FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
   res.json({ preferences: result.rows[0].member_preferences || {} });
 }));
-app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
+app.put('/api/account/preferences', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarları kaydetmek için giriş yapmalısınız.' });
   const allowed = ['settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingShowOnline','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI'];
   const input = req.body?.preferences;
@@ -297,55 +537,72 @@ app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   res.json({ ok: true, preferences: result.rows[0].member_preferences });
 }));
 
-app.get('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
+app.get('/api/account/avatar', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   if (!req.session.user?.id) return res.status(401).json({ error: 'Avatar için giriş yapmalısınız.' });
   const result = await pool.query('SELECT avatar_data FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
   res.json({ avatar: result.rows[0].avatar_data || null });
 }));
 
-app.put('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {
+app.put('/api/account/avatar', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Avatar değiştirmek için giriş yapmalısınız.' });
   const avatar = req.body.avatar === null ? null : String(req.body.avatar || '');
-  if (avatar !== null && (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar) || avatar.length > 1400000)) {
-    return res.status(400).json({ error: 'PNG, JPG veya WebP formatında, en fazla 1 MB bir görsel seçin.' });
+  if (avatar !== null) {
+    const match = avatar.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/);
+    if (!match || avatar.length > 1400000) {
+      return res.status(400).json({ error: 'PNG, JPG veya WebP formatında, en fazla 1 MB bir görsel seçin.' });
+    }
+    const bytes = Buffer.from(match[2], 'base64');
+    const canonicalBase64 = bytes.length > 0 && bytes.toString('base64') === match[2];
+    const validSignature = match[1] === 'png'
+      ? bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+      : match[1] === 'jpeg'
+        ? bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+        : bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
+    if (!canonicalBase64 || bytes.length > 1024 * 1024 || !validSignature) {
+      return res.status(400).json({ error: 'PNG, JPG veya WebP formatında, en fazla 1 MB bir görsel seçin.' });
+    }
   }
   const result = await pool.query('UPDATE users SET avatar_data=$1 WHERE id=$2 AND is_active=TRUE RETURNING avatar_data', [avatar, req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
   res.json({ ok: true, avatar: result.rows[0].avatar_data || null });
 }));
 
-app.get('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
+app.get('/api/account/chat-style', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   if (!req.session.user?.id) return res.status(401).json({ error: 'Renk tercihleri için giriş yapmalısınız.' });
   const result = await pool.query('SELECT chat_name_color,chat_text_color,chat_row_color FROM users WHERE id=$1 AND is_active=TRUE', [req.session.user.id]);
   if (!result.rows[0]) return res.status(401).json({ error: 'Hesap bulunamadı.' });
   res.json({ chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color, rowColor: result.rows[0].chat_row_color } });
 }));
 
-app.put('/api/account/chat-style', dbRequired, asyncRoute(async (req, res) => {
+app.put('/api/account/chat-style', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Renk tercihleri için giriş yapmalısınız.' });
   const nameColor = String(req.body.nameColor || '').toLowerCase();
   const textColor = String(req.body.textColor || '').toLowerCase();
   const rowColor = req.body.rowColor === undefined ? null : String(req.body.rowColor || '').toLowerCase();
   const validHex = value => /^#[0-9a-f]{6}$/.test(value);
   if (!validHex(nameColor) || !validHex(textColor) || (rowColor !== null && !validHex(rowColor))) return res.status(400).json({ error: 'Geçerli bir HEX renk seçin.' });
-  const result = await pool.query('UPDATE users SET chat_name_color=$1,chat_text_color=$2,chat_row_color=COALESCE($3,chat_row_color) WHERE id=$4 RETURNING chat_name_color,chat_text_color,chat_row_color', [nameColor, textColor, rowColor, req.session.user.id]);
+  const result = await pool.query('UPDATE users SET chat_name_color=$1,chat_text_color=$2,chat_row_color=COALESCE($3,chat_row_color) WHERE id=$4 AND is_active=TRUE RETURNING chat_name_color,chat_text_color,chat_row_color', [nameColor, textColor, rowColor, req.session.user.id]);
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
   res.json({ ok: true, chatStyle: { nameColor: result.rows[0].chat_name_color, textColor: result.rows[0].chat_text_color, rowColor: result.rows[0].chat_row_color } });
 }));
 
 app.get('/api/lobby/chat-styles', dbRequired, asyncRoute(async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
     SELECT u.id,u.username,u.chat_name_color,u.chat_text_color
     FROM users u
     JOIN user_presence p ON p.user_id=u.id
-    WHERE u.is_active=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
+    WHERE u.is_active=TRUE AND p.show_online=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
     ORDER BY u.id ASC
   `);
   res.json({ members: result.rows });
 }));
 
 app.get('/api/lobby/messages', dbRequired, asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   const afterId = Math.max(0, Number.parseInt(req.query.after || '0', 10) || 0);
   const result = afterId
     ? await pool.query('SELECT m.id,m.user_id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id>$1 ORDER BY m.id ASC LIMIT 100', [afterId])
@@ -353,39 +610,83 @@ app.get('/api/lobby/messages', dbRequired, asyncRoute(async (req, res) => {
   res.json({ messages: result.rows });
 }));
 
-app.post('/api/lobby/messages', dbRequired, authLimiter, asyncRoute(async (req, res) => {
+app.post('/api/lobby/messages', dbRequired, lobbyMessageLimiter, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Sohbete yazmak için önce giriş yapmalısınız.' });
   const message = String(req.body.message || '').trim();
   if (!message || message.length > 300) return res.status(400).json({ error: 'Mesaj 1-300 karakter arasında olmalı.' });
   const user = req.session.user;
   const result = await pool.query(
-    'INSERT INTO lobby_messages(user_id,username,message) VALUES($1,$2,$3) RETURNING id',
-    [user.id, user.username, message]
+    'INSERT INTO lobby_messages(user_id,username,message) SELECT id,username,$2 FROM users WHERE id=$1 AND is_active=TRUE RETURNING id',
+    [user.id, message]
   );
+  if (!result.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Sohbete yazmak için yeniden giriş yapın.' });
   const decorated = await pool.query('SELECT m.id,m.user_id,m.username,m.message,m.created_at,u.chat_name_color,u.chat_text_color,u.chat_row_color FROM lobby_messages m JOIN users u ON u.id=m.user_id WHERE m.id=$1', [result.rows[0].id]);
   await pool.query('DELETE FROM lobby_messages WHERE id < (SELECT GREATEST(COALESCE(MAX(id),0)-500,0) FROM lobby_messages)');
   res.status(201).json({ message: decorated.rows[0] });
 }));
 
 
+app.get('/api/contact/status', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ configured: Boolean(process.env.RESEND_API_KEY && process.env.MAIL_FROM && process.env.SUPPORT_EMAIL) });
+});
+
+app.post('/api/contact', contactLimiter, asyncRoute(async (req, res) => {
+  const name = String(req.body?.name || '').trim();
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const subject = String(req.body?.subject || '').trim();
+  const message = String(req.body?.message || '').trim();
+  if (name.length < 2 || name.length > 80) return res.status(400).json({ error: 'Ad alanı 2-80 karakter arasında olmalı.' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+  if (subject.length < 3 || subject.length > 120) return res.status(400).json({ error: 'Konu 3-120 karakter arasında olmalı.' });
+  if (message.length < 10 || message.length > 3000) return res.status(400).json({ error: 'Mesaj 10-3000 karakter arasında olmalı.' });
+  if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.SUPPORT_EMAIL) return res.status(503).json({ error: 'İletişim gönderim kanalı henüz yapılandırılmadı.' });
+  try {
+    const mail = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [process.env.SUPPORT_EMAIL], reply_to: email, subject: '[ZirveOkey Destek] ' + subject, text: 'Gönderen: ' + name + '\nE-posta: ' + email + '\n\n' + message })
+    });
+    if (!mail.ok) throw new Error('Provider HTTP ' + mail.status);
+  } catch (mailError) {
+    console.error('Contact email delivery failed:', mailError.message);
+    return res.status(502).json({ error: 'Mesaj şu anda gönderilemedi. Lütfen daha sonra tekrar deneyin.' });
+  }
+  res.status(202).json({ ok: true, message: 'Mesajın destek ekibine iletildi.' });
+}));
 app.post('/api/auth/forgot-password', dbRequired, resetLimiter, asyncRoute(async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
   const generic = { ok: true, message: 'Adres kayıtlıysa şifre sıfırlama bağlantısı gönderilecektir.' };
+  if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.APP_URL) {
+    return res.status(503).json({ error: 'Şifre sıfırlama e-posta hizmeti henüz yapılandırılmadı.' });
+  }
+  let appBase;
+  try {
+    appBase = new URL(process.env.APP_URL);
+    if (appBase.protocol !== 'https:' && process.env.NODE_ENV === 'production') throw new Error('APP_URL must use HTTPS in production');
+    if (!['https:', 'http:'].includes(appBase.protocol)) throw new Error('Unsupported APP_URL protocol');
+  } catch {
+    return res.status(503).json({ error: 'Şifre sıfırlama e-posta hizmeti henüz yapılandırılmadı.' });
+  }
   const result = await pool.query('SELECT id,email FROM users WHERE email_normalized=$1 AND is_active=TRUE LIMIT 1', [email]);
   if (!result.rows[0]) return res.json(generic);
-  if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.APP_URL) return res.status(503).json({ error: 'Şifre sıfırlama e-posta hizmeti henüz yapılandırılmadı.' });
   const rawToken = crypto.randomBytes(32).toString('hex');
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
   await pool.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [result.rows[0].id]);
   await pool.query('INSERT INTO password_reset_tokens(user_id,token_hash,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 minutes\')', [result.rows[0].id, tokenHash]);
-  const link = new URL('/?reset=' + encodeURIComponent(rawToken), process.env.APP_URL).toString();
-  const mail = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: process.env.MAIL_FROM, to: [email], subject: 'ZirveOkey şifre sıfırlama', text: 'Şifrenizi yenilemek için 30 dakika içinde bu bağlantıyı açın: ' + link })
-  });
-  if (!mail.ok) throw new Error('Password reset email provider rejected the request');
+  const link = new URL('/?reset=' + encodeURIComponent(rawToken), appBase).toString();
+  try {
+    const mail = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [email], subject: 'ZirveOkey şifre sıfırlama', text: 'Şifrenizi yenilemek için 30 dakika içinde bu bağlantıyı açın: ' + link })
+    });
+    if (!mail.ok) throw new Error('Provider HTTP ' + mail.status);
+  } catch (error) {
+    await pool.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE token_hash=$1 AND used_at IS NULL', [tokenHash]);
+    console.error('Password reset email delivery failed:', error.message);
+  }
   res.json(generic);
 }));
 
@@ -403,7 +704,11 @@ app.post('/api/auth/reset-password', dbRequired, authLimiter, asyncRoute(async (
     if (!found.rows[0]) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Sıfırlama bağlantısı geçersiz veya süresi dolmuş.' }); }
     await client.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, found.rows[0].user_id]);
     await client.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL', [found.rows[0].user_id]);
-    await client.query('DELETE FROM user_sessions WHERE sess::jsonb->\'user\'->>\'id\'=$1', [String(found.rows[0].user_id)]).catch(() => {});
+    await client.query('DELETE FROM user_sessions WHERE sess::jsonb->\'user\'->>\'id\'=$1', [String(found.rows[0].user_id)]);
+    await client.query(
+      "INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",
+      [found.rows[0].user_id, 'Şifren sıfırlandı', 'Hesabının şifresi sıfırlama bağlantısıyla değiştirildi. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.']
+    );
     await client.query('COMMIT');
     res.json({ ok: true, message: 'Şifreniz güncellendi. Yeni şifrenizle giriş yapabilirsiniz.' });
   } catch (error) { await client.query('ROLLBACK'); throw error; }
@@ -411,7 +716,7 @@ app.post('/api/auth/reset-password', dbRequired, authLimiter, asyncRoute(async (
 }));
 
 
-app.get('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
+app.get('/api/notifications', dbRequired, activeAccountRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Bildirimleri görmek için giriş yapmalısınız.'});
   const pref=await pool.query('SELECT notifications_enabled,member_preferences FROM users WHERE id=$1',[req.session.user.id]);
   const enabled=pref.rows[0]?.notifications_enabled===true;
@@ -423,7 +728,7 @@ app.get('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
   res.setHeader('Cache-Control','no-store');
   res.json({notifications:items.rows,unreadByCategory,preferences:pref.rows[0]?.member_preferences||{},enabled});
 }));
-app.put('/api/notifications/preferences', dbRequired, asyncRoute(async(req,res)=>{
+app.put('/api/notifications/preferences', dbRequired, activeAccountRequired, asyncRoute(async(req,res)=>{
   if(!req.session.user?.id)return res.status(401).json({error:'Giriş yapmalısınız.'});
   if(typeof req.body.enabled!=='boolean')return res.status(400).json({error:'Bildirim tercihi geçersiz.'});
   const result=await pool.query(
@@ -437,7 +742,7 @@ app.put('/api/notifications/preferences', dbRequired, asyncRoute(async(req,res)=
   res.setHeader('Cache-Control','no-store');
   res.json({enabled:result.rows[0]?.notifications_enabled===true});
 }));
-app.post('/api/notifications/:id/read', dbRequired, asyncRoute(async (req,res) => {
+app.post('/api/notifications/:id/read', dbRequired, activeAccountRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
   if(!/^[1-9]\d*$/.test(req.params.id))return res.status(400).json({error:'Geçersiz bildirim.'});
   const id=Number(req.params.id);
@@ -446,12 +751,12 @@ app.post('/api/notifications/:id/read', dbRequired, asyncRoute(async (req,res) =
   if(!result.rowCount)return res.status(404).json({error:'Bildirim bulunamadı.'});
   res.json({ok:true});
 }));
-app.post('/api/notifications/read-all', dbRequired, asyncRoute(async (req,res) => {
+app.post('/api/notifications/read-all', dbRequired, activeAccountRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
   await pool.query('UPDATE user_notifications SET read_at=NOW() WHERE user_id=$1 AND read_at IS NULL',[req.session.user.id]);
   res.json({ok:true});
 }));
-app.delete('/api/notifications/:id', dbRequired, asyncRoute(async (req,res) => {
+app.delete('/api/notifications/:id', dbRequired, activeAccountRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
   if(!/^[1-9]\d*$/.test(req.params.id))return res.status(400).json({error:'Geçersiz bildirim.'});
   const id=Number(req.params.id);
@@ -460,7 +765,7 @@ app.delete('/api/notifications/:id', dbRequired, asyncRoute(async (req,res) => {
   if(!result.rowCount)return res.status(404).json({error:'Bildirim bulunamadı.'});
   res.json({ok:true});
 }));
-app.delete('/api/notifications', dbRequired, asyncRoute(async (req,res) => {
+app.delete('/api/notifications', dbRequired, activeAccountRequired, asyncRoute(async (req,res) => {
   if (!req.session.user?.id) return res.status(401).json({error:'Giriş yapmalısınız.'});
   await pool.query('DELETE FROM user_notifications WHERE user_id=$1',[req.session.user.id]);
   res.json({ok:true});
@@ -475,18 +780,20 @@ app.get('/api/public/new-members', asyncRoute(async (_req, res) => {
   res.json({ members: result.rows });
 }));
 
-app.post('/api/activity/heartbeat', dbRequired, asyncRoute(async (req, res) => {
+app.post('/api/activity/heartbeat', dbRequired, activeAccountRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Aktivite kaydı için giriş yapmalısınız.' });
-  await pool.query(`
+  const activity = await pool.query(`
     INSERT INTO user_activity(user_id,last_seen_at,active_seconds)
-    VALUES($1,NOW(),0)
+    SELECT id,NOW(),0 FROM users WHERE id=$1 AND is_active=TRUE
     ON CONFLICT(user_id) DO UPDATE SET
       active_seconds=user_activity.active_seconds + CASE
         WHEN user_activity.last_seen_at > NOW()-INTERVAL '2 minutes'
         THEN LEAST(90,GREATEST(0,EXTRACT(EPOCH FROM (NOW()-user_activity.last_seen_at))::BIGINT))
         ELSE 0 END,
       last_seen_at=NOW()
+    RETURNING user_id
   `, [req.session.user.id]);
+  if (!activity.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
   res.status(204).end();
 }));
 

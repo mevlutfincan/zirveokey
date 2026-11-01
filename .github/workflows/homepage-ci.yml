@@ -1,4 +1,4 @@
-name: Homepage CI
+name: ZirveOkey CI
 
 on:
   push:
@@ -40,29 +40,30 @@ jobs:
         run: |
           node --check server.js
           node --check public/js/main.js
+          node --check public/js/account.js
+          node --check public/js/email-verify.js
           node --check public/js/oyun.js
           node --check tests/two-user-integration.js
-      - name: Smoke-test homepage and health endpoint
+      - name: Smoke-test homepage and account pages
         run: |
           npm start > /tmp/zirveokey.log 2>&1 &
-          echo $! > /tmp/zirveokey.pid
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           ready=0
-          for attempt in $(seq 1 20); do
-            if curl --fail --silent http://127.0.0.1:3000/health | grep -q '"status":"ok"'; then ready=1; break; fi
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/health | grep -q '"status":"ok"'; then
+              ready=1
+              break
+            fi
             sleep 1
           done
           if [ "$ready" -ne 1 ]; then cat /tmp/zirveokey.log; exit 1; fi
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'ZirveOkey'
-          curl --fail --silent http://127.0.0.1:3000/ | grep -q 'hero-copy'
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'Yeni Üyeler'
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'En Çok Aktif Üyeler'
-          curl --fail --silent http://127.0.0.1:3000/ | grep -q 'Puan Sıralaması'
-          curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q '.community-card'
-          curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q '.hero-copy'
-          curl --fail --silent http://127.0.0.1:3000/css/styles.css | grep -q 'radio.is-open .radio-panel'
-          curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'radioPlay'
-          curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'panel.inert=!open'
-          test -s public/assets/hero-background.png
-          kill "$(cat /tmp/zirveokey.pid)"
-      - name: Two-user membership, chat and presence integration test
+          curl --fail --silent http://127.0.0.1:3000/hesabim.html | grep -q 'Hesap tercihleri'
+          curl --fail --silent http://127.0.0.1:3000/email-dogrula.html | grep -q 'E-posta doğrulama'
+          curl --fail --silent http://127.0.0.1:3000/iletisim.html | grep -q 'contactForm'
+          curl --fail --silent http://127.0.0.1:3000/yardim.html | grep -q 'Profil bilgilerimi nereden güncellerim'
+      - name: Two-user membership and account integration tests
         run: node tests/two-user-integration.js

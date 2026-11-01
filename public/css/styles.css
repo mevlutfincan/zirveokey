@@ -1203,3 +1203,74 @@ body:not(.soft-light) .community-empty{
 .modal select{width:100%;height:46px;border:1px solid #42634a;border-radius:9px;padding:0 12px;background:#142319;color:#fff;outline:none;color-scheme:dark}
 .modal select:focus{border-color:var(--green);box-shadow:0 0 0 3px #70ed3520}
 .modal select option{background:#142319;color:#fff}
+
+
+/* Homepage notification center: anchored to the existing account actions. */
+.site-header .header-actions{position:relative}
+.notification-toggle{
+ display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ min-height:40px;padding:0 12px;border:1px solid rgba(151,231,123,.25);
+ border-radius:10px;background:rgba(112,237,53,.09);color:#e8f8e5;
+ font-family:inherit;font-size:13px;font-weight:700;line-height:1;white-space:nowrap;cursor:pointer;position:relative
+}
+.notification-toggle[hidden]{display:none!important}
+.notification-toggle>span:first-child{font-size:18px;line-height:1}
+.notification-toggle b{
+ display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
+ padding:0 4px;border-radius:20px;background:#70ed35;color:#07130b;font-size:10px
+}
+.notification-toggle b[hidden]{display:none!important}
+.notification-panel{
+ position:absolute;z-index:1000;right:0;top:calc(100% + 12px);width:min(390px,calc(100vw - 24px));
+ max-height:min(75vh,620px);overflow:auto;padding:15px;border:1px solid rgba(151,231,123,.24);
+ border-radius:15px;background:#0b1911;color:#eaf4ec;box-shadow:0 20px 55px rgba(0,0,0,.48)
+}
+.notification-panel[hidden]{display:none!important}
+.notification-panel-head,.notification-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.notification-panel-head{padding-bottom:12px;border-bottom:1px solid rgba(151,231,123,.15)}
+.notification-panel-head>div{display:grid;gap:4px}
+.notification-panel-head strong{font-size:16px}
+.notification-panel-head small,.notification-item small{color:#a8b9aa;font-size:11px}
+.notification-close{width:30px;height:30px;border:0;border-radius:8px;background:rgba(255,255,255,.07);color:#fff;font-size:21px;cursor:pointer}
+.notification-toolbar{padding:12px 0;border-bottom:1px solid rgba(151,231,123,.12)}
+.notification-master,.notification-category-list label{display:flex;align-items:center;gap:8px;color:#dce9df;font-size:12px}
+.notification-toolbar button,.notification-item-actions button,.notification-item a{
+ border:0;background:none;color:#9de979;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none
+}
+.notification-items{display:grid;gap:8px;padding:10px 0}
+.notification-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px;border:1px solid rgba(151,231,123,.12);border-radius:10px;background:rgba(255,255,255,.035)}
+.notification-item.is-unread{border-color:rgba(112,237,53,.34);background:rgba(112,237,53,.07)}
+.notification-copy{display:grid;gap:5px;min-width:0}
+.notification-copy strong{font-size:12px;color:#f0f7f1}
+.notification-copy p{margin:0;color:#c5d2c8;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.notification-item-actions{display:flex;flex:0 0 auto;gap:7px;padding-top:2px}
+.notification-empty{margin:0;padding:16px 8px;color:#a8b9aa;text-align:center;font-size:12px}
+.notification-settings{padding-top:10px;border-top:1px solid rgba(151,231,123,.15)}
+.notification-settings summary{color:#dff5d9;font-size:12px;font-weight:700;cursor:pointer}
+.notification-category-list{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:13px 2px 4px}
+.notification-category-list input,.notification-master input{accent-color:#70ed35}
+.notification-settings-status{min-height:16px;margin:7px 0 0;color:#9de979;font-size:11px}
+@media(max-width:760px){
+ .site-header .header-actions{position:relative;gap:8px!important}
+ .site-header .header-actions .notification-toggle{
+  display:inline-flex!important;flex:0 0 42px!important;width:42px!important;min-width:42px!important;
+  height:42px!important;min-height:42px!important;padding:0!important;font-size:0!important
+ }
+ .site-header .header-actions .notification-toggle>span:first-child{font-size:19px}
+ .site-header .header-actions .notification-toggle b{position:absolute;top:-5px;right:-5px}
+ .site-header .header-actions .account-greeting{flex:1;min-width:0;justify-content:center}
+ .site-header .notification-panel{top:calc(100% + 8px);right:0;max-height:70vh}
+}
+@media(max-width:390px){
+ .site-header .header-actions .notification-toggle{flex-basis:38px!important;width:38px!important;min-width:38px!important}
+ .notification-panel{padding:12px}
+ .notification-category-list{grid-template-columns:1fr}
+}
+
+@media(max-width:760px){
+ .site-header .header-actions .logout-button{flex:1 1 0!important;width:auto!important;min-width:0!important}
+ .site-header .header-actions .notification-toggle>span:first-child svg{display:block;width:18px;height:18px}
+}
+
+.account-page-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+@media(max-width:760px){.mobile-auth .account-page-link{height:44px;display:flex;align-items:center;justify-content:center}}
