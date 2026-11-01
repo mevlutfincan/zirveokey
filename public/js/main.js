@@ -72,15 +72,9 @@ async function loadActiveMembers(){
 }
 let activityHeartbeatBusy=false;
 let homeSignedIn=false;
-function readHomeShowOnlinePreference(){
-  try{
-    const settings=JSON.parse(localStorage.getItem('zirveMemberSettings')||'{}');
-    return settings.settingShowOnline!==false;
-  }catch{return true;}
-}
 async function sendHomePresenceHeartbeat(){
   if(!homeSignedIn||document.visibilityState!=='visible')return;
-  try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({showOnline:readHomeShowOnlinePreference()})});}
+  try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin'});}
   catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
 }
 async function sendActivityHeartbeat(){
