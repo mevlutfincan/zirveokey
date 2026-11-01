@@ -58,6 +58,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(40);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_data TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS member_preferences JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_tier VARCHAR(16) NOT NULL DEFAULT 'normal';
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -288,7 +289,7 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
 app.get('/api/presence/online', dbRequired, asyncRoute(async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
-    SELECT u.id,u.username,
+    SELECT u.id,u.username,u.membership_tier,
       CASE WHEN u.member_preferences->>'settingPresenceStatus' IN ('away','sleeping','busy')
         THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END AS status
     FROM user_presence p JOIN users u ON u.id=p.user_id
@@ -340,6 +341,18 @@ app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   );
   if (!result.rows[0]) return res.status(404).json({ error: 'Hesap bulunamadı.' });
   res.json({ ok: true, preferences: result.rows[0].member_preferences });
+}));
+
+app.get('/api/public/members/:id/avatar', dbRequired, asyncRoute(async (req, res) => {
+  const memberId = Number(req.params.id);
+  if (!Number.isSafeInteger(memberId) || memberId < 1) return res.status(400).end();
+  const result = await pool.query('SELECT avatar_data FROM users WHERE id=$1 AND is_active=TRUE', [memberId]);
+  const avatar = result.rows[0]?.avatar_data;
+  const match = typeof avatar === 'string' ? avatar.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/) : null;
+  if (!match) return res.status(404).end();
+  res.setHeader('Content-Type', match[1] === 'jpeg' ? 'image/jpeg' : 'image/' + match[1]);
+  res.setHeader('Cache-Control', 'private, max-age=60');
+  res.send(Buffer.from(match[2], 'base64'));
 }));
 
 app.get('/api/account/avatar', dbRequired, asyncRoute(async (req, res) => {

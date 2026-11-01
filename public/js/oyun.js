@@ -468,21 +468,42 @@ async function loadOnlineMembers(){
  try{
   const r=await fetch('/api/presence/online',{credentials:'same-origin',cache:'no-store'});
   if(!r.ok)throw new Error('Çevrimiçi listesi alınamadı');
-  const data=await r.json(),root=$('#onlineList');root.innerHTML='';
+  const data=await r.json(),root=$('#onlineList');root.replaceChildren();
   (data.members||[]).forEach(member=>{
-   const row=document.createElement('div');row.className='online-member';
-   const dot=document.createElement('i');dot.className='online-member-dot';
-   const name=document.createElement('b');name.textContent=member.username;
+   const tier=['gold','vip'].includes(String(member.membership_tier||'').toLowerCase())?String(member.membership_tier).toLowerCase():'normal';
+   const row=document.createElement('div');row.className='online-member tier-'+tier;
+   const avatar=document.createElement('button');avatar.type='button';avatar.className='online-member-avatar';avatar.title=member.username+' profil fotoğrafını büyüt';
+   avatar.setAttribute('aria-label',member.username+' profil fotoğrafını büyüt');
+   const image=document.createElement('img');image.alt='';image.loading='lazy';image.src='/api/public/members/'+encodeURIComponent(member.id)+'/avatar';
+   const fallback=document.createElement('span');fallback.textContent=(member.username||'?').trim().charAt(0).toLocaleUpperCase('tr-TR');
+   image.addEventListener('error',()=>{image.remove();avatar.append(fallback);},{once:true});
+   avatar.append(image);
+   avatar.addEventListener('click',()=>openOnlineMemberAvatar(member.username,image.src));
+   const identity=document.createElement('span');identity.className='online-member-identity';
+   const nameLine=document.createElement('span');nameLine.className='online-member-name-line';
+   if(tier!=='normal'){const mark=document.createElement('span');mark.className='online-member-tier-icon';mark.textContent=tier==='gold'?'🪙':'💎';mark.setAttribute('aria-label',tier==='gold'?'Gold Üye':'VIP Üye');nameLine.append(mark);}
+   const name=document.createElement('b');name.textContent=member.username;nameLine.append(name);
+   const membership=document.createElement('small');membership.className='online-member-tier-label';membership.textContent=tier==='gold'?'Gold Üye':tier==='vip'?'VIP Üye':'Normal Üye';
+   identity.append(nameLine,membership);
    const status=document.createElement('small');
-   const statusLabels={online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Şu Anda Meşgul'};
+   const statusLabels={online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Meşgul'};
    status.className='online-member-status status-'+(statusLabels[member.status]?member.status:'online');
    status.textContent=statusLabels[member.status]||statusLabels.online;
-   row.append(dot,name,status);root.append(row);
+   row.append(avatar,identity,status);root.append(row);
   });
   if(!root.children.length){const empty=document.createElement('div');empty.className='side-empty';empty.innerHTML='<span>♙</span><b>Şu anda çevrimiçi üye yok</b>';root.append(empty);}
   updateOnlineCount(Number(data.count)||0);
  }catch(error){console.warn('Çevrimiçi üye listesi yüklenemedi.');}
 }
+function openOnlineMemberAvatar(username,src){
+ const dialog=$('#onlineMemberAvatarDialog'),image=$('#onlineMemberAvatarImage');
+ if(!dialog||!image)return;
+ $('#onlineMemberAvatarName').textContent=username;
+ image.src=src;dialog.showModal();
+}
+const onlineAvatarDialog=$('#onlineMemberAvatarDialog');
+$('#onlineMemberAvatarClose')?.addEventListener('click',()=>onlineAvatarDialog?.close());
+onlineAvatarDialog?.addEventListener('click',event=>{if(event.target===onlineAvatarDialog)onlineAvatarDialog.close();});
 async function sendPresenceHeartbeat(){
  try{await fetch('/api/presence/heartbeat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'});}
  catch(error){console.warn('Çevrimiçi durumu güncellenemedi.');}
