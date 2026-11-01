@@ -93,6 +93,8 @@ async function main() {
   assert.equal(prefsB.settingDarkMode, undefined, 'A kullanıcısının ayarı B hesabına sızdı.');
   const invalidPreferences = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { isAdmin: true } } });
   assert.equal(invalidPreferences.status, 400, 'İzin verilmeyen hesap tercihi kabul edildi.');
+  const invalidPresenceStatus = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingPresenceStatus: 'offline' } } });
+  assert.equal(invalidPresenceStatus.status, 400, 'Desteklenmeyen çevrim içi durumu kabul edildi.');
   const anonymousAvatar = await request('/api/account/avatar');
   assert.equal(anonymousAvatar.status, 401, 'Oturumsuz kullanıcı avatar verisini okuyabildi.');
   const avatarData = 'data:image/png;base64,iVBORw0KGgo=';
