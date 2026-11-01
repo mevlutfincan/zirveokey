@@ -40,6 +40,7 @@ jobs:
         run: |
           node --check server.js
           node --check public/js/main.js
+          node --check public/js/account.js
           node --check public/js/oyun.js
           node --check tests/two-user-integration.js
       - name: Smoke-test homepage and health endpoint
@@ -53,6 +54,10 @@ jobs:
           done
           if [ "$ready" -ne 1 ]; then cat /tmp/zirveokey.log; exit 1; fi
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'ZirveOkey'
+          curl --fail --silent http://127.0.0.1:3000/ | grep -q 'accountPageLink'
+          curl --fail --silent http://127.0.0.1:3000/hesabim.html | grep -q 'Hesap tercihleri'
+          curl --fail --silent http://127.0.0.1:3000/js/account.js | grep -q '/api/account/password'
+          curl --fail --silent http://127.0.0.1:3000/css/account.css | grep -q '.account-grid'
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'hero-copy'
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'Yeni Üyeler'
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'En Çok Aktif Üyeler'
