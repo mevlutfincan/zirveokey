@@ -224,7 +224,7 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
   if (!identifier || !password || password.length > 72) return res.status(400).json({ error: 'Kullanıcı adı/e-posta ve şifre gerekli.' });
   const normalized = identifier.includes('@') ? identifier.toLowerCase() : identifier.toLocaleLowerCase('tr-TR');
   const result = await pool.query(
-    'SELECT id, username, email, password_hash FROM users WHERE (username_normalized=$1 OR email_normalized=$1) AND is_active=TRUE LIMIT 1',
+    'SELECT id, username, email, country, gender, password_hash FROM users WHERE (username_normalized=$1 OR email_normalized=$1) AND is_active=TRUE LIMIT 1',
     [normalized]
   );
   const user = result.rows[0];
@@ -234,7 +234,7 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
   await pool.query('UPDATE users SET last_login_at=NOW() WHERE id=$1', [user.id]);
   req.session.regenerate(err => {
     if (err) return res.status(500).json({ error: 'Oturum açılamadı.' });
-    req.session.user = { id: user.id, username: user.username, email: user.email };
+    req.session.user = { id: user.id, username: user.username, email: user.email, country: user.country, gender: user.gender };
     req.session.cookie.maxAge = req.body.rememberMe === true ? 30 * 24 * 60 * 60 * 1000 : null;
     req.session.save(saveErr => {
       if (saveErr) return res.status(500).json({ error: 'Oturum kaydedilemedi.' });
