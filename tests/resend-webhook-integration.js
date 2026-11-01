@@ -17,6 +17,7 @@ if (!process.env.RESEND_WEBHOOK_SECRET) throw new Error('RESEND_WEBHOOK_SECRET i
 const port = 3101;
 const baseUrl = 'http://127.0.0.1:' + port;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+let eventId = null;
 const child = spawn(process.execPath, ['server.js'], {
   env: { ...process.env, PORT: String(port) },
   stdio: ['ignore', 'pipe', 'pipe']
@@ -53,7 +54,7 @@ async function main() {
   }
   assert.equal(ready, true, 'Test server did not become ready: ' + logs);
 
-  const eventId = 'msg_integration_' + crypto.randomUUID();
+  eventId = 'msg_integration_' + crypto.randomUUID();
   const timestamp = String(Math.floor(Date.now() / 1000));
   const body = JSON.stringify({ type: 'email.delivered', data: { email_id: 'email_integration_test' } });
   const headers = signedHeaders(eventId, body, timestamp);
@@ -86,5 +87,9 @@ main().catch(error => {
   process.exitCode = 1;
 }).finally(async () => {
   try { child.kill('SIGTERM'); } catch {}
+  if (eventId) {
+    try { await pool.query('DELETE FROM resend_webhook_events WHERE event_id=$1', [eventId]); }
+    catch (error) { console.error('Webhook test cleanup failed:', error.message); process.exitCode = 1; }
+  }
   await pool.end();
 });
