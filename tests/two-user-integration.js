@@ -414,6 +414,8 @@ async function main() {
     assert.equal(loginD.status, 200, 'Doğrulama sonrası kullanıcı yeniden giriş yapamadı.');
     assert.equal((await loginD.json()).user.email, newEmailD, 'Yeni e-posta adresi girişte kullanılmadı.');
     const cookieDNew = cookieFrom(loginD);
+    const emailChangedNotifications = await (await request('/api/notifications', { cookie: cookieDNew })).json();
+    assert.ok(emailChangedNotifications.notifications.some(item => item.category === 'system' && item.title === 'E-posta adresin güncellendi'), 'E-posta değişikliği sistem bildirimi oluşturulmadı.');
     await request('/api/auth/logout', { method: 'POST', cookie: cookieDNew });
 
     const expiredToken = randomUUID().replaceAll('-', '').repeat(2);
