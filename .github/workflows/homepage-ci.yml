@@ -57,6 +57,7 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'Yeni Üyeler'
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'En Çok Aktif Üyeler'
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'notificationToggle'
+          curl --fail --silent http://127.0.0.1:3000/ | grep -q 'notifications-20261101-02'
           curl --fail --silent http://127.0.0.1:3000/ | grep -q 'settingNotifySystem'
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'loadNotifications'
           curl --fail --silent http://127.0.0.1:3000/js/main.js | grep -q 'saveNotificationCategories'
