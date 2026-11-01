@@ -479,7 +479,6 @@ async function loadOnlineMembers(){
    image.addEventListener('error',()=>{image.remove();avatar.append(fallback);},{once:true});
    avatar.append(image);
    avatar.addEventListener('click',()=>openMemberProfile(member.id));
-   name.addEventListener('click',()=>openMemberProfile(member.id));name.className='online-member-name-button';
    row.dataset.memberId=member.id;row.dataset.memberName=member.username;
    row.addEventListener('contextmenu',event=>{event.preventDefault();showMemberContextMenu(member,event.clientX,event.clientY);});
    let holdTimer=null;row.addEventListener('pointerdown',event=>{if(event.pointerType==='touch')holdTimer=window.setTimeout(()=>showMemberContextMenu(member,event.clientX,event.clientY),550);});
@@ -487,7 +486,7 @@ async function loadOnlineMembers(){
    const identity=document.createElement('span');identity.className='online-member-identity';
    const nameLine=document.createElement('span');nameLine.className='online-member-name-line';
    if(tier!=='normal'){const mark=document.createElement('span');mark.className='online-member-tier-icon';mark.textContent=tier==='gold'?'🪙':'💎';mark.setAttribute('aria-label',tier==='gold'?'Gold Üye':'VIP Üye');nameLine.append(mark);}
-   const name=document.createElement('b');name.textContent=member.username;nameLine.append(name);
+   const name=document.createElement('b');name.textContent=member.username;name.className='online-member-name-button';name.addEventListener('click',()=>openMemberProfile(member.id));nameLine.append(name);
    const membership=document.createElement('small');membership.className='online-member-tier-label';membership.textContent=tier==='gold'?'Gold Üye':tier==='vip'?'VIP Üye':'Normal Üye';
    identity.append(nameLine,membership);
    const status=document.createElement('small');
@@ -512,7 +511,7 @@ function closeMemberContextMenu(){memberContextMenu.hidden=true;memberContextMen
 function showMemberContextMenu(member,x,y){
  if(!gameSignedIn){requireGameMembership('Üye işlemleri');return;}
  activeSocialMember=member;
- const actions=[['profile','Profili görüntüle'],['friend','Arkadaşlık isteği gönder'],['favorite','Favorilere ekle'],['message','Özel mesaj gönder'],['block','Üyeyi engelle'],['report','Şikâyet et']];
+ const actions=[['profile','Profili görüntüle'],['message','Özel mesaj gönder']];
  memberContextMenu.replaceChildren();
  actions.forEach(([action,label])=>{const button=document.createElement('button');button.type='button';button.role='menuitem';button.textContent=label;button.addEventListener('click',()=>{closeMemberContextMenu();runMemberAction(action,member);});memberContextMenu.append(button);});
  memberContextMenu.hidden=false;
