@@ -506,6 +506,14 @@ async function loadOnlineMembers(){
   updateOnlineCount(Number(data.count)||0);
  }catch(error){console.warn('Çevrimiçi üye listesi yüklenemedi.');}
 }
+let onlinePresenceEvents=null;
+function connectOnlinePresenceEvents(){
+ if(!window.EventSource||onlinePresenceEvents)return;
+ onlinePresenceEvents=new EventSource('/api/presence/events',{withCredentials:true});
+ onlinePresenceEvents.addEventListener('presence',()=>{loadOnlineMembers();});
+ onlinePresenceEvents.onerror=()=>{ /* EventSource reconnects automatically; polling remains as fallback. */ };
+}
+connectOnlinePresenceEvents();
 let activeSocialMember=null,activePrivateMember=null,privateMessageLastId=0;
 const memberProfileDialog=$('#memberProfileDialog'),privateMessageDialog=$('#privateMessageDialog'),socialCenterDialog=$('#socialCenterDialog'),memberContextMenu=$('#memberContextMenu');
 async function socialRequest(url,method='GET',body){
