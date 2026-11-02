@@ -12,7 +12,7 @@ const { verifyResendWebhook } = require('./resend-webhook');
 const app = express();
 const presenceEventClients = new Set();
 function broadcastPresenceUpdate(){
-  const payload = 'event: presence\\ndata: {"type":"refresh"}\\n\\n';
+  const payload = 'event: presence\ndata: {"type":"refresh"}\n\n';
   for (const client of presenceEventClients) {
     try { client.write(payload); } catch { presenceEventClients.delete(client); }
   }
@@ -390,9 +390,9 @@ app.get('/api/presence/events', dbRequired, (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders?.();
-  res.write('event: presence\\ndata: {"type":"refresh"}\\n\\n');
+  res.write('event: presence\ndata: {"type":"refresh"}\n\n');
   presenceEventClients.add(res);
-  const keepAlive = setInterval(() => { try { res.write(': keep-alive\\n\\n'); } catch { clearInterval(keepAlive); presenceEventClients.delete(res); } }, 25000);
+  const keepAlive = setInterval(() => { try { res.write(': keep-alive\n\n'); } catch { clearInterval(keepAlive); presenceEventClients.delete(res); } }, 25000);
   req.on('close', () => { clearInterval(keepAlive); presenceEventClients.delete(res); });
 });
 
