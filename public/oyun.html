@@ -87,7 +87,7 @@
 
 <dialog class="member-social-dialog" id="memberProfileDialog" aria-labelledby="memberProfileName">
  <button type="button" class="member-social-close" data-close-dialog="memberProfileDialog" aria-label="Kapat">×</button>
- <div class="member-profile-head"><img id="memberProfileAvatar" alt=""><div><h2 id="memberProfileName">Üye profili</h2><span id="memberProfileTier"></span><small id="memberProfileStatus"></small></div></div>
+ <div class="member-profile-head"><img id="memberProfileAvatar" alt=""><div><h2 id="memberProfileName">Üye profili</h2><span id="memberProfileTier"></span><span id="memberProfileIdentity" class="member-profile-identity" hidden></span><small id="memberProfileStatus"></small></div></div>
  <p id="memberProfileBio" class="member-profile-bio">Henüz profil açıklaması eklenmemiş.</p>
  <div id="memberProfileStats" class="member-profile-stats"></div><div id="memberProfileAchievements" class="member-profile-achievements"></div>
  <div id="memberProfileActions" class="member-profile-actions"></div><small id="memberProfileFeedback" aria-live="polite"></small>
@@ -100,7 +100,7 @@
 <dialog class="member-social-dialog" id="socialCenterDialog" aria-labelledby="socialCenterTitle">
  <button type="button" class="member-social-close" data-close-dialog="socialCenterDialog" aria-label="Kapat">×</button>
  <h2 id="socialCenterTitle">Arkadaşlarım ve Mesajlarım</h2>
- <div class="social-center-tabs"><button type="button" data-social-tab="friends" class="active">Arkadaşlar</button><button type="button" data-social-tab="requests">İstekler</button><button type="button" data-social-tab="favorites">Favoriler</button><button type="button" data-social-tab="messages">Mesajlar</button><button type="button" data-social-tab="blocked">Engelliler</button></div>
+ <div class="social-center-tabs"><button type="button" data-social-tab="friends" class="active">Arkadaşlar</button><button type="button" data-social-tab="requests">İstekler</button><button type="button" data-social-tab="messages">Mesajlar</button><button type="button" data-social-tab="blocked">Engelliler</button></div>
  <div id="socialCenterList" class="social-center-list"></div>
 </dialog>
 <dialog class="member-social-dialog" id="memberReportDialog" aria-labelledby="memberReportTitle">

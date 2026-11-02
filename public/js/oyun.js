@@ -548,6 +548,12 @@ async function openMemberProfile(memberId){
   $('#memberProfileAvatar').src='/api/public/members/'+p.id+'/avatar';
   $('#memberProfileAvatar').onerror=()=>{$('#memberProfileAvatar').src='';};
   $('#memberProfileTier').textContent=(p.member_role==='dj'?'🎧 DJ · ':'')+(p.membership_tier==='gold'?'🪙 Gold Üye':p.membership_tier==='vip'?'💎 VIP Üye':'Normal Üye');
+  const countryFlags={'Türkiye':'🇹🇷','Almanya':'🇩🇪','Azerbaycan':'🇦🇿','Belçika':'🇧🇪','Birleşik Krallık':'🇬🇧','Fransa':'🇫🇷','Hollanda':'🇳🇱','Kıbrıs':'🇨🇾','ABD':'🇺🇸','Avusturya':'🇦🇹','Diğer':'🌍'};
+  const identity=[];
+  if(p.gender&&p.gender!=='Belirtmek istemiyorum')identity.push(p.gender);
+  if(p.country)identity.push((countryFlags[p.country]||'🌍')+' '+p.country);
+  $('#memberProfileIdentity').textContent=identity.join(' · ');
+  $('#memberProfileIdentity').hidden=!identity.length;
   $('#memberProfileStatus').textContent=({online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Meşgul',offline:'Çevrim Dışı'})[p.status]||'Çevrim Dışı';
   $('#memberProfileBio').textContent=p.bio||'Henüz profil açıklaması eklenmemiş.';
   const hours=Math.floor(Number(p.active_seconds||0)/3600),days=Number(p.member_days||0);
@@ -571,8 +577,7 @@ async function openMemberProfile(memberId){
   const badges=[];
   if(days>=30)badges.push('🏅 Topluluk Üyesi');
   else if(days>=7)badges.push('🌱 Yeni Topluluk Üyesi');
-  if(hours>=10)badges.push('⭐ Sadık Oyuncu');
-  else if(hours>=1)badges.push('🎯 Aktif Üye');
+  if(hours>=1)badges.push('🎯 Aktif Üye');
   if(p.member_role==='dj')badges.push('🎧 DJ');
   if(p.membership_tier==='gold')badges.push('🪙 Gold Üye');
   if(p.membership_tier==='vip')badges.push('💎 VIP Üye');
@@ -583,7 +588,6 @@ async function openMemberProfile(memberId){
   const add=(label,action)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>runMemberAction(action,activeSocialMember,p));root.append(b);};
   if(p.incoming_request){add('İsteği kabul et','accept');add('İsteği reddet','decline');}else if(!p.is_friend&&!p.outgoing_request)add('Arkadaş ekle','friend');else if(p.outgoing_request)add('İsteği iptal et','cancel_request');
   if(p.is_friend)add('Arkadaşlıktan çıkar','unfriend');
-  add(p.is_favorite?'Favorilerden çıkar':'Favorilere ekle','favorite');
   add('Özel mesaj gönder','message');add(p.is_blocked?'Engeli kaldır':'Engelle','block');add('Şikâyet et','report');
   $('#memberProfileFeedback').textContent='';
   memberProfileDialog.showModal();
@@ -601,9 +605,8 @@ async function runMemberAction(action,member,profile){
   else if(action==='decline')data=await socialRequest('/api/social/friends/'+member.id,'PUT',{status:'declined'});
   else if(action==='cancel_request')data=await socialRequest('/api/social/friends/'+member.id,'DELETE');
   else if(action==='unfriend')data=await socialRequest('/api/social/friends/'+member.id,'DELETE');
-  else if(action==='favorite')data=await socialRequest('/api/social/favorites/'+member.id,profile?.is_favorite?'DELETE':'POST',{});
   else if(action==='block'){if(!confirm(member.username+' adlı üyeyi engellemek istiyor musun?'))return;data=await socialRequest('/api/social/blocks/'+member.id,profile?.is_blocked?'DELETE':'POST',{});}
-  notify(action==='friend'?'Arkadaşlık isteği gönderildi.':action==='accept'?'Arkadaşlık isteği kabul edildi.':action==='favorite'?'Favori listen güncellendi.':action==='block'?'Engelleme listen güncellendi.':'İşlem tamamlandı.');
+  notify(action==='friend'?'Arkadaşlık isteği gönderildi.':action==='accept'?'Arkadaşlık isteği kabul edildi.':action==='block'?'Engelleme listen güncellendi.':'İşlem tamamlandı.');
   if(memberProfileDialog.open)await openMemberProfile(member.id);
   if(socialCenterDialog.open)await loadSocialCenter(currentSocialTab);
  }catch(error){notify(error.message);}
@@ -621,10 +624,10 @@ async function loadSocialCenter(tab='friends'){
    return;
   }
   const data=await socialRequest('/api/social/summary');
-  const key={friends:'friends',requests:'incoming',favorites:'favorites',blocked:'blocked'}[tab],items=data[key]||[];
+  const key={friends:'friends',requests:'incoming',blocked:'blocked'}[tab],items=data[key]||[];
   root.replaceChildren();
   items.forEach(item=>{
-   const suffix=tab==='requests'?'Arkadaşlık isteği':tab==='blocked'?'Engellenmiş üye':tab==='favorites'?'Favori üye':'Arkadaş';
+   const suffix=tab==='requests'?'Arkadaşlık isteği':tab==='blocked'?'Engellenmiş üye':'Arkadaş';
    const row=document.createElement('div');row.className='social-list-item';
    const name=document.createElement('b');name.textContent=item.username;
    const sub=document.createElement('small');sub.textContent=suffix;
@@ -634,7 +637,7 @@ async function loadSocialCenter(tab='friends'){
    if(tab==='blocked'){const unblock=document.createElement('button');unblock.type='button';unblock.textContent='Engeli kaldır';unblock.addEventListener('click',()=>runMemberAction('block',item,{is_blocked:true}));row.append(unblock);}
    root.append(row);
   });
-  if(!root.children.length)root.textContent=tab==='requests'?'Bekleyen arkadaşlık isteği yok.':tab==='favorites'?'Favori listen boş.':tab==='blocked'?'Engellediğin üye yok.':'Henüz arkadaşın yok.';
+  if(!root.children.length)root.textContent=tab==='requests'?'Bekleyen arkadaşlık isteği yok.':tab==='blocked'?'Engellediğin üye yok.':'Henüz arkadaşın yok.';
  }catch(error){root.textContent=error.message;}
 }
 function addSocialListItem(root,name,description,onClick,meta=''){
