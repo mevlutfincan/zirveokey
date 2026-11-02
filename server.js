@@ -367,7 +367,7 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   broadcastPresenceUpdate();
 }));
 
-app.put('/api/internal/members/:id/role', asyncRoute(async (req, res) => {
+app.put('/api/internal/members/:id/role', dbRequired, asyncRoute(async (req, res) => {
   const configuredToken = String(process.env.MEMBER_ROLE_ADMIN_TOKEN || '');
   const suppliedToken = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '');
   if (!configuredToken) return res.status(503).json({ error: 'Üye rolü yönetimi henüz yapılandırılmadı.' });
