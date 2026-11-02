@@ -2704,3 +2704,7 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .member-profile-achievements{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
 .member-profile-achievements>span{padding:6px 9px;border:1px solid #b7a05b55;border-radius:20px;background:#a68a2c1a;color:#e8d18c;font-size:10px}
 @media(max-width:420px){.member-profile-stats{gap:5px}.member-profile-stats>span{padding:8px 5px}.member-profile-stats b{font-size:11px}}
+
+/* DJ role marker in the online member list */
+.online-member-role-icon{display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1;margin-right:3px}
+.online-member-dj-icon{filter:drop-shadow(0 0 4px #f0b84a66)}

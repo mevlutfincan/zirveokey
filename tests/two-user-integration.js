@@ -60,6 +60,12 @@ async function main() {
   assert.equal(typeof radioStatus.isLive, 'boolean', 'Radyo canlı yayın durumu boolean olmalı.');
   assert.equal(typeof radioStatus.djName, 'string', 'Radyo yayıncı adı metin olmalı.');
   assert.equal(typeof radioStatus.streamUrl, 'string', 'Radyo yayın adresi metin olmalı.');
+  const serverSource = readFileSync('server.js', 'utf8');
+  assert.match(serverSource, /member_role VARCHAR\(16\) NOT NULL DEFAULT 'member'/, 'DJ üye rolü için veritabanı alanı tanımlı olmalı.');
+  assert.match(serverSource, /p\.show_online=TRUE/, 'Gizlilik tercihi çevrimiçi liste sorgusunda uygulanmalı.');
+  assert.ok(serverSource.includes("app.get('/api/presence/events'"), 'Gerçek zamanlı çevrimiçi olay akışı bulunmalı.');
+  assert.ok(gameScript.includes("new EventSource('/api/presence/events'"), 'Oyun istemcisi gerçek zamanlı çevrimiçi olay akışına bağlanmalı.');
+  assert.match(gameScript, /DJ · Radyo Yayıncısı/, 'Çevrimiçi üye listesinde DJ rolü gösterilmeli.');
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
   const users = [
     { username: 'TestA_' + suffix, email: 'testa-' + suffix + '@example.invalid', password: 'ZirveTest!2026A', country: 'Türkiye', gender: 'Kadın' },
@@ -97,14 +103,17 @@ async function main() {
     }
   }
 
+  const roleChangeWithoutToken = await request('/api/internal/members/1/role', { method: 'PUT', body: { role: 'dj' } });
+  assert.equal(roleChangeWithoutToken.status, 503, 'Üye rolü yönetimi gizli token olmadan açık olmamalı.');
   const anonymousPreferences = await request('/api/account/preferences');
   assert.equal(anonymousPreferences.status, 401, 'Oturumsuz kullanıcı hesap tercihlerini okuyabildi.');
-  const savePreferencesA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingDarkMode: false, settingPresenceStatus: 'away', settingAutoArrange: true } } });
+  const savePreferencesA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingDarkMode: false, settingPresenceStatus: 'away', settingShowOnline: false, settingAutoArrange: true } } });
   assert.equal(savePreferencesA.status, 200, 'A kendi ayarlarını kaydedemedi.');
   const readPreferencesA = await request('/api/account/preferences', { cookie: cookieA });
   const prefsA = (await readPreferencesA.json()).preferences;
   assert.equal(prefsA.settingDarkMode, false, 'A tema tercihi kalıcı değil.');
   assert.equal(prefsA.settingPresenceStatus, 'away', 'A durum tercihi kalıcı değil.');
+  assert.equal(prefsA.settingShowOnline, false, 'A çevrimiçi görünürlük tercihi kalıcı değil.');
   assert.equal(prefsA.settingAutoArrange, true, 'A oyun tercihi kalıcı değil.');
   const bioSave = await request('/api/account/preferences',{method:'PUT',cookie:cookieA,body:{preferences:{profileBio:'Profil açıklaması testi'}}});
   assert.equal(bioSave.status,200,'Profil açıklaması kaydedilemedi.');
@@ -279,8 +288,12 @@ async function main() {
   assert.equal(heartbeatAWhileAway.status, 204, 'A durum seçiliyken heartbeat gönderemedi.');
   const visibleWhileAway = await (await request('/api/presence/online')).json();
   const awayMember = visibleWhileAway.members.find(member => member.username === users[0].username);
-  assert.ok(awayMember, 'A Dışarda durumundayken çevrim içi listeden kayboldu.');
-  assert.equal(awayMember.status, 'away', 'A durum etiketi listede gösterilmedi.');
+  assert.equal(awayMember, undefined, 'Görünürlüğü kapalı A çevrimiçi listede görünmemeli.');
+  await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingShowOnline: true } } });
+  await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: {} });
+  const visibleAgain = (await (await request('/api/presence/online')).json()).members.find(member => member.username === users[0].username);
+  assert.ok(visibleAgain, 'A görünürlüğü açınca çevrimiçi listede tekrar görünmeli.');
+  assert.equal(visibleAgain.status, 'away', 'A durum etiketi listede gösterilmedi.');
   const updatePresenceStatus = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingPresenceStatus: 'sleeping' } } });
   assert.equal(updatePresenceStatus.status, 200, 'A durumunu Uyuyorum olarak güncelleyemedi.');
   await request('/api/presence/heartbeat', { method: 'POST', cookie: cookieA, body: {} });
@@ -323,6 +336,7 @@ async function main() {
   const profileAId = (await (await request('/api/auth/me',{cookie:cookieA})).json()).user.id;
   const profileA = await request('/api/members/' + profileAId + '/profile', { cookie: cookieA });
   assert.equal(profileA.status, 200, 'A kendi profilini açamadı.');
+  assert.equal((await profileA.json()).profile.member_role, 'member', 'Yeni üye varsayılan rolü member olmalı.');
   const profileBId = (await (await request('/api/auth/me',{cookie:cookieB})).json()).user.id;
   const profileB = await request('/api/members/' + profileBId + '/profile', { cookie: cookieA });
   assert.equal(profileB.status, 200, 'A, B profilini görüntüleyemedi.');

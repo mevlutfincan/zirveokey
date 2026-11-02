@@ -10,6 +10,13 @@ const crypto = require('crypto');
 const { verifyResendWebhook } = require('./resend-webhook');
 
 const app = express();
+const presenceEventClients = new Set();
+function broadcastPresenceUpdate(){
+  const payload = 'event: presence\ndata: {"type":"refresh"}\n\n';
+  for (const client of presenceEventClients) {
+    try { client.write(payload); } catch { presenceEventClients.delete(client); }
+  }
+}
 const PORT = process.env.PORT || 3000;
 const publicDir = path.join(__dirname, 'public');
 const databaseUrl = process.env.DATABASE_URL;
@@ -60,6 +67,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN NOT NUL
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_data TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS member_preferences JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_tier VARCHAR(16) NOT NULL DEFAULT 'normal';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_role VARCHAR(16) NOT NULL DEFAULT 'member';
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -337,7 +345,7 @@ app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session) return res.json({ ok: true });
   const userId = req.session.user?.id;
   if (userId) {
-    try { await pool.query('DELETE FROM user_presence WHERE user_id=$1', [userId]); }
+    try { await pool.query('DELETE FROM user_presence WHERE user_id=$1', [userId]); broadcastPresenceUpdate(); }
     catch (error) { console.error('Presence cleanup failed during logout:', error.message); }
   }
   req.session.destroy(error => {
@@ -350,22 +358,52 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
   const presence = await pool.query(`
     INSERT INTO user_presence(user_id,last_seen_at,show_online)
-    SELECT u.id,NOW(),TRUE FROM users u WHERE u.id=$1 AND u.is_active=TRUE
-    ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=TRUE
+    SELECT u.id,NOW(),COALESCE((u.member_preferences->>'settingShowOnline')::boolean,TRUE) FROM users u WHERE u.id=$1 AND u.is_active=TRUE
+    ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=EXCLUDED.show_online
     RETURNING user_id
   `, [req.session.user.id]);
   if (!presence.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
   res.status(204).end();
+  broadcastPresenceUpdate();
 }));
+
+app.put('/api/internal/members/:id/role', dbRequired, asyncRoute(async (req, res) => {
+  const configuredToken = String(process.env.MEMBER_ROLE_ADMIN_TOKEN || '');
+  const suppliedToken = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!configuredToken) return res.status(503).json({ error: 'Üye rolü yönetimi henüz yapılandırılmadı.' });
+  const expected = Buffer.from(configuredToken);
+  const supplied = Buffer.from(suppliedToken);
+  if (expected.length !== supplied.length || !crypto.timingSafeEqual(expected, supplied)) return res.status(401).json({ error: 'Yetkisiz işlem.' });
+  const memberId = parseMemberId(req.params.id);
+  const role = String(req.body?.role || '');
+  if (!memberId || !['member','dj'].includes(role)) return res.status(400).json({ error: 'Geçerli üye ve rol seçilmelidir.' });
+  const result = await pool.query('UPDATE users SET member_role=$1 WHERE id=$2 AND is_active=TRUE RETURNING id,username,member_role', [role, memberId]);
+  if (!result.rowCount) return res.status(404).json({ error: 'Üye bulunamadı.' });
+  res.json({ ok: true, member: result.rows[0] });
+  broadcastPresenceUpdate();
+}));
+
+app.get('/api/presence/events', dbRequired, (req, res) => {
+  if (!req.session.user?.id) return res.status(401).end();
+  res.status(200);
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+  res.write('event: presence\ndata: {"type":"refresh"}\n\n');
+  presenceEventClients.add(res);
+  const keepAlive = setInterval(() => { try { res.write(': keep-alive\n\n'); } catch { clearInterval(keepAlive); presenceEventClients.delete(res); } }, 25000);
+  req.on('close', () => { clearInterval(keepAlive); presenceEventClients.delete(res); });
+});
 
 app.get('/api/presence/online', dbRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
-    SELECT u.id,u.username,u.membership_tier,
+    SELECT u.id,u.username,u.membership_tier,u.member_role,
       CASE WHEN u.member_preferences->>'settingPresenceStatus' IN ('away','sleeping','busy')
         THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END AS status
     FROM user_presence p JOIN users u ON u.id=p.user_id
-    WHERE p.last_seen_at>NOW()-INTERVAL '90 seconds' AND u.is_active=TRUE
+    WHERE p.last_seen_at>NOW()-INTERVAL '90 seconds' AND p.show_online=TRUE AND u.is_active=TRUE
       AND ($1::bigint IS NULL OR NOT EXISTS(SELECT 1 FROM member_blocks b WHERE b.blocker_id=$1 AND b.blocked_id=u.id))
     ORDER BY u.username_normalized ASC LIMIT 100
   `,[req.session.user?.id||null]);
@@ -394,7 +432,7 @@ app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
 }));
 app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarları kaydetmek için giriş yapmalısınız.' });
-  const allowed = ['profileBio','settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI','settingPresenceStatus'];
+  const allowed = ['profileBio','settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI','settingPresenceStatus','settingShowOnline'];
   const input = req.body?.preferences;
   const validPresenceStatuses = new Set(['online','away','sleeping','busy']);
   if (!input || typeof input !== 'object' || Array.isArray(input) ||
@@ -473,7 +511,7 @@ app.get('/api/lobby/chat-styles', dbRequired, asyncRoute(async (_req, res) => {
     SELECT u.id,u.username,u.chat_name_color,u.chat_text_color,u.chat_row_color
     FROM users u
     JOIN user_presence p ON p.user_id=u.id
-    WHERE u.is_active=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
+    WHERE u.is_active=TRUE AND p.show_online=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
     ORDER BY u.id ASC
   `);
   res.json({ members: result.rows });
@@ -565,12 +603,12 @@ app.get('/api/members/:id/profile',dbRequired,asyncRoute(async(req,res)=>{
   const viewerId=requireMemberSession(req,res);if(!viewerId)return;
   const targetId=parseMemberId(req.params.id);if(!targetId)return res.status(400).json({error:'Geçersiz üye.'});
   const result=await pool.query(`
-    SELECT u.id,u.username,u.membership_tier,u.created_at,
+    SELECT u.id,u.username,u.membership_tier,u.member_role,u.created_at,
       COALESCE(u.member_preferences->>'profileBio','') AS bio,
       COALESCE(a.active_seconds,0)::bigint AS active_seconds,
       GREATEST(0,EXTRACT(DAY FROM NOW()-u.created_at)::int) AS member_days,
       (SELECT COUNT(*)::int FROM member_friendships f WHERE (f.requester_id=u.id OR f.recipient_id=u.id) AND f.status='accepted') AS friend_count,
-      CASE WHEN p.last_seen_at>NOW()-INTERVAL '90 seconds' THEN
+      CASE WHEN p.show_online=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds' THEN
         CASE WHEN u.member_preferences->>'settingPresenceStatus' IN ('away','sleeping','busy') THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END
       ELSE 'offline' END AS status,
       EXISTS(SELECT 1 FROM member_friendships f WHERE ((f.requester_id=$1 AND f.recipient_id=u.id) OR (f.requester_id=u.id AND f.recipient_id=$1)) AND f.status='accepted') AS is_friend,

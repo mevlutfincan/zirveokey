@@ -4,9 +4,9 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
-<link rel="stylesheet" href="/css/oyun.css?v=header-controls-avatar-20261102">
+<link rel="stylesheet" href="/css/oyun.css?v=presence-dj-role-20261102">
 <script defer src="/js/game-header.js?v=header-controls-avatar-20261102"></script>
-<script defer src="/js/oyun.js?v=header-controls-avatar-20261102"></script>
+<script defer src="/js/oyun.js?v=presence-dj-role-20261102"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
@@ -156,11 +156,12 @@
      <details class="settings-disclosure"><summary>Bildirim ayarları hakkında</summary><p>Bildirimleri kapattığında bildirim paneli gizlenir. Bildirim geçmişin sunucudaki hesabında saklanmaya devam eder.</p></details>
     </section>
     <section class="settings-page" data-settings-page="privacy" hidden>
-     <span class="eyebrow">ÜYE DURUMU</span><h3>Çevrim İçi Durumum</h3><p>Çevrim içi listesinde adın her zaman görünür. Buradan o anki durumunu seçebilirsin.</p>
+     <span class="eyebrow">ÜYE DURUMU</span><h3>Çevrim İçi Durumum</h3><p>Diğer üyelerin çevrimiçi listesinde nasıl görüneceğini ve durum etiketini buradan yönetebilirsin.</p>
      <label class="member-bio-setting">Profil açıklamam<textarea id="settingProfileBio" maxlength="160" rows="3" placeholder="Kendinden kısaca bahset..."></textarea><small>En fazla 160 karakter. Profilinde diğer üyelere görünür.</small><button type="button" class="settings-action-button" id="saveProfileBio">Açıklamayı kaydet</button></label>
      <div class="settings-control-group">
       <label class="setting-row"><span><b>Özel mesajları kabul et</b><small>Diğer üyeler sana özel mesaj gönderebilsin</small></span><input type="checkbox" id="settingPrivateMessages" checked></label>
-      <label class="setting-row" for="settingPresenceStatus"><span><b>Durumum</b><small>Diğer üyelerin göreceği durum etiketi</small></span>
+      <label class="setting-row" for="settingShowOnline"><span><b>Çevrimiçi listesinde görün</b><small>Kapalı olduğunda diğer üyeler seni listede göremez.</small></span><input type="checkbox" id="settingShowOnline" checked></label>
+       <label class="setting-row" for="settingPresenceStatus"><span><b>Durumum</b><small>Diğer üyelerin göreceği durum etiketi</small></span>
        <select id="settingPresenceStatus" class="setting-select">
         <option value="online">Çevrim İçi</option><option value="away">Dışarda</option><option value="sleeping">Uyuyorum</option><option value="busy">Meşgul</option>
        </select>
