@@ -841,11 +841,11 @@ async function loadMemberSettings(){
  $('#settingsAccountStatus').textContent=chatStyleAuthenticated?'Oturum açık · Ayarların hesabına kaydedilir.':'Misafir oturumu · Değişiklikleri kaydetmek için giriş yap.';
 }
 function showSettingsCategory(category){
- window.__ZIRVE_OPEN_SETTINGS=async()=>{showSettingsCategory('account');await loadMemberSettings();loadMemberAvatar();if(!settingsDialog.open)settingsDialog.showModal();};
- window.__ZIRVE_OPEN_NOTIFICATION_SETTINGS=async()=>{notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');await loadMemberSettings();showSettingsCategory('notifications');if(!settingsDialog.open)settingsDialog.showModal();};
  Array.from(document.querySelectorAll('.settings-category')).forEach(button=>button.classList.toggle('active',button.dataset.settingsCategory===category));
  $$('.settings-page').forEach(page=>{const active=page.dataset.settingsPage===category;page.hidden=!active;page.classList.toggle('active',active);});
 }
+window.__ZIRVE_OPEN_SETTINGS=async()=>{showSettingsCategory('account');await loadMemberSettings();loadMemberAvatar();if(!settingsDialog.open)settingsDialog.showModal();};
+window.__ZIRVE_OPEN_NOTIFICATION_SETTINGS=async()=>{notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');await loadMemberSettings();showSettingsCategory('notifications');if(!settingsDialog.open)settingsDialog.showModal();};
 Array.from(document.querySelectorAll('.settings-category')).forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsCategory)));
 Array.from(document.querySelectorAll('[data-settings-open]')).forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsOpen)));
 Array.from(document.querySelectorAll('.password-visibility-toggle')).forEach(button=>button.addEventListener('click',()=>{const input=$('#'+button.dataset.passwordTarget);if(!input)return;const reveal=input.type==='password';input.type=reveal?'text':'password';button.textContent=reveal?'Gizle':'Göster';button.setAttribute('aria-label',reveal?'Şifreyi gizle':'Şifreyi göster');}));
