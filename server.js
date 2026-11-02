@@ -60,6 +60,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN NOT NUL
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_data TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS member_preferences JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_tier VARCHAR(16) NOT NULL DEFAULT 'normal';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_role VARCHAR(16) NOT NULL DEFAULT 'member';
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -361,11 +362,11 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
 app.get('/api/presence/online', dbRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
-    SELECT u.id,u.username,u.membership_tier,
+    SELECT u.id,u.username,u.membership_tier,u.member_role,
       CASE WHEN u.member_preferences->>'settingPresenceStatus' IN ('away','sleeping','busy')
         THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END AS status
     FROM user_presence p JOIN users u ON u.id=p.user_id
-    WHERE p.last_seen_at>NOW()-INTERVAL '90 seconds' AND u.is_active=TRUE
+    WHERE p.last_seen_at>NOW()-INTERVAL '90 seconds' AND p.show_online=TRUE AND u.is_active=TRUE
       AND ($1::bigint IS NULL OR NOT EXISTS(SELECT 1 FROM member_blocks b WHERE b.blocker_id=$1 AND b.blocked_id=u.id))
     ORDER BY u.username_normalized ASC LIMIT 100
   `,[req.session.user?.id||null]);
@@ -565,7 +566,7 @@ app.get('/api/members/:id/profile',dbRequired,asyncRoute(async(req,res)=>{
   const viewerId=requireMemberSession(req,res);if(!viewerId)return;
   const targetId=parseMemberId(req.params.id);if(!targetId)return res.status(400).json({error:'Geçersiz üye.'});
   const result=await pool.query(`
-    SELECT u.id,u.username,u.membership_tier,u.created_at,
+    SELECT u.id,u.username,u.membership_tier,u.member_role,u.created_at,
       COALESCE(u.member_preferences->>'profileBio','') AS bio,
       COALESCE(a.active_seconds,0)::bigint AS active_seconds,
       GREATEST(0,EXTRACT(DAY FROM NOW()-u.created_at)::int) AS member_days,
