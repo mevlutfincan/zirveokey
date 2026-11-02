@@ -65,7 +65,8 @@ async function main() {
   assert.match(serverSource, /p\.show_online=TRUE/, 'Gizlilik tercihi çevrimiçi liste sorgusunda uygulanmalı.');
   assert.ok(serverSource.includes("app.get('/api/presence/events'"), 'Gerçek zamanlı çevrimiçi olay akışı bulunmalı.');
   assert.ok(gameScript.includes("new EventSource('/api/presence/events'"), 'Oyun istemcisi gerçek zamanlı çevrimiçi olay akışına bağlanmalı.');
-  assert.match(gameScript, /DJ · Radyo Yayıncısı/, 'Çevrimiçi üye listesinde DJ rolü gösterilmeli.');
+  assert.match(gameScript, /memberRole==='dj'/, 'Çevrimiçi üye listesinde DJ rolü gösterilmeli.');
+  assert.ok(!serverSource.includes("app.put('/api/internal/members/:id/role'"), 'DJ rolü ataması bu sunucu endpointinden yapılmamalı; yönetim manuel sürecinde kalmalı.');
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
   const users = [
     { username: 'TestA_' + suffix, email: 'testa-' + suffix + '@example.invalid', password: 'ZirveTest!2026A', country: 'Türkiye', gender: 'Kadın' },
@@ -103,8 +104,6 @@ async function main() {
     }
   }
 
-  const roleChangeWithoutToken = await request('/api/internal/members/1/role', { method: 'PUT', body: { role: 'dj' } });
-  assert.equal(roleChangeWithoutToken.status, 503, 'Üye rolü yönetimi gizli token olmadan açık olmamalı.');
   const anonymousPreferences = await request('/api/account/preferences');
   assert.equal(anonymousPreferences.status, 401, 'Oturumsuz kullanıcı hesap tercihlerini okuyabildi.');
   const savePreferencesA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingDarkMode: false, settingPresenceStatus: 'away', settingShowOnline: false, settingAutoArrange: true } } });
