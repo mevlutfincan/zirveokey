@@ -491,21 +491,20 @@ async function loadOnlineMembers(){
    ['pointerup','pointercancel','pointerleave'].forEach(type=>row.addEventListener(type,()=>{if(holdTimer)clearTimeout(holdTimer);holdTimer=null;}));
    const identity=document.createElement('span');identity.className='online-member-identity';
    const nameLine=document.createElement('span');nameLine.className='online-member-name-line';
+   const liveDot=document.createElement('span');liveDot.className='online-member-live-dot';liveDot.title='Canlı';liveDot.setAttribute('aria-label','Canlı');
+   nameLine.append(liveDot);
    if(memberRole==='dj'){const mark=document.createElement('span');mark.className='online-member-role-icon online-member-dj-icon';mark.textContent='🎧';mark.setAttribute('aria-label','DJ');mark.title='DJ';nameLine.append(mark);}
-    if(tier!=='normal'){const mark=document.createElement('span');mark.className='online-member-tier-icon';mark.textContent=tier==='gold'?'🪙':'💎';mark.setAttribute('aria-label',tier==='gold'?'Gold Üye':'VIP Üye');nameLine.append(mark);}
+   if(tier!=='normal'){const mark=document.createElement('span');mark.className='online-member-tier-icon';mark.textContent=tier==='gold'?'🪙':'💎';mark.setAttribute('aria-label',tier==='gold'?'Gold Üye':'VIP Üye');nameLine.append(mark);}
    const name=document.createElement('b');name.textContent=member.username;name.className='online-member-name-button';name.addEventListener('click',()=>openMemberProfile(member.id));nameLine.append(name);
    const membership=document.createElement('small');membership.className='online-member-tier-label';membership.textContent=(memberRole==='dj'?'DJ · ':'')+(tier==='gold'?'Gold Üye':tier==='vip'?'VIP Üye':'Normal Üye');
-   identity.append(nameLine,membership);
-   const presenceMeta=document.createElement('span');presenceMeta.className='online-member-presence-meta';
-   const device=document.createElement('span');device.className='online-member-device';
+   const detailsLine=document.createElement('span');detailsLine.className='online-member-details-line';
+   detailsLine.append(membership);
    const isMobile=String(member.device_type||'desktop')==='mobile';
+   const device=document.createElement('span');device.className='online-member-device';
    device.textContent=isMobile?'📱':'🖥️';device.title=isMobile?'Mobil cihaz':'Bilgisayar / tarayıcı';device.setAttribute('aria-label',device.title);
-   const status=document.createElement('small');
-   const statusLabels={online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Meşgul'};
-   status.className='online-member-status status-'+(statusLabels[member.status]?member.status:'online');
-   status.textContent=statusLabels[member.status]||statusLabels.online;
-   presenceMeta.append(device,status);
-   nameLine.append(presenceMeta);
+   const deviceLabel=document.createElement('small');deviceLabel.className='online-member-device-label';deviceLabel.textContent=isMobile?'Mobil':'Bilgisayar';
+   detailsLine.append(device,deviceLabel);
+   identity.append(nameLine,detailsLine);
    row.append(avatar,identity);root.append(row);
   });
   if(!root.children.length){const empty=document.createElement('div');empty.className='side-empty';empty.innerHTML='<span>♙</span><b>Şu anda çevrimiçi üye yok</b>';root.append(empty);}
