@@ -2413,7 +2413,7 @@ nav.lobby-tabs>.lobby-tab:first-child{
  .header-tools{gap:3px!important}
  .header-tools .header-action{width:29px!important;min-width:29px!important;height:29px!important}
  .header-tools .user-online-count{padding:5px!important}
- .header-user .user-avatar{display:none!important}
+ 
  .header-user .game-auth-actions .icon-button,.header-user>#gameLogoutButton{padding:0 5px!important;font-size:8px!important}
 }
 
