@@ -359,6 +359,21 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   res.status(204).end();
 }));
 
+app.put('/api/internal/members/:id/role', asyncRoute(async (req, res) => {
+  const configuredToken = String(process.env.MEMBER_ROLE_ADMIN_TOKEN || '');
+  const suppliedToken = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!configuredToken) return res.status(503).json({ error: 'Üye rolü yönetimi henüz yapılandırılmadı.' });
+  const expected = Buffer.from(configuredToken);
+  const supplied = Buffer.from(suppliedToken);
+  if (expected.length !== supplied.length || !crypto.timingSafeEqual(expected, supplied)) return res.status(401).json({ error: 'Yetkisiz işlem.' });
+  const memberId = parseMemberId(req.params.id);
+  const role = String(req.body?.role || '');
+  if (!memberId || !['member','dj'].includes(role)) return res.status(400).json({ error: 'Geçerli üye ve rol seçilmelidir.' });
+  const result = await pool.query('UPDATE users SET member_role=$1 WHERE id=$2 AND is_active=TRUE RETURNING id,username,member_role', [role, memberId]);
+  if (!result.rowCount) return res.status(404).json({ error: 'Üye bulunamadı.' });
+  res.json({ ok: true, member: result.rows[0] });
+}));
+
 app.get('/api/presence/online', dbRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
@@ -474,7 +489,7 @@ app.get('/api/lobby/chat-styles', dbRequired, asyncRoute(async (_req, res) => {
     SELECT u.id,u.username,u.chat_name_color,u.chat_text_color,u.chat_row_color
     FROM users u
     JOIN user_presence p ON p.user_id=u.id
-    WHERE u.is_active=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
+    WHERE u.is_active=TRUE AND p.show_online=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds'
     ORDER BY u.id ASC
   `);
   res.json({ members: result.rows });
@@ -571,7 +586,7 @@ app.get('/api/members/:id/profile',dbRequired,asyncRoute(async(req,res)=>{
       COALESCE(a.active_seconds,0)::bigint AS active_seconds,
       GREATEST(0,EXTRACT(DAY FROM NOW()-u.created_at)::int) AS member_days,
       (SELECT COUNT(*)::int FROM member_friendships f WHERE (f.requester_id=u.id OR f.recipient_id=u.id) AND f.status='accepted') AS friend_count,
-      CASE WHEN p.last_seen_at>NOW()-INTERVAL '90 seconds' THEN
+      CASE WHEN p.show_online=TRUE AND p.last_seen_at>NOW()-INTERVAL '90 seconds' THEN
         CASE WHEN u.member_preferences->>'settingPresenceStatus' IN ('away','sleeping','busy') THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END
       ELSE 'offline' END AS status,
       EXISTS(SELECT 1 FROM member_friendships f WHERE ((f.requester_id=$1 AND f.recipient_id=u.id) OR (f.requester_id=u.id AND f.recipient_id=$1)) AND f.status='accepted') AS is_friend,
