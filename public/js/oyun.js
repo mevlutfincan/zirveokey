@@ -505,7 +505,8 @@ async function loadOnlineMembers(){
    status.className='online-member-status status-'+(statusLabels[member.status]?member.status:'online');
    status.textContent=statusLabels[member.status]||statusLabels.online;
    presenceMeta.append(device,status);
-   row.append(avatar,identity,presenceMeta);root.append(row);
+   nameLine.append(presenceMeta);
+   row.append(avatar,identity);root.append(row);
   });
   if(!root.children.length){const empty=document.createElement('div');empty.className='side-empty';empty.innerHTML='<span>♙</span><b>Şu anda çevrimiçi üye yok</b>';root.append(empty);}
   updateOnlineCount(Number(data.count)||0);
