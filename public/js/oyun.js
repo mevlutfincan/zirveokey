@@ -957,11 +957,17 @@ async function refreshGameAccount(){
   if(data.authenticated===true&&!data.user)throw new Error('Oturum yanıtında kullanıcı bilgisi bulunamadı.');
  }catch(error){
   if(checkSequence!==gameAuthCheckSequence)return;
-  gameSignedIn=false;chatDisplayEnabled=false;
-  $('#gameUsername').textContent='Misafir Oyuncu';$('#gameAccountState').textContent='Oturum doğrulanamadı';
-  $('#gameAuthActions').hidden=false;$('#gameLogoutButton').hidden=true;
-  $('#chatInput').placeholder='Oturum doğrulanamadı';$('#chatForm button[type="submit"]').disabled=true;
-  console.error('Oyun hesabı doğrulama hatası:',error);return;
+  // A network/5xx/JSON failure is not proof that the user's session ended.
+  // Keep the last confirmed account state; only an explicit authenticated:false
+  // response from /api/auth/me may switch the UI back to guest.
+  $('#gameAccountState').textContent=gameSignedIn?'Bağlantı yenileniyor':'Oturum doğrulanamadı';
+  if(!gameSignedIn){
+   $('#gameAuthActions').hidden=false;$('#gameLogoutButton').hidden=true;
+   $('#chatInput').placeholder='Oturum doğrulanamadı';
+   $('#chatForm button[type="submit"]').disabled=true;
+  }
+  console.warn('Oyun hesabı geçici olarak doğrulanamadı; mevcut oturum durumu korundu:',error);
+  return;
  }
  if(checkSequence!==gameAuthCheckSequence)return;
  const signed=data.authenticated===true;
