@@ -483,7 +483,7 @@ async function loadOnlineMembers(){
    const fallback=document.createElement('span');fallback.textContent=(member.username||'?').trim().charAt(0).toLocaleUpperCase('tr-TR');
    image.addEventListener('error',()=>{image.remove();avatar.append(fallback);},{once:true});
    avatar.append(image);
-   avatar.addEventListener('click',()=>openMemberProfile(member.id));
+   avatar.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();openOnlineMemberAvatar(member.username,image.currentSrc||image.src);});
    row.dataset.memberId=member.id;row.dataset.memberName=member.username;
    row.addEventListener('contextmenu',event=>{event.preventDefault();showMemberContextMenu(member,event.clientX,event.clientY);});
    let holdTimer=null,longPressTriggered=false;row.addEventListener('pointerdown',event=>{if(event.pointerType==='touch')holdTimer=window.setTimeout(()=>{longPressTriggered=true;showMemberContextMenu(member,event.clientX,event.clientY);},550);});
