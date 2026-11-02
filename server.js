@@ -83,8 +83,10 @@ CREATE INDEX IF NOT EXISTS user_activity_recent_idx ON user_activity(last_seen_a
 CREATE TABLE IF NOT EXISTS user_presence (
   user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  show_online BOOLEAN NOT NULL DEFAULT TRUE
+  show_online BOOLEAN NOT NULL DEFAULT TRUE,
+  device_type VARCHAR(12) NOT NULL DEFAULT 'desktop'
 );
+ALTER TABLE user_presence ADD COLUMN IF NOT EXISTS device_type VARCHAR(12) NOT NULL DEFAULT 'desktop';
 CREATE INDEX IF NOT EXISTS user_presence_seen_idx ON user_presence(last_seen_at DESC);
 CREATE TABLE IF NOT EXISTS lobby_messages (
   id BIGSERIAL PRIMARY KEY,
@@ -356,12 +358,14 @@ app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
 }));
 app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
+  const userAgent = String(req.get('user-agent') || '');
+  const deviceType = /android|iphone|ipad|ipod|mobile|windows phone|iemobile|opera mini/i.test(userAgent) ? 'mobile' : 'desktop';
   const presence = await pool.query(`
-    INSERT INTO user_presence(user_id,last_seen_at,show_online)
-    SELECT u.id,NOW(),COALESCE((u.member_preferences->>'settingShowOnline')::boolean,TRUE) FROM users u WHERE u.id=$1 AND u.is_active=TRUE
-    ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=EXCLUDED.show_online
+    INSERT INTO user_presence(user_id,last_seen_at,show_online,device_type)
+    SELECT u.id,NOW(),COALESCE((u.member_preferences->>'settingShowOnline')::boolean,TRUE),$2 FROM users u WHERE u.id=$1 AND u.is_active=TRUE
+    ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=EXCLUDED.show_online,device_type=EXCLUDED.device_type
     RETURNING user_id
-  `, [req.session.user.id]);
+  `, [req.session.user.id, deviceType]);
   if (!presence.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
   res.status(204).end();
   broadcastPresenceUpdate();
@@ -383,7 +387,7 @@ app.get('/api/presence/events', dbRequired, (req, res) => {
 app.get('/api/presence/online', dbRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const result = await pool.query(`
-    SELECT u.id,u.username,u.membership_tier,u.member_role,
+    SELECT u.id,u.username,u.membership_tier,u.member_role,p.device_type,
       CASE WHEN u.member_preferences->>'settingPresenceStatus' IN ('away','sleeping','busy')
         THEN u.member_preferences->>'settingPresenceStatus' ELSE 'online' END AS status
     FROM user_presence p JOIN users u ON u.id=p.user_id
