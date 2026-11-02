@@ -591,7 +591,7 @@ app.get('/api/members/:id/profile',dbRequired,asyncRoute(async(req,res)=>{
   const viewerId=requireMemberSession(req,res);if(!viewerId)return;
   const targetId=parseMemberId(req.params.id);if(!targetId)return res.status(400).json({error:'Geçersiz üye.'});
   const result=await pool.query(`
-    SELECT u.id,u.username,u.membership_tier,u.member_role,u.created_at,
+    SELECT u.id,u.username,u.membership_tier,u.member_role,u.gender,u.country,u.created_at,
       COALESCE(u.member_preferences->>'profileBio','') AS bio,
       COALESCE(a.active_seconds,0)::bigint AS active_seconds,
       GREATEST(0,EXTRACT(DAY FROM NOW()-u.created_at)::int) AS member_days,
@@ -602,7 +602,6 @@ app.get('/api/members/:id/profile',dbRequired,asyncRoute(async(req,res)=>{
       EXISTS(SELECT 1 FROM member_friendships f WHERE ((f.requester_id=$1 AND f.recipient_id=u.id) OR (f.requester_id=u.id AND f.recipient_id=$1)) AND f.status='accepted') AS is_friend,
       EXISTS(SELECT 1 FROM member_friendships f WHERE f.requester_id=u.id AND f.recipient_id=$1 AND f.status='pending') AS incoming_request,
       EXISTS(SELECT 1 FROM member_friendships f WHERE f.requester_id=$1 AND f.recipient_id=u.id AND f.status='pending') AS outgoing_request,
-      EXISTS(SELECT 1 FROM member_favorites WHERE user_id=$1 AND target_id=u.id) AS is_favorite,
       EXISTS(SELECT 1 FROM member_blocks WHERE blocker_id=$1 AND blocked_id=u.id) AS is_blocked,
       EXISTS(SELECT 1 FROM member_blocks WHERE blocker_id=u.id AND blocked_id=$1) AS blocked_by_member
     FROM users u LEFT JOIN user_presence p ON p.user_id=u.id LEFT JOIN user_activity a ON a.user_id=u.id
@@ -614,13 +613,12 @@ app.get('/api/members/:id/profile',dbRequired,asyncRoute(async(req,res)=>{
 }));
 app.get('/api/social/summary',dbRequired,asyncRoute(async(req,res)=>{
   const userId=requireMemberSession(req,res);if(!userId)return;
-  const [friends,incoming,favorites,blocked]=await Promise.all([
+  const [friends,incoming,blocked]=await Promise.all([
     pool.query("SELECT u.id,u.username,u.membership_tier FROM member_friendships f JOIN users u ON u.id=CASE WHEN f.requester_id=$1 THEN f.recipient_id ELSE f.requester_id END WHERE (f.requester_id=$1 OR f.recipient_id=$1) AND f.status='accepted' ORDER BY u.username_normalized",[userId]),
     pool.query("SELECT u.id,u.username FROM member_friendships f JOIN users u ON u.id=f.requester_id WHERE f.recipient_id=$1 AND f.status='pending' ORDER BY f.created_at DESC",[userId]),
-    pool.query('SELECT u.id,u.username,u.membership_tier FROM member_favorites f JOIN users u ON u.id=f.target_id WHERE f.user_id=$1 ORDER BY f.created_at DESC',[userId]),
     pool.query('SELECT u.id,u.username FROM member_blocks b JOIN users u ON u.id=b.blocked_id WHERE b.blocker_id=$1 ORDER BY b.created_at DESC',[userId])
   ]);
-  res.json({friends:friends.rows,incoming:incoming.rows,favorites:favorites.rows,blocked:blocked.rows});
+  res.json({friends:friends.rows,incoming:incoming.rows,blocked:blocked.rows});
 }));
 app.post('/api/social/friends/:id',dbRequired,socialLimiter,asyncRoute(async(req,res)=>{
   const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);
@@ -652,16 +650,6 @@ app.put('/api/social/friends/:id',dbRequired,asyncRoute(async(req,res)=>{
 app.delete('/api/social/friends/:id',dbRequired,asyncRoute(async(req,res)=>{
   const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);if(!targetId)return res.status(400).json({error:'Geçersiz üye.'});
   await pool.query('DELETE FROM member_friendships WHERE (requester_id=$1 AND recipient_id=$2) OR (requester_id=$2 AND recipient_id=$1)',[userId,targetId]);res.json({ok:true});
-}));
-app.post('/api/social/favorites/:id',dbRequired,asyncRoute(async(req,res)=>{
-  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);
-  if(!targetId||targetId===userId)return res.status(400).json({error:'Geçerli bir üye seçin.'});
-  const exists=await pool.query('SELECT 1 FROM users WHERE id=$1 AND is_active=TRUE',[targetId]);if(!exists.rowCount)return res.status(404).json({error:'Üye bulunamadı.'});
-  await pool.query('INSERT INTO member_favorites(user_id,target_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[userId,targetId]);res.json({ok:true,favorite:true});
-}));
-app.delete('/api/social/favorites/:id',dbRequired,asyncRoute(async(req,res)=>{
-  const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);if(!targetId)return res.status(400).json({error:'Geçersiz üye.'});
-  await pool.query('DELETE FROM member_favorites WHERE user_id=$1 AND target_id=$2',[userId,targetId]);res.json({ok:true,favorite:false});
 }));
 app.post('/api/social/blocks/:id',dbRequired,asyncRoute(async(req,res)=>{
   const userId=requireMemberSession(req,res);if(!userId)return;const targetId=parseMemberId(req.params.id);
