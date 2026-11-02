@@ -275,7 +275,7 @@ $('#playButton').addEventListener('click',async()=>{
     const response=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'Hesap bağlantısı şu anda kullanılamıyor.');
-    if(data.authenticated===true){window.location.href='/oyun.html';return;}
+    if(data.authenticated===true){window.location.href='/oyun';return;}
     const loginButton=document.querySelector('[data-modal="login"]');
     loginButton?.click();
     $('#modalNote').textContent='Oyuna katılmak için önce hesabına giriş yap.';
