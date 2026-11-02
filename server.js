@@ -789,7 +789,7 @@ app.get(['/oyun', '/oyun/', '/oyun.html'], asyncRoute(async (req, res) => {
   if (user) {
     const username = String(user.username || 'Üye').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     const bootstrap = JSON.stringify({ authenticated: true, user: { id: user.id, username: user.username } }).replace(/</g, '\\u003c');
-    html = html.replace('Misafir Oyuncu', username).replace('Giriş yapılmadı', 'Üye hesabı');
+    html = html.replaceAll('Misafir Oyuncu', username).replace('Giriş yapılmadı', 'Üye hesabı');
     html = html.replace('<div class="game-auth-actions" id="gameAuthActions">', '<div class="game-auth-actions" id="gameAuthActions" hidden>');
     html = html.replace('<button class="icon-button" id="gameLogoutButton" type="button" hidden>Çıkış</button>', '<button class="icon-button" id="gameLogoutButton" type="button">Çıkış</button>');
     html = html.replace('</head>', '<script>window.__ZIRVE_AUTH_BOOTSTRAP__=' + bootstrap + ';</script>\\n</head>');
