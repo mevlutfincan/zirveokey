@@ -351,8 +351,8 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Çevrimiçi görünmek için giriş yapmalısınız.' });
   const presence = await pool.query(`
     INSERT INTO user_presence(user_id,last_seen_at,show_online)
-    SELECT u.id,NOW(),TRUE FROM users u WHERE u.id=$1 AND u.is_active=TRUE
-    ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=TRUE
+    SELECT u.id,NOW(),COALESCE((u.member_preferences->>'settingShowOnline')::boolean,TRUE) FROM users u WHERE u.id=$1 AND u.is_active=TRUE
+    ON CONFLICT(user_id) DO UPDATE SET last_seen_at=NOW(),show_online=EXCLUDED.show_online
     RETURNING user_id
   `, [req.session.user.id]);
   if (!presence.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
@@ -395,7 +395,7 @@ app.get('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
 }));
 app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session.user?.id) return res.status(401).json({ error: 'Ayarları kaydetmek için giriş yapmalısınız.' });
-  const allowed = ['profileBio','settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI','settingPresenceStatus'];
+  const allowed = ['profileBio','settingAnimations','settingDarkMode','settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards','settingAutoArrange','settingConfirmExit','settingCompactUI','settingPresenceStatus','settingShowOnline'];
   const input = req.body?.preferences;
   const validPresenceStatuses = new Set(['online','away','sleeping','busy']);
   if (!input || typeof input !== 'object' || Array.isArray(input) ||
