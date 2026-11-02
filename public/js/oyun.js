@@ -801,9 +801,9 @@ $('#removeSettingAvatar').addEventListener('click',async()=>{
  try{const r=await fetch('/api/account/avatar',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:null})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Avatar kaldırılamadı.');paintMemberAvatar(null);$('#settingAvatarFile').value='';$('#settingAvatarStatus').textContent='Avatar kaldırıldı.';notify('Avatar kaldırıldı.');}
  catch(error){$('#settingAvatarStatus').textContent=error.message;}
 });
-const settingsKeys=['settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards'];
+const settingsKeys=['settingShowOnline','settingNotifications','settingNotificationSound','settingPrivateMessages','settingFriendRequests','settingNotifyPlayers','settingNotifyGame','settingNotifySystem','settingNotifyManagement','settingNotifyRewards'];
 let memberPreferences={};
-const preferenceDefaults={settingNotifications:true,settingNotificationSound:false,settingPresenceStatus:'online',settingFriendRequests:true,settingNotifyPlayers:true,settingNotifyGame:true,settingNotifySystem:true,settingNotifyManagement:true,settingNotifyRewards:true};
+const preferenceDefaults={settingShowOnline:true,settingNotifications:true,settingNotificationSound:false,settingPresenceStatus:'online',settingFriendRequests:true,settingNotifyPlayers:true,settingNotifyGame:true,settingNotifySystem:true,settingNotifyManagement:true,settingNotifyRewards:true};
 function applyMemberSettings(values){
  notificationsEnabled=values.settingNotifications!==false;
  // Bildirim merkezi, bildirimler kapalıyken de ayarları yeniden açabilmek için erişilebilir kalır.
@@ -864,7 +864,12 @@ $('#saveProfileBio').addEventListener('click',async()=>{
  try{await saveMemberPreferences({profileBio:bio});$('#settingsSaveState').textContent='Profil açıklaman kaydedildi.';notify('Profil açıklaman güncellendi.');}
  catch(error){$('#settingsSaveState').textContent=error.message;notify(error.message);}
 });
-$('#settingPresenceStatus').addEventListener('change',async()=>{
+$('#settingShowOnline')?.addEventListener('change',async()=>{
+  const value=$('#settingShowOnline').checked;$('#settingsSaveState').textContent='Kaydediliyor…';
+  try{await saveMemberPreferences({settingShowOnline:value});await sendPresenceHeartbeat();await loadOnlineMembers();}
+  catch(error){$('#settingShowOnline').checked=!value;$('#settingsSaveState').textContent=error.message;notify(error.message);}
+ });
+ $('#settingPresenceStatus').addEventListener('change',async()=>{
  const value=$('#settingPresenceStatus').value;$('#settingsSaveState').textContent='Kaydediliyor…';
  try{await saveMemberPreferences({settingPresenceStatus:value});sendPresenceHeartbeat();loadOnlineMembers();}
  catch(error){$('#settingPresenceStatus').value=memberPreferences.settingPresenceStatus||'online';$('#settingsSaveState').textContent=error.message;notify(error.message);}
