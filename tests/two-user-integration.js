@@ -63,8 +63,8 @@ async function main() {
   const serverSource = readFileSync('server.js', 'utf8');
   assert.match(serverSource, /member_role VARCHAR\(16\) NOT NULL DEFAULT 'member'/, 'DJ üye rolü için veritabanı alanı tanımlı olmalı.');
   assert.match(serverSource, /p\.show_online=TRUE/, 'Gizlilik tercihi çevrimiçi liste sorgusunda uygulanmalı.');
-  assert.match(serverSource, /api\\/presence\\/events/, 'Gerçek zamanlı çevrimiçi olay akışı bulunmalı.');
-  assert.match(gameScript, /new EventSource\\('/api\\/presence\\/events'/, 'Oyun istemcisi gerçek zamanlı çevrimiçi olay akışına bağlanmalı.');
+  assert.ok(serverSource.includes("app.get('/api/presence/events'"), 'Gerçek zamanlı çevrimiçi olay akışı bulunmalı.');
+  assert.ok(gameScript.includes("new EventSource('/api/presence/events'"), 'Oyun istemcisi gerçek zamanlı çevrimiçi olay akışına bağlanmalı.');
   assert.match(gameScript, /DJ · Radyo Yayıncısı/, 'Çevrimiçi üye listesinde DJ rolü gösterilmeli.');
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
   const users = [
