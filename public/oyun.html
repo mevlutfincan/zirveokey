@@ -132,6 +132,12 @@
     <section class="settings-page active" data-settings-page="account">
      <span class="eyebrow">HESAP MERKEZİ</span><h3>Hesap ve Profil</h3><p>Üyelik durumunu görüntüle, profilini ve hesap güvenliğini yönet.</p>
      <div class="settings-account-summary"><span class="settings-summary-label">OTURUM AÇIK HESAP</span><b id="settingsAccountName">Üye hesabı</b><small id="settingsAccountStatus">Hesap bilgilerin yalnızca sana gösterilir.</small></div>
+     <div class="settings-profile-fields">
+      <div><b>Profil bilgileri</b><small>Cinsiyet ve ülke bilgilerin profil kartında diğer üyelere görünür.</small></div>
+      <label for="settingProfileGender">Cinsiyet<select id="settingProfileGender" class="setting-select"><option value="">Cinsiyet seçin</option><option value="Kadın">Kadın</option><option value="Erkek">Erkek</option><option value="Belirtmek istemiyorum">Belirtmek istemiyorum</option></select></label>
+      <label for="settingProfileCountry">Ülke<select id="settingProfileCountry" class="setting-select"><option value="">Ülke seçin</option><option value="Türkiye">Türkiye</option><option value="Almanya">Almanya</option><option value="Azerbaycan">Azerbaycan</option><option value="Belçika">Belçika</option><option value="Birleşik Krallık">Birleşik Krallık</option><option value="Fransa">Fransa</option><option value="Hollanda">Hollanda</option><option value="Kıbrıs">Kıbrıs</option><option value="ABD">ABD</option><option value="Avusturya">Avusturya</option><option value="Diğer">Diğer</option></select></label>
+      <button type="button" class="settings-action-button" id="saveProfileIdentity">Cinsiyet ve ülkeyi kaydet</button>
+     </div>
      <div class="settings-action-card"><div><b>Profil görselin</b><small>Avatarını değiştirmek için profil düzenleyicisini aç.</small></div><button type="button" class="settings-action-button" data-settings-open="avatar">Avatarı düzenle</button></div>
      <div class="settings-action-card"><div><b>Hesap güvenliği</b><small>Şifreni düzenli aralıklarla güncel tut.</small></div><button type="button" class="settings-action-button" data-settings-open="password">Şifre işlemleri</button></div>
     </section>
