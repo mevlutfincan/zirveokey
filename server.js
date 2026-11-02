@@ -782,7 +782,7 @@ app.get('/api/public/active-members', asyncRoute(async (_req, res) => {
   res.json({ members: result.rows });
 }));
 
-app.get(['/oyun', '/oyun/'], asyncRoute(async (req, res) => {
+app.get(['/oyun', '/oyun/', '/oyun.html'], asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   let html = await fs.readFile(path.join(publicDir, 'oyun.html'), 'utf8');
   const user = req.session?.user?.id ? req.session.user : null;
