@@ -51,7 +51,7 @@ async function waitForServer() {
 
 async function main() {
   const gameScript = readFileSync('public/js/oyun.js', 'utf8');
-  assert.doesNotMatch(gameScript, /(?<!\\$)\\$\\([^)]*\\)\\.forEach/, 'Tek eleman seçicisi forEach ile çağrılmamalı.');
+  assert.doesNotMatch(gameScript, /(?<!\$)\$\([^)]*\)\.forEach/, 'Tek eleman seçicisi forEach ile çağrılmamalı.');
   await waitForServer();
   const radioStatusResponse = await request('/api/radio/status');
   assert.equal(radioStatusResponse.status, 200, 'Radyo yayın durumu alınamadı.');
