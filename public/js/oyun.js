@@ -513,7 +513,6 @@ function connectOnlinePresenceEvents(){
  onlinePresenceEvents.addEventListener('presence',()=>{loadOnlineMembers();});
  onlinePresenceEvents.onerror=()=>{ /* EventSource reconnects automatically; polling remains as fallback. */ };
 }
-connectOnlinePresenceEvents();
 let activeSocialMember=null,activePrivateMember=null,privateMessageLastId=0;
 const memberProfileDialog=$('#memberProfileDialog'),privateMessageDialog=$('#privateMessageDialog'),socialCenterDialog=$('#socialCenterDialog'),memberContextMenu=$('#memberContextMenu');
 async function socialRequest(url,method='GET',body){
@@ -966,6 +965,7 @@ async function refreshGameAccount(){
  if(checkSequence!==gameAuthCheckSequence)return;
  const signed=data.authenticated===true;
  gameSignedIn=signed;chatDisplayEnabled=signed;
+ if(signed)connectOnlinePresenceEvents();else if(onlinePresenceEvents){onlinePresenceEvents.close();onlinePresenceEvents=null;}
  if(!signed){chatMessagesBox.replaceChildren();renderedChatMessageIds.clear();}
  $('#gameUsername').textContent=signed?data.user.username:'Misafir Oyuncu';
  $('#gameAccountState').textContent=signed?'Üye hesabı':'Giriş yapılmadı';
