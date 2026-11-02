@@ -2713,3 +2713,35 @@ nav.lobby-tabs>.lobby-tab:first-child{
 /* DJ role marker in the online member list */
 .online-member-role-icon{display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1;margin-right:3px}
 .online-member-dj-icon{filter:drop-shadow(0 0 4px #f0b84a66)}
+
+/* Member profile: bright green home-page palette and balanced action grid */
+.member-social-dialog#memberProfileDialog{
+  width:min(540px,calc(100vw - 28px));max-height:min(86vh,760px);
+  padding:24px;border:1px solid #32d65b;border-radius:20px;
+  background:linear-gradient(145deg,#102b18 0%,#0c1c12 58%,#102719 100%);
+  color:#effff1;box-shadow:0 0 0 1px #20c94a33,0 18px 64px #000c,0 0 28px #18d64a22
+}
+#memberProfileDialog .member-social-close{color:#ecfff0}
+#memberProfileDialog .member-profile-head{gap:15px;margin:8px 0 16px}
+#memberProfileDialog .member-profile-head img{width:82px;height:82px;border:2px solid #36dc61;box-shadow:0 0 16px #20d64a55}
+#memberProfileDialog .member-profile-identity{display:block;margin-top:5px;color:#9ff5ad;font-size:12px;font-weight:600}
+#memberProfileDialog .member-profile-status{color:#d2f4d6}
+#memberProfileDialog .member-profile-bio{margin:0 0 12px;border:1px solid #2a7540;background:#173b24;color:#e8ffeb}
+#memberProfileDialog .member-profile-stats>span{min-height:58px;border:1px solid #2b8144;background:linear-gradient(145deg,#173e25,#11291a)}
+#memberProfileDialog .member-profile-stats small{color:#a9dcb1}
+#memberProfileDialog .member-profile-stats b{color:#f2fff3}
+#memberProfileDialog .member-profile-achievements>span{border-color:#39a65366;background:#1b4627;color:#c9ffd1}
+#memberProfileDialog .member-profile-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin:16px 0 4px}
+#memberProfileDialog .member-profile-actions button{
+  grid-column:span 2;min-height:42px;padding:9px 10px;border:1px solid #38bd58;border-radius:10px;
+  background:linear-gradient(180deg,#245b32,#173d24);color:#f1fff3;font-size:12px;font-weight:650;
+  box-shadow:inset 0 1px #ffffff16,0 3px 10px #0003;transition:background .15s,border-color .15s,transform .15s
+}
+#memberProfileDialog .member-profile-actions button:nth-child(4){grid-column:2/span 2}
+#memberProfileDialog .member-profile-actions button:nth-child(5){grid-column:4/span 2}
+#memberProfileDialog .member-profile-actions button:hover{background:linear-gradient(180deg,#2e7840,#1d512d);border-color:#69ef82;transform:translateY(-1px)}
+@media(max-width:420px){
+ #memberProfileDialog.member-social-dialog{padding:20px 15px}
+ #memberProfileDialog .member-profile-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #memberProfileDialog .member-profile-actions button,#memberProfileDialog .member-profile-actions button:nth-child(4),#memberProfileDialog .member-profile-actions button:nth-child(5){grid-column:auto}
+}
