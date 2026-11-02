@@ -61,9 +61,9 @@ async function main() {
   assert.equal(typeof radioStatus.djName, 'string', 'Radyo yayıncı adı metin olmalı.');
   assert.equal(typeof radioStatus.streamUrl, 'string', 'Radyo yayın adresi metin olmalı.');
   const serverSource = readFileSync('server.js', 'utf8');
-  assert.match(serverSource, /member_role VARCHAR\\(16\\) NOT NULL DEFAULT 'member'/, 'DJ üye rolü için veritabanı alanı tanımlı olmalı.');
-  assert.match(serverSource, /p\\.show_online=TRUE/, 'Gizlilik tercihi çevrimiçi liste sorgusunda uygulanmalı.');
-  assert.match(gameScript, /DJ \\· Radyo Yayıncısı/, 'Çevrimiçi üye listesinde DJ rolü gösterilmeli.');
+  assert.match(serverSource, /member_role VARCHAR\(16\) NOT NULL DEFAULT 'member'/, 'DJ üye rolü için veritabanı alanı tanımlı olmalı.');
+  assert.match(serverSource, /p\.show_online=TRUE/, 'Gizlilik tercihi çevrimiçi liste sorgusunda uygulanmalı.');
+  assert.match(gameScript, /DJ · Radyo Yayıncısı/, 'Çevrimiçi üye listesinde DJ rolü gösterilmeli.');
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
   const users = [
     { username: 'TestA_' + suffix, email: 'testa-' + suffix + '@example.invalid', password: 'ZirveTest!2026A', country: 'Türkiye', gender: 'Kadın' },
@@ -101,6 +101,8 @@ async function main() {
     }
   }
 
+  const roleChangeWithoutToken = await request('/api/internal/members/1/role', { method: 'PUT', body: { role: 'dj' } });
+  assert.equal(roleChangeWithoutToken.status, 503, 'Üye rolü yönetimi gizli token olmadan açık olmamalı.');
   const anonymousPreferences = await request('/api/account/preferences');
   assert.equal(anonymousPreferences.status, 401, 'Oturumsuz kullanıcı hesap tercihlerini okuyabildi.');
   const savePreferencesA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingDarkMode: false, settingPresenceStatus: 'away', settingShowOnline: false, settingAutoArrange: true } } });
