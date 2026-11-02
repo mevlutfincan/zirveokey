@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs/promises');
 const { Pool } = require('pg');
 const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);
@@ -781,10 +782,22 @@ app.get('/api/public/active-members', asyncRoute(async (_req, res) => {
   res.json({ members: result.rows });
 }));
 
-app.get(['/oyun', '/oyun/'], (_req, res) => {
-  res.setHeader('Cache-Control', 'no-cache');
-  res.sendFile(path.join(publicDir, 'oyun.html'));
-});
+app.get(['/oyun', '/oyun/'], asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  let html = await fs.readFile(path.join(publicDir, 'oyun.html'), 'utf8');
+  const user = req.session?.user?.id ? req.session.user : null;
+  if (user) {
+    const username = String(user.username || 'Üye').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const bootstrap = JSON.stringify({ authenticated: true, user: { id: user.id, username: user.username } }).replace(/</g, '\\u003c');
+    html = html.replace('Misafir Oyuncu', username).replace('Giriş yapılmadı', 'Üye hesabı');
+    html = html.replace('<div class="game-auth-actions" id="gameAuthActions">', '<div class="game-auth-actions" id="gameAuthActions" hidden>');
+    html = html.replace('<button class="icon-button" id="gameLogoutButton" type="button" hidden>Çıkış</button>', '<button class="icon-button" id="gameLogoutButton" type="button">Çıkış</button>');
+    html = html.replace('</head>', '<script>window.__ZIRVE_AUTH_BOOTSTRAP__=' + bootstrap + ';</script>\\n</head>');
+  } else {
+    html = html.replace('</head>', '<script>window.__ZIRVE_AUTH_BOOTSTRAP__={authenticated:false};</script>\\n</head>');
+  }
+  res.type('html').send(html);
+}));
 app.use(express.static(publicDir, {
   extensions: ['html'],
   etag: true,
