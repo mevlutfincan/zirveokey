@@ -10,6 +10,13 @@ const crypto = require('crypto');
 const { verifyResendWebhook } = require('./resend-webhook');
 
 const app = express();
+const presenceEventClients = new Set();
+function broadcastPresenceUpdate(){
+  const payload = 'event: presence\\ndata: {"type":"refresh"}\\n\\n';
+  for (const client of presenceEventClients) {
+    try { client.write(payload); } catch { presenceEventClients.delete(client); }
+  }
+}
 const PORT = process.env.PORT || 3000;
 const publicDir = path.join(__dirname, 'public');
 const databaseUrl = process.env.DATABASE_URL;
@@ -357,6 +364,7 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   `, [req.session.user.id]);
   if (!presence.rowCount) return res.status(401).json({ error: 'Hesap etkin değil. Lütfen yeniden giriş yapın.' });
   res.status(204).end();
+  broadcastPresenceUpdate();
 }));
 
 app.put('/api/internal/members/:id/role', asyncRoute(async (req, res) => {
@@ -372,7 +380,21 @@ app.put('/api/internal/members/:id/role', asyncRoute(async (req, res) => {
   const result = await pool.query('UPDATE users SET member_role=$1 WHERE id=$2 AND is_active=TRUE RETURNING id,username,member_role', [role, memberId]);
   if (!result.rowCount) return res.status(404).json({ error: 'Üye bulunamadı.' });
   res.json({ ok: true, member: result.rows[0] });
+  broadcastPresenceUpdate();
 }));
+
+app.get('/api/presence/events', dbRequired, (req, res) => {
+  if (!req.session.user?.id) return res.status(401).end();
+  res.status(200);
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+  res.write('event: presence\\ndata: {"type":"refresh"}\\n\\n');
+  presenceEventClients.add(res);
+  const keepAlive = setInterval(() => { try { res.write(': keep-alive\\n\\n'); } catch { clearInterval(keepAlive); presenceEventClients.delete(res); } }, 25000);
+  req.on('close', () => { clearInterval(keepAlive); presenceEventClients.delete(res); });
+});
 
 app.get('/api/presence/online', dbRequired, asyncRoute(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
