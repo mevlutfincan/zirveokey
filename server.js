@@ -792,9 +792,9 @@ app.get(['/oyun', '/oyun/', '/oyun.html'], asyncRoute(async (req, res) => {
     html = html.replaceAll('Misafir Oyuncu', username).replace('Giriş yapılmadı', 'Üye hesabı');
     html = html.replace('<div class="game-auth-actions" id="gameAuthActions">', '<div class="game-auth-actions" id="gameAuthActions" hidden>');
     html = html.replace('<button class="icon-button" id="gameLogoutButton" type="button" hidden>Çıkış</button>', '<button class="icon-button" id="gameLogoutButton" type="button">Çıkış</button>');
-    html = html.replace('</head>', '<script>window.__ZIRVE_AUTH_BOOTSTRAP__=' + bootstrap + ';</script>\\n</head>');
+    html = html.replace('</head>', '<script>window.__ZIRVE_AUTH_BOOTSTRAP__=' + bootstrap + ';</script>\n</head>');
   } else {
-    html = html.replace('</head>', '<script>window.__ZIRVE_AUTH_BOOTSTRAP__={authenticated:false};</script>\\n</head>');
+    html = html.replace('</head>', '<script>window.__ZIRVE_AUTH_BOOTSTRAP__={authenticated:false};</script>\n</head>');
   }
   res.type('html').send(html);
 }));

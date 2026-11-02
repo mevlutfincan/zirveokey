@@ -581,7 +581,7 @@ async function runMemberAction(action,member,profile){
 let currentSocialTab='friends';
 async function loadSocialCenter(tab='friends'){
  currentSocialTab=tab;
- $('.social-center-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.socialTab===tab));
+ $$('.social-center-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.socialTab===tab));
  const root=$('#socialCenterList');root.textContent='Yükleniyor…';
  try{
   if(tab==='messages'){
@@ -635,8 +635,8 @@ $('#memberReportForm').addEventListener('submit',async event=>{
  try{await socialRequest('/api/social/reports/'+activeSocialMember.id,'POST',{reason:$('#memberReportReason').value,details:$('#memberReportDetails').value.trim()});$('#memberReportFeedback').textContent='Şikâyetin yönetime iletildi.';notify('Şikâyetin alındı.');window.setTimeout(()=>$('#memberReportDialog').close(),700);}
  catch(error){$('#memberReportFeedback').textContent=error.message;}finally{button.disabled=false;}
 });
-$('[data-close-dialog]').forEach(button=>button.addEventListener('click',()=>$('#'+button.dataset.closeDialog).close()));
-$('[data-social-tab]').forEach(button=>button.addEventListener('click',()=>loadSocialCenter(button.dataset.socialTab)));
+$$('[data-close-dialog]').forEach(button=>button.addEventListener('click',()=>$('#'+button.dataset.closeDialog).close()));
+$$('[data-social-tab]').forEach(button=>button.addEventListener('click',()=>loadSocialCenter(button.dataset.socialTab)));
 $('#openSocialCenter').addEventListener('click',()=>{if(!requireGameMembership('Arkadaş listesini açmak'))return;socialCenterDialog.showModal();loadSocialCenter('friends');});
 $('#openPrivateInbox').addEventListener('click',()=>{if(!requireGameMembership('Özel mesajlarını açmak'))return;socialCenterDialog.showModal();loadSocialCenter('messages');});
 window.setInterval(()=>{if(privateMessageDialog.open)loadPrivateMessages();},5000);

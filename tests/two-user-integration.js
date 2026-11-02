@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
+const { readFileSync } = require('node:fs');
 
 const port = Number(process.env.TEST_PORT || 3101);
 const baseUrl = 'http://127.0.0.1:' + port;
@@ -49,6 +50,8 @@ async function waitForServer() {
 }
 
 async function main() {
+  const gameScript = readFileSync('public/js/oyun.js', 'utf8');
+  assert.doesNotMatch(gameScript, /(?<!\$)\$\([^)]*\)\.forEach/, 'Tek eleman seçicisi forEach ile çağrılmamalı.');
   await waitForServer();
   const radioStatusResponse = await request('/api/radio/status');
   assert.equal(radioStatusResponse.status, 200, 'Radyo yayın durumu alınamadı.');
