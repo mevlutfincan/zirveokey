@@ -304,15 +304,32 @@ app.post('/api/auth/login', dbRequired, authLimiter, asyncRoute(async (req, res)
   if (!user || !valid) return res.status(401).json({ error: 'Giriş bilgileri hatalı.' });
   await pool.query("INSERT INTO user_notifications(user_id,category,title,message) SELECT id,'system',$2,$3 FROM users WHERE id=$1 AND notifications_enabled=TRUE AND COALESCE(member_preferences->>'settingNotifySystem','true') <> 'false'",[user.id,'Hesabına giriş yapıldı','ZirveOkey hesabına yeni bir oturum açıldı. Bu işlem sana ait değilse hesabının güvenliğini kontrol et.']);
   await pool.query('UPDATE users SET last_login_at=NOW() WHERE id=$1', [user.id]);
-  req.session.regenerate(err => {
-    if (err) return res.status(500).json({ error: 'Oturum açılamadı.' });
+  try {
+    await new Promise((resolve, reject) => {
+      req.session.regenerate(error => error ? reject(error) : resolve());
+    });
     req.session.user = { id: user.id, username: user.username, email: user.email };
     req.session.cookie.maxAge = req.body.rememberMe === true ? 30 * 24 * 60 * 60 * 1000 : null;
-    req.session.save(saveErr => {
-      if (saveErr) return res.status(500).json({ error: 'Oturum kaydedilemedi.' });
-      res.json({ ok: true, user: req.session.user });
+    await new Promise((resolve, reject) => {
+      req.session.save(error => error ? reject(error) : resolve());
     });
-  });
+    console.info('[auth-login-success]', JSON.stringify({
+      path: req.path,
+      secure: req.secure,
+      sessionLoaded: Boolean(req.session),
+      sessionUserSet: Boolean(req.session?.user?.id),
+      rememberMe: req.body.rememberMe === true
+    }));
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ ok: true, user: req.session.user });
+  } catch (error) {
+    console.error('[auth-login-session-error]', JSON.stringify({
+      name: error?.name || 'Error',
+      code: error?.code || null,
+      message: error?.message || 'Session persistence failed'
+    }));
+    return res.status(500).json({ error: 'Oturum kaydedilemedi. Lütfen tekrar giriş yap.' });
+  }
 }));
 
 app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
