@@ -4,7 +4,8 @@ const $$=s=>Array.from(document.querySelectorAll(s));
 const toast=$('#gameToast');let toastTimer;
 function notify(message){toast.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2600)}
 let tables=[],activeTable=null,selectedTile=null,idleTimer=null;
-let gameSignedIn=false,pendingMembershipAction=null;
+const gameAuthBootstrap=window.__ZIRVE_AUTH_BOOTSTRAP__||{authenticated:false};
+let gameSignedIn=gameAuthBootstrap.authenticated===true,pendingMembershipAction=null;
 function requireGameMembership(action,onSuccess){if(gameSignedIn)return true;pendingMembershipAction=typeof onSuccess==='function'?onSuccess:null;openGameAuth('login');$('#gameAuthMessage').textContent=action+' için önce hesabına giriş yapmalısın. Hesabın yoksa Üye Ol seçeneğini kullanabilirsin.';notify('Devam etmek için giriş yapmalısın.');return false;}
 const discarded=[];
 function lobbyNotice(message){const box=$('#chatMessages');const item=document.createElement('div');item.className='chat-system';item.textContent=message;box.append(item);box.scrollTop=box.scrollHeight;}
