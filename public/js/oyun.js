@@ -475,6 +475,7 @@ async function loadOnlineMembers(){
   const data=await r.json(),root=$('#onlineList');root.replaceChildren();
   (data.members||[]).forEach(member=>{
    const tier=['gold','vip'].includes(String(member.membership_tier||'').toLowerCase())?String(member.membership_tier).toLowerCase():'normal';
+    const memberRole=String(member.member_role||'member').toLowerCase()==='dj'?'dj':'member';
    const row=document.createElement('div');row.className='online-member tier-'+tier;
    const avatar=document.createElement('button');avatar.type='button';avatar.className='online-member-avatar';avatar.title=member.username+' profil fotoğrafını büyüt';
    avatar.setAttribute('aria-label',member.username+' profil fotoğrafını büyüt');
@@ -490,9 +491,10 @@ async function loadOnlineMembers(){
    ['pointerup','pointercancel','pointerleave'].forEach(type=>row.addEventListener(type,()=>{if(holdTimer)clearTimeout(holdTimer);holdTimer=null;}));
    const identity=document.createElement('span');identity.className='online-member-identity';
    const nameLine=document.createElement('span');nameLine.className='online-member-name-line';
-   if(tier!=='normal'){const mark=document.createElement('span');mark.className='online-member-tier-icon';mark.textContent=tier==='gold'?'🪙':'💎';mark.setAttribute('aria-label',tier==='gold'?'Gold Üye':'VIP Üye');nameLine.append(mark);}
+   if(memberRole==='dj'){const mark=document.createElement('span');mark.className='online-member-role-icon online-member-dj-icon';mark.textContent='🎧';mark.setAttribute('aria-label','DJ / Radyo Yayıncısı');mark.title='DJ · Radyo Yayıncısı';nameLine.append(mark);}
+    if(tier!=='normal'){const mark=document.createElement('span');mark.className='online-member-tier-icon';mark.textContent=tier==='gold'?'🪙':'💎';mark.setAttribute('aria-label',tier==='gold'?'Gold Üye':'VIP Üye');nameLine.append(mark);}
    const name=document.createElement('b');name.textContent=member.username;name.className='online-member-name-button';name.addEventListener('click',()=>openMemberProfile(member.id));nameLine.append(name);
-   const membership=document.createElement('small');membership.className='online-member-tier-label';membership.textContent=tier==='gold'?'Gold Üye':tier==='vip'?'VIP Üye':'Normal Üye';
+   const membership=document.createElement('small');membership.className='online-member-tier-label';membership.textContent=(memberRole==='dj'?'DJ · ':'')+(tier==='gold'?'Gold Üye':tier==='vip'?'VIP Üye':'Normal Üye');
    identity.append(nameLine,membership);
    const status=document.createElement('small');
    const statusLabels={online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Meşgul'};
@@ -533,7 +535,7 @@ async function openMemberProfile(memberId){
   $('#memberProfileName').textContent=p.username;
   $('#memberProfileAvatar').src='/api/public/members/'+p.id+'/avatar';
   $('#memberProfileAvatar').onerror=()=>{$('#memberProfileAvatar').src='';};
-  $('#memberProfileTier').textContent=p.membership_tier==='gold'?'🪙 Gold Üye':p.membership_tier==='vip'?'💎 VIP Üye':'Normal Üye';
+  $('#memberProfileTier').textContent=(p.member_role==='dj'?'🎧 DJ · ':'')+(p.membership_tier==='gold'?'🪙 Gold Üye':p.membership_tier==='vip'?'💎 VIP Üye':'Normal Üye');
   $('#memberProfileStatus').textContent=({online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Meşgul',offline:'Çevrim Dışı'})[p.status]||'Çevrim Dışı';
   $('#memberProfileBio').textContent=p.bio||'Henüz profil açıklaması eklenmemiş.';
   const hours=Math.floor(Number(p.active_seconds||0)/3600),days=Number(p.member_days||0);
@@ -544,6 +546,7 @@ async function openMemberProfile(memberId){
   else if(days>=7)badges.push('🌱 Yeni Topluluk Üyesi');
   if(hours>=10)badges.push('⭐ Sadık Oyuncu');
   else if(hours>=1)badges.push('🎯 Aktif Üye');
+  if(p.member_role==='dj')badges.push('🎧 DJ / Radyo Yayıncısı');
   if(p.membership_tier==='gold')badges.push('🪙 Gold Üye');
   if(p.membership_tier==='vip')badges.push('💎 VIP Üye');
   const badgeRoot=$('#memberProfileAchievements');badgeRoot.replaceChildren();
