@@ -496,11 +496,16 @@ async function loadOnlineMembers(){
    const name=document.createElement('b');name.textContent=member.username;name.className='online-member-name-button';name.addEventListener('click',()=>openMemberProfile(member.id));nameLine.append(name);
    const membership=document.createElement('small');membership.className='online-member-tier-label';membership.textContent=(memberRole==='dj'?'DJ · ':'')+(tier==='gold'?'Gold Üye':tier==='vip'?'VIP Üye':'Normal Üye');
    identity.append(nameLine,membership);
+   const presenceMeta=document.createElement('span');presenceMeta.className='online-member-presence-meta';
+   const device=document.createElement('span');device.className='online-member-device';
+   const isMobile=String(member.device_type||'desktop')==='mobile';
+   device.textContent=isMobile?'📱':'🖥️';device.title=isMobile?'Mobil cihaz':'Bilgisayar / tarayıcı';device.setAttribute('aria-label',device.title);
    const status=document.createElement('small');
    const statusLabels={online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Meşgul'};
    status.className='online-member-status status-'+(statusLabels[member.status]?member.status:'online');
    status.textContent=statusLabels[member.status]||statusLabels.online;
-   row.append(avatar,identity,status);root.append(row);
+   presenceMeta.append(device,status);
+   row.append(avatar,identity,presenceMeta);root.append(row);
   });
   if(!root.children.length){const empty=document.createElement('div');empty.className='side-empty';empty.innerHTML='<span>♙</span><b>Şu anda çevrimiçi üye yok</b>';root.append(empty);}
   updateOnlineCount(Number(data.count)||0);
