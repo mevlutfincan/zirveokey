@@ -444,6 +444,29 @@ app.put('/api/account/preferences', dbRequired, asyncRoute(async (req, res) => {
   res.json({ ok: true, preferences: result.rows[0].member_preferences });
 }));
 
+app.get('/api/account/profile',dbRequired,asyncRoute(async(req,res)=>{
+  if(!req.session.user?.id)return res.status(401).json({error:'Profil bilgilerini görüntülemek için giriş yapmalısınız.'});
+  const result=await pool.query('SELECT gender,country FROM users WHERE id=$1 AND is_active=TRUE',[req.session.user.id]);
+  if(!result.rows[0])return res.status(404).json({error:'Hesap bulunamadı.'});
+  res.setHeader('Cache-Control','no-store');
+  res.json({profile:result.rows[0]});
+}));
+app.put('/api/account/profile',dbRequired,asyncRoute(async(req,res)=>{
+  if(!req.session.user?.id)return res.status(401).json({error:'Profil bilgilerini güncellemek için giriş yapmalısınız.'});
+  const gender=String(req.body?.gender||'').trim();
+  const country=String(req.body?.country||'').trim();
+  const allowedGenders=['Kadın','Erkek','Belirtmek istemiyorum'];
+  const allowedCountries=['Türkiye','Almanya','Azerbaycan','Belçika','Birleşik Krallık','Fransa','Hollanda','Kıbrıs','ABD','Avusturya','Diğer'];
+  if(!allowedGenders.includes(gender))return res.status(400).json({error:'Lütfen geçerli bir cinsiyet seçin.'});
+  if(!allowedCountries.includes(country))return res.status(400).json({error:'Lütfen geçerli bir ülke seçin.'});
+  const result=await pool.query('UPDATE users SET gender=$1,country=$2 WHERE id=$3 AND is_active=TRUE RETURNING gender,country',[gender,country,req.session.user.id]);
+  if(!result.rows[0])return res.status(404).json({error:'Hesap bulunamadı.'});
+  req.session.user.gender=result.rows[0].gender;
+  req.session.user.country=result.rows[0].country;
+  await new Promise((resolve,reject)=>req.session.save(error=>error?reject(error):resolve()));
+  res.setHeader('Cache-Control','no-store');
+  res.json({ok:true,profile:result.rows[0]});
+}));
 app.get('/api/public/members/:id/avatar', dbRequired, asyncRoute(async (req, res) => {
   const memberId = Number(req.params.id);
   if (!Number.isSafeInteger(memberId) || memberId < 1) return res.status(400).end();
