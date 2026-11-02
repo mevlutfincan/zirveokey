@@ -80,6 +80,19 @@ async function main() {
     assert.equal(data.user.gender, label === 'A' ? 'Kadın' : 'Erkek', label + ' cinsiyet bilgisi saklanmadı.');
   }
 
+  for (const [label, cookie, expected] of [['A', cookieA, users[0].username], ['B', cookieB, users[1].username]]) {
+    for (const gamePath of ['/oyun', '/oyun/', '/oyun.html']) {
+      const gameResponse = await request(gamePath, { cookie });
+      assert.equal(gameResponse.status, 200, label + ' oyun sayfası açılamadı: ' + gamePath);
+      assert.match(gameResponse.headers.get('cache-control') || '', /no-store/, label + ' oyun HTML yanıtı önbelleğe açık.');
+      const gameHtml = await gameResponse.text();
+      assert.ok(gameHtml.includes('window.__ZIRVE_AUTH_BOOTSTRAP__='), label + ' oyun sayfasında sunucu oturum başlangıcı bulunamadı: ' + gamePath);
+      assert.ok(gameHtml.includes('id="gameUsername">' + expected + '</b>'), label + ' üst kullanıcı adı oyun sayfasına aktarılmadı: ' + gamePath);
+      assert.ok(gameHtml.includes('id="gameSeatUsername">' + expected + '</b>'), label + ' masa koltuğu kullanıcı adı oyun sayfasına aktarılmadı: ' + gamePath);
+      assert.ok(gameHtml.includes('"authenticated":true'), label + ' oyun başlangıç verisi oturumu doğrulamadı: ' + gamePath);
+    }
+  }
+
   const anonymousPreferences = await request('/api/account/preferences');
   assert.equal(anonymousPreferences.status, 401, 'Oturumsuz kullanıcı hesap tercihlerini okuyabildi.');
   const savePreferencesA = await request('/api/account/preferences', { method: 'PUT', cookie: cookieA, body: { preferences: { settingDarkMode: false, settingPresenceStatus: 'away', settingAutoArrange: true } } });
