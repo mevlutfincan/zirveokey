@@ -46,6 +46,7 @@ jobs:
           node --check server.js
           node --check public/js/main.js
           node --check public/js/oyun.js
+          node --check public/js/game-header.js
           node --check tests/two-user-integration.js
           node --check tests/resend-webhook-integration.js
       - name: Smoke-test homepage and health endpoint
