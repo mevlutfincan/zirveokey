@@ -551,8 +551,23 @@ async function openMemberProfile(memberId){
   $('#memberProfileStatus').textContent=({online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Meşgul',offline:'Çevrim Dışı'})[p.status]||'Çevrim Dışı';
   $('#memberProfileBio').textContent=p.bio||'Henüz profil açıklaması eklenmemiş.';
   const hours=Math.floor(Number(p.active_seconds||0)/3600),days=Number(p.member_days||0);
-  $('#memberProfileStats').replaceChildren();
-  [['Üyelik',days+' gündür'],['Aktif süre',hours+' saat'],['Arkadaş',String(p.friend_count||0)]].forEach(([label,value])=>{const item=document.createElement('span');item.innerHTML='<small>'+label+'</small><b>'+value+'</b>';$('#memberProfileStats').append(item);});
+  const statsRoot=$('#memberProfileStats');
+  statsRoot.replaceChildren();
+  const formatStatPercent=value=>{
+   const number=Number(value);
+   return value!==null&&value!==undefined&&value!==''&&Number.isFinite(number)&&number>=0&&number<=100?number.toLocaleString('tr-TR',{maximumFractionDigits:1})+'%':'—';
+  };
+  const points=Number(p.points);
+  [
+   ['Puan',p.points!==null&&p.points!==undefined&&p.points!==''&&Number.isFinite(points)?points.toLocaleString('tr-TR'):'—'],
+   ['Kazanma %',formatStatPercent(p.win_percentage)],
+   ['Kaybetme %',formatStatPercent(p.loss_percentage)]
+  ].forEach(([label,value])=>{
+   const item=document.createElement('span');
+   const caption=document.createElement('small');caption.textContent=label;
+   const metric=document.createElement('b');metric.textContent=value;
+   item.append(caption,metric);statsRoot.append(item);
+  });
   const badges=[];
   if(days>=30)badges.push('🏅 Topluluk Üyesi');
   else if(days>=7)badges.push('🌱 Yeni Topluluk Üyesi');
