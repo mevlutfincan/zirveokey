@@ -60,6 +60,10 @@ async function main() {
   assert.equal(typeof radioStatus.isLive, 'boolean', 'Radyo canlı yayın durumu boolean olmalı.');
   assert.equal(typeof radioStatus.djName, 'string', 'Radyo yayıncı adı metin olmalı.');
   assert.equal(typeof radioStatus.streamUrl, 'string', 'Radyo yayın adresi metin olmalı.');
+  const serverSource = readFileSync('server.js', 'utf8');
+  assert.match(serverSource, /member_role VARCHAR\\(16\\) NOT NULL DEFAULT 'member'/, 'DJ üye rolü için veritabanı alanı tanımlı olmalı.');
+  assert.match(serverSource, /p\\.show_online=TRUE/, 'Gizlilik tercihi çevrimiçi liste sorgusunda uygulanmalı.');
+  assert.match(gameScript, /DJ \\· Radyo Yayıncısı/, 'Çevrimiçi üye listesinde DJ rolü gösterilmeli.');
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
   const users = [
     { username: 'TestA_' + suffix, email: 'testa-' + suffix + '@example.invalid', password: 'ZirveTest!2026A', country: 'Türkiye', gender: 'Kadın' },
@@ -323,6 +327,7 @@ async function main() {
   const profileAId = (await (await request('/api/auth/me',{cookie:cookieA})).json()).user.id;
   const profileA = await request('/api/members/' + profileAId + '/profile', { cookie: cookieA });
   assert.equal(profileA.status, 200, 'A kendi profilini açamadı.');
+  assert.equal((await profileA.json()).profile.member_role, 'member', 'Yeni üye varsayılan rolü member olmalı.');
   const profileBId = (await (await request('/api/auth/me',{cookie:cookieB})).json()).user.id;
   const profileB = await request('/api/members/' + profileBId + '/profile', { cookie: cookieA });
   assert.equal(profileB.status, 200, 'A, B profilini görüntüleyemedi.');
