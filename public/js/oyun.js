@@ -737,11 +737,7 @@ async function notificationAction(url,method='POST'){
 }
 async function markNotificationRead(id){try{await notificationAction('/api/notifications/'+id+'/read');}catch(e){notify(e.message);}}
 async function deleteNotification(id){try{await notificationAction('/api/notifications/'+id,'DELETE');}catch(e){notify(e.message);}}
-notificationsButton.addEventListener('click',()=>{
- const opening=notificationsPopover.hidden;notificationsPopover.hidden=!opening;
- notificationsButton.setAttribute('aria-expanded',String(opening));
- if(opening)loadNotifications();
-});
+window.__ZIRVE_LOAD_NOTIFICATIONS=loadNotifications;
 notificationList.addEventListener('click',e=>{if(e.target.id==='notificationLogin')openGameAuth('login');});
 $('#notificationReadAll').addEventListener('click',async()=>{try{await notificationAction('/api/notifications/read-all');}catch(e){notify(e.message);}});
 $('#notificationClearAll').addEventListener('click',async()=>{if(!confirm('Tüm bildirimlerini silmek istediğinden emin misin?'))return;try{await notificationAction('/api/notifications','DELETE');}catch(e){notify(e.message);}});
@@ -848,6 +844,8 @@ function showSettingsCategory(category){
  Array.from(document.querySelectorAll('.settings-category')).forEach(button=>button.classList.toggle('active',button.dataset.settingsCategory===category));
  $$('.settings-page').forEach(page=>{const active=page.dataset.settingsPage===category;page.hidden=!active;page.classList.toggle('active',active);});
 }
+window.__ZIRVE_OPEN_SETTINGS=async()=>{showSettingsCategory('account');await loadMemberSettings();loadMemberAvatar();if(!settingsDialog.open)settingsDialog.showModal();};
+window.__ZIRVE_OPEN_NOTIFICATION_SETTINGS=async()=>{notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');await loadMemberSettings();showSettingsCategory('notifications');if(!settingsDialog.open)settingsDialog.showModal();};
 Array.from(document.querySelectorAll('.settings-category')).forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsCategory)));
 Array.from(document.querySelectorAll('[data-settings-open]')).forEach(button=>button.addEventListener('click',()=>showSettingsCategory(button.dataset.settingsOpen)));
 Array.from(document.querySelectorAll('.password-visibility-toggle')).forEach(button=>button.addEventListener('click',()=>{const input=$('#'+button.dataset.passwordTarget);if(!input)return;const reveal=input.type==='password';input.type=reveal?'text':'password';button.textContent=reveal?'Gizle':'Göster';button.setAttribute('aria-label',reveal?'Şifreyi gizle':'Şifreyi göster');}));
@@ -883,8 +881,6 @@ settingsKeys.forEach(id=>{const control=$('#'+id);if(!control)return;control.add
   $('#settingsSaveState').textContent=error.message;notify(error.message);
  }
 });});
-$('#settingsButton').addEventListener('click',async()=>{showSettingsCategory('account');await loadMemberSettings();loadMemberAvatar();settingsDialog.showModal();});
-$('#openNotificationSettings').addEventListener('click',async()=>{notificationsPopover.hidden=true;notificationsButton.setAttribute('aria-expanded','false');await loadMemberSettings();showSettingsCategory('notifications');settingsDialog.showModal();});
 function updateMemberColorPreview(){const name=$('#settingNickColor').value,text=$('#settingMessageColor').value,row=$('#settingRowColor')?.value||defaultChatStyle.rowColor;$('#memberColorPreviewName').style.color=name;$('#memberColorPreviewText').style.color=text;$('#memberColorPreview').style.background=row;}
 $('#settingNickColor').addEventListener('input',updateMemberColorPreview);
 $('#settingMessageColor').addEventListener('input',updateMemberColorPreview);
@@ -908,21 +904,6 @@ $('#saveMemberSettings').addEventListener('click',async()=>{
  try{const response=await fetch('/api/account/chat-style',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({nameColor,textColor,rowColor})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Renk tercihleri kaydedilemedi.');const saved=data.chatStyle||{nameColor,textColor};setChatColorInputs(saved);if(chatStyleAccountId)applyLobbyChatStyles([{id:chatStyleAccountId,chat_name_color:saved.nameColor,chat_text_color:saved.textColor,chat_row_color:saved.rowColor}]);chatLastId=0;renderedChatMessageIds.clear();chatMessagesBox.replaceChildren();await loadLobbyMessages(true);$('#memberColorStatus').textContent='Nick, mesaj ve sohbet satırı renklerin kaydedildi.';notify('Renk tercihlerin kaydedildi.');}
  catch(error){$('#memberColorStatus').textContent=error.message;notify(error.message);}
  finally{button.disabled=false;button.textContent='Renkleri kaydet';}
-});
-
-
-const fullscreenButton=$('#fullscreenButton');
-fullscreenButton.addEventListener('click',async()=>{
- try{
-  if(!document.fullscreenElement)await document.documentElement.requestFullscreen();
-  else await document.exitFullscreen();
- }catch(error){notify('Tam ekran bu tarayıcıda kullanılamıyor.');}
-});
-document.addEventListener('fullscreenchange',()=>{
- const active=!!document.fullscreenElement;
- fullscreenButton.textContent=active?'⛶':'⛶';
- fullscreenButton.title=active?'Tam ekrandan çık':'Tam ekran';
- fullscreenButton.setAttribute('aria-label',active?'Tam ekrandan çık':'Tam ekran');
 });
 
 

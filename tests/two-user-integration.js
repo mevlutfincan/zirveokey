@@ -89,6 +89,7 @@ async function main() {
       assert.ok(gameHtml.includes('window.__ZIRVE_AUTH_BOOTSTRAP__='), label + ' oyun sayfasında sunucu oturum başlangıcı bulunamadı: ' + gamePath);
       assert.ok(gameHtml.includes('id="gameUsername">' + expected + '</b>'), label + ' üst kullanıcı adı oyun sayfasına aktarılmadı: ' + gamePath);
       assert.ok(gameHtml.includes('id="gameSeatUsername">' + expected + '</b>'), label + ' masa koltuğu kullanıcı adı oyun sayfasına aktarılmadı: ' + gamePath);
+      assert.ok(gameHtml.includes('/js/game-header.js?v=header-controls-avatar-20261102'), label + ' bağımsız üst menü betiği yüklenmedi: ' + gamePath);
       assert.ok(gameHtml.includes('"authenticated":true'), label + ' oyun başlangıç verisi oturumu doğrulamadı: ' + gamePath);
     }
   }
