@@ -550,6 +550,7 @@ async function openMemberProfile(memberId){
   $('#memberProfileTier').textContent=(p.member_role==='dj'?'🎧 DJ · ':'')+(p.membership_tier==='gold'?'🪙 Gold Üye':p.membership_tier==='vip'?'💎 VIP Üye':'Normal Üye');
   $('#memberProfileStatus').textContent=({online:'Çevrim İçi',away:'Dışarda',sleeping:'Uyuyorum',busy:'Meşgul',offline:'Çevrim Dışı'})[p.status]||'Çevrim Dışı';
   $('#memberProfileBio').textContent=p.bio||'Henüz profil açıklaması eklenmemiş.';
+  const hours=Math.floor(Number(p.active_seconds||0)/3600),days=Number(p.member_days||0);
   const statsRoot=$('#memberProfileStats');
   statsRoot.replaceChildren();
   const formatStatPercent=value=>{
