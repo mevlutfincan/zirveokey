@@ -870,6 +870,18 @@ async function loadMemberSettings(){
  if($('#settingPresenceStatus'))$('#settingPresenceStatus').value=memberPreferences.settingPresenceStatus||'online';
  applyMemberSettings(memberPreferences);
  $('#settingProfileBio').value=memberPreferences.profileBio||'';
+ if(chatStyleAuthenticated){
+  try{
+   const profileResponse=await fetch('/api/account/profile',{credentials:'same-origin',cache:'no-store'});
+   const profileData=await profileResponse.json();
+   if(!profileResponse.ok)throw new Error(profileData.error||'Profil bilgileri yüklenemedi.');
+   $('#settingProfileGender').value=profileData.profile?.gender||'';
+   $('#settingProfileCountry').value=profileData.profile?.country||'';
+  }catch(error){saveState.textContent=error.message;}
+ }else{
+  $('#settingProfileGender').value='';
+  $('#settingProfileCountry').value='';
+ }
  $('#settingsAccountName').textContent=$('#gameUsername')?.textContent||'Üye hesabı';
  $('#settingsAccountStatus').textContent=chatStyleAuthenticated?'Oturum açık · Ayarların hesabına kaydedilir.':'Misafir oturumu · Değişiklikleri kaydetmek için giriş yap.';
 }
@@ -888,6 +900,20 @@ settingsDialog.addEventListener('close',()=>{
  ['currentPassword','newPassword','confirmNewPassword'].forEach(id=>{const input=$('#'+id);if(input){input.value='';input.type='password';}});
  Array.from(document.querySelectorAll('.password-visibility-toggle')).forEach(button=>{button.textContent='Göster';button.setAttribute('aria-label','Şifreyi göster');});
  $('#passwordChangeStatus').textContent='Şifren en az 10 karakter olmalıdır.';
+});
+$('#saveProfileIdentity').addEventListener('click',async()=>{
+ const gender=$('#settingProfileGender').value,country=$('#settingProfileCountry').value;
+ if(!gender||!country){$('#settingsSaveState').textContent='Cinsiyet ve ülke seçimini yapmalısın.';return;}
+ const button=$('#saveProfileIdentity');button.disabled=true;button.textContent='Kaydediliyor…';$('#settingsSaveState').textContent='Profil bilgileri kaydediliyor…';
+ try{
+  const response=await fetch('/api/account/profile',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({gender,country})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||'Profil bilgileri kaydedilemedi.');
+  $('#settingsSaveState').textContent='Cinsiyet ve ülke bilgilerin kaydedildi.';
+  notify('Profil bilgilerin güncellendi.');
+  if(memberProfileDialog.open&&activeSocialMember?.id)await openMemberProfile(activeSocialMember.id);
+ }catch(error){$('#settingsSaveState').textContent=error.message;notify(error.message);}
+ finally{button.disabled=false;button.textContent='Cinsiyet ve ülkeyi kaydet';}
 });
 $('#saveProfileBio').addEventListener('click',async()=>{
  const bio=$('#settingProfileBio').value.trim();$('#settingsSaveState').textContent='Kaydediliyor…';
