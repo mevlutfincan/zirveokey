@@ -345,7 +345,7 @@ app.post('/api/auth/logout', dbRequired, asyncRoute(async (req, res) => {
   if (!req.session) return res.json({ ok: true });
   const userId = req.session.user?.id;
   if (userId) {
-    try { await pool.query('DELETE FROM user_presence WHERE user_id=$1', [userId]); }
+    try { await pool.query('DELETE FROM user_presence WHERE user_id=$1', [userId]); broadcastPresenceUpdate(); }
     catch (error) { console.error('Presence cleanup failed during logout:', error.message); }
   }
   req.session.destroy(error => {
