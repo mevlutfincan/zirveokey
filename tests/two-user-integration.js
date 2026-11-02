@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
+const { readFileSync } = require('node:fs');
 
 const port = Number(process.env.TEST_PORT || 3101);
 const baseUrl = 'http://127.0.0.1:' + port;
@@ -49,6 +50,8 @@ async function waitForServer() {
 }
 
 async function main() {
+  const gameScript = readFileSync('public/js/oyun.js', 'utf8');
+  assert.doesNotMatch(gameScript, /(?<!\\$)\\$\\([^)]*\\)\\.forEach/, 'Tek eleman seçicisi forEach ile çağrılmamalı.');
   await waitForServer();
   const radioStatusResponse = await request('/api/radio/status');
   assert.equal(radioStatusResponse.status, 200, 'Radyo yayın durumu alınamadı.');
@@ -87,6 +90,7 @@ async function main() {
       assert.match(gameResponse.headers.get('cache-control') || '', /no-store/, label + ' oyun HTML yanıtı önbelleğe açık.');
       const gameHtml = await gameResponse.text();
       assert.ok(gameHtml.includes('window.__ZIRVE_AUTH_BOOTSTRAP__='), label + ' oyun sayfasında sunucu oturum başlangıcı bulunamadı: ' + gamePath);
+      assert.ok(!gameHtml.includes('</script>\\\\n</head>'), label + ' oyun sayfasında görünür kaçış karakteri kaldı: ' + gamePath);
       assert.ok(gameHtml.includes('id="gameUsername">' + expected + '</b>'), label + ' üst kullanıcı adı oyun sayfasına aktarılmadı: ' + gamePath);
       assert.ok(gameHtml.includes('id="gameSeatUsername">' + expected + '</b>'), label + ' masa koltuğu kullanıcı adı oyun sayfasına aktarılmadı: ' + gamePath);
       assert.ok(gameHtml.includes('/js/game-header.js?v=header-controls-avatar-20261102'), label + ' bağımsız üst menü betiği yüklenmedi: ' + gamePath);
