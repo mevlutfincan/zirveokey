@@ -864,12 +864,7 @@ $('#saveProfileBio').addEventListener('click',async()=>{
  try{await saveMemberPreferences({profileBio:bio});$('#settingsSaveState').textContent='Profil açıklaman kaydedildi.';notify('Profil açıklaman güncellendi.');}
  catch(error){$('#settingsSaveState').textContent=error.message;notify(error.message);}
 });
-$('#settingShowOnline')?.addEventListener('change',async()=>{
-  const value=$('#settingShowOnline').checked;$('#settingsSaveState').textContent='Kaydediliyor…';
-  try{await saveMemberPreferences({settingShowOnline:value});await sendPresenceHeartbeat();await loadOnlineMembers();}
-  catch(error){$('#settingShowOnline').checked=!value;$('#settingsSaveState').textContent=error.message;notify(error.message);}
- });
- $('#settingPresenceStatus').addEventListener('change',async()=>{
+$('#settingPresenceStatus').addEventListener('change',async()=>{
  const value=$('#settingPresenceStatus').value;$('#settingsSaveState').textContent='Kaydediliyor…';
  try{await saveMemberPreferences({settingPresenceStatus:value});sendPresenceHeartbeat();loadOnlineMembers();}
  catch(error){$('#settingPresenceStatus').value=memberPreferences.settingPresenceStatus||'online';$('#settingsSaveState').textContent=error.message;notify(error.message);}
@@ -879,6 +874,7 @@ settingsKeys.forEach(id=>{const control=$('#'+id);if(!control)return;control.add
  applyMemberSettings({...memberPreferences,[id]:value});
  try{
   await saveMemberPreferences({[id]:value});
+  if(id==='settingShowOnline'){await sendPresenceHeartbeat();await loadOnlineMembers();}
   if(id==='settingNotifications'){
    notificationsEnabled=value;
    renderNotificationPreference();
