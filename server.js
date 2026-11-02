@@ -367,22 +367,6 @@ app.post('/api/presence/heartbeat', dbRequired, asyncRoute(async (req, res) => {
   broadcastPresenceUpdate();
 }));
 
-app.put('/api/internal/members/:id/role', dbRequired, asyncRoute(async (req, res) => {
-  const configuredToken = String(process.env.MEMBER_ROLE_ADMIN_TOKEN || '');
-  const suppliedToken = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '');
-  if (!configuredToken) return res.status(503).json({ error: 'Üye rolü yönetimi henüz yapılandırılmadı.' });
-  const expected = Buffer.from(configuredToken);
-  const supplied = Buffer.from(suppliedToken);
-  if (expected.length !== supplied.length || !crypto.timingSafeEqual(expected, supplied)) return res.status(401).json({ error: 'Yetkisiz işlem.' });
-  const memberId = parseMemberId(req.params.id);
-  const role = String(req.body?.role || '');
-  if (!memberId || !['member','dj'].includes(role)) return res.status(400).json({ error: 'Geçerli üye ve rol seçilmelidir.' });
-  const result = await pool.query('UPDATE users SET member_role=$1 WHERE id=$2 AND is_active=TRUE RETURNING id,username,member_role', [role, memberId]);
-  if (!result.rowCount) return res.status(404).json({ error: 'Üye bulunamadı.' });
-  res.json({ ok: true, member: result.rows[0] });
-  broadcastPresenceUpdate();
-}));
-
 app.get('/api/presence/events', dbRequired, (req, res) => {
   if (!req.session.user?.id) return res.status(401).end();
   res.status(200);
