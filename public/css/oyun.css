@@ -2868,139 +2868,80 @@ nav.lobby-tabs>.lobby-tab:first-child{
 }
 
 
-/* Definitive mobile header layout: brand/avatar row + controls row.
-   Overrides legacy 760px desktop-canvas rules that caused the overlap. */
-@media (max-width:760px) {
- html, body.game-page {
-  width:100%!important;
-  min-width:0!important;
-  max-width:100%!important;
-  overflow-x:hidden!important;
+
+/* Compact single-row mobile header with an expandable tools drawer. */
+.mobile-header-toggle{display:none}
+@media(max-width:760px){
+ body.game-page .game-header{
+  box-sizing:border-box!important;display:flex!important;flex-direction:row!important;
+  align-items:center!important;justify-content:space-between!important;gap:8px!important;
+  width:100%!important;min-width:0!important;height:auto!important;min-height:58px!important;
+  padding:8px 10px!important;overflow:visible!important
  }
- body.game-page .game-header {
-  box-sizing:border-box!important;
-  display:grid!important;
-  grid-template-columns:minmax(0,1fr) auto!important;
-  grid-template-areas:"brand account" "tools tools"!important;
-  align-items:center!important;
-  justify-content:initial!important;
-  gap:8px 10px!important;
-  width:100%!important;
-  min-width:0!important;
-  height:auto!important;
-  min-height:0!important;
-  padding:10px 12px 9px!important;
-  overflow:visible!important;
+ body.game-page .game-header .game-brand{
+  display:flex!important;flex:0 1 auto!important;width:auto!important;min-width:0!important;
+  max-width:none!important;margin:0!important;font-size:clamp(18px,5vw,23px)!important;
+  line-height:1!important;white-space:nowrap!important
  }
- body.game-page .game-header .game-brand {
-  grid-area:brand!important;
-  display:flex!important;
-  min-width:0!important;
-  width:max-content!important;
-  max-width:100%!important;
-  align-self:center!important;
-  margin:0!important;
-  font-size:22px!important;
-  line-height:1.15!important;
-  white-space:nowrap!important;
+ body.game-page .game-header .brand-crown{display:none!important}
+ body.game-page .game-header .header-center{display:none!important}
+ body.game-page .game-header .header-user{
+  display:flex!important;flex:0 0 auto!important;width:auto!important;min-width:0!important;
+  min-height:36px!important;margin:0!important;padding:0!important;border:0!important;
+  align-items:center!important;justify-content:flex-end!important;gap:5px!important
  }
- body.game-page .game-header .brand-crown {display:none!important}
- body.game-page .game-header .header-center {display:none!important}
- body.game-page .game-header .header-user {
-  grid-area:account!important;
-  display:flex!important;
-  flex:0 0 auto!important;
-  width:auto!important;
-  min-width:0!important;
-  min-height:36px!important;
-  margin:0!important;
-  padding:0!important;
-  border:0!important;
-  justify-content:flex-end!important;
-  align-items:center!important;
-  flex-wrap:nowrap!important;
-  gap:6px!important;
+ body.game-page .game-header .user-meta{display:none!important}
+ body.game-page .game-header .user-avatar{
+  display:grid!important;flex:0 0 34px!important;width:34px!important;height:34px!important;
+  margin:0!important
  }
- body.game-page .game-header .user-meta {display:none!important}
- body.game-page .game-header .user-avatar {
-  display:grid!important;
-  flex:0 0 36px!important;
-  width:36px!important;
-  height:36px!important;
-  margin:0!important;
-  order:0!important;
- }
- body.game-page .game-header .game-auth-actions {
-  display:flex!important;
-  flex:0 0 auto!important;
-  width:auto!important;
-  min-width:0!important;
-  margin:0!important;
-  gap:5px!important;
- }
+ body.game-page .game-header .game-auth-actions{display:flex!important;flex:0 0 auto!important;gap:4px!important}
  body.game-page .game-header .game-auth-actions .icon-button,
- body.game-page .game-header #gameLogoutButton {
-  display:inline-flex!important;
-  flex:0 0 auto!important;
-  width:auto!important;
-  min-width:0!important;
-  height:32px!important;
-  min-height:32px!important;
-  margin:0!important;
-  padding:0 9px!important;
-  align-items:center!important;
-  justify-content:center!important;
-  white-space:nowrap!important;
-  font-size:10px!important;
+ body.game-page .game-header #gameLogoutButton{
+  display:inline-flex!important;flex:0 0 auto!important;width:auto!important;min-width:0!important;
+  height:30px!important;min-height:30px!important;margin:0!important;padding:0 7px!important;
+  align-items:center!important;justify-content:center!important;white-space:nowrap!important;font-size:10px!important
  }
- body.game-page .game-header .header-tools {
-  grid-area:tools!important;
-  display:flex!important;
-  flex:0 0 auto!important;
-  width:100%!important;
-  min-width:0!important;
-  min-height:38px!important;
-  margin:0!important;
-  padding:0!important;
-  align-items:center!important;
-  justify-content:flex-end!important;
-  flex-wrap:nowrap!important;
-  gap:8px!important;
+ body.game-page .game-header .mobile-header-toggle{
+  box-sizing:border-box!important;display:flex!important;flex:0 0 36px!important;
+  width:36px!important;height:36px!important;padding:8px!important;margin:0!important;
+  flex-direction:column!important;justify-content:center!important;align-items:center!important;
+  gap:4px!important;border:1px solid rgba(130,220,120,.55)!important;border-radius:10px!important;
+  background:rgba(24,67,35,.88)!important;cursor:pointer!important
  }
- body.game-page .game-header .header-tools .notification-anchor {
-  display:flex!important;
-  flex:0 0 36px!important;
-  width:36px!important;
-  min-width:36px!important;
+ body.game-page .game-header .mobile-header-toggle span{
+  display:block!important;width:17px!important;height:2px!important;border-radius:2px!important;
+  background:#e8ffe8!important;transition:transform .18s ease,opacity .18s ease
  }
- body.game-page .game-header .header-tools .header-action {
-  display:grid!important;
-  flex:0 0 36px!important;
-  width:36px!important;
-  min-width:36px!important;
-  height:36px!important;
-  min-height:36px!important;
-  margin:0!important;
-  padding:0!important;
-  place-items:center!important;
+ body.game-page .game-header.mobile-tools-open .mobile-header-toggle span:first-child{transform:translateY(6px) rotate(45deg)}
+ body.game-page .game-header.mobile-tools-open .mobile-header-toggle span:nth-child(2){opacity:0}
+ body.game-page .game-header.mobile-tools-open .mobile-header-toggle span:last-child{transform:translateY(-6px) rotate(-45deg)}
+ body.game-page .game-header .header-tools{
+  display:none!important;position:absolute!important;z-index:100!important;top:100%!important;
+  left:8px!important;right:8px!important;width:auto!important;min-width:0!important;
+  min-height:48px!important;margin:0!important;padding:7px 9px!important;
+  align-items:center!important;justify-content:space-around!important;gap:8px!important;
+  border:1px solid rgba(112,205,105,.48)!important;border-radius:0 0 13px 13px!important;
+  background:#102318!important;box-shadow:0 10px 22px rgba(0,0,0,.38)!important
  }
- body.game-page .game-header .header-tools .header-action small {display:none!important}
- body.game-page .game-header .header-tools .user-online-count {
-  display:flex!important;
-  flex:0 0 auto!important;
-  min-width:44px!important;
-  margin:0!important;
-  padding:7px 9px!important;
-  justify-content:center!important;
-  white-space:nowrap!important;
+ body.game-page .game-header.mobile-tools-open .header-tools{display:flex!important}
+ body.game-page .game-header .header-tools .notification-anchor{
+  display:flex!important;flex:0 0 36px!important;width:36px!important;min-width:36px!important
  }
- body.game-page .game-header [hidden] {display:none!important}
+ body.game-page .game-header .header-tools .header-action{
+  display:grid!important;flex:0 0 36px!important;width:36px!important;min-width:36px!important;
+  height:36px!important;min-height:36px!important;margin:0!important;padding:0!important;place-items:center!important
+ }
+ body.game-page .game-header .header-tools .header-action small{display:none!important}
+ body.game-page .game-header .header-tools .user-online-count{
+  display:flex!important;flex:0 0 auto!important;min-width:42px!important;margin:0!important;
+  padding:7px 9px!important;justify-content:center!important;white-space:nowrap!important
+ }
+ body.game-page .game-header [hidden]{display:none!important}
 }
-@media (max-width:360px) {
- body.game-page .game-header {padding:8px!important;gap:7px!important}
- body.game-page .game-header .game-brand {font-size:19px!important}
- body.game-page .game-header .header-tools {gap:5px!important}
- body.game-page .game-header .header-tools .header-action,
- body.game-page .game-header .header-tools .notification-anchor {flex-basis:33px!important;width:33px!important;min-width:33px!important;height:33px!important;min-height:33px!important}
- body.game-page .game-header .user-avatar {flex-basis:32px!important;width:32px!important;height:32px!important}
+@media(max-width:360px){
+ body.game-page .game-header{gap:5px!important;padding:7px!important}
+ body.game-page .game-header .game-brand{font-size:18px!important}
+ body.game-page .game-header .user-avatar{flex-basis:31px!important;width:31px!important;height:31px!important}
+ body.game-page .game-header .mobile-header-toggle{flex-basis:33px!important;width:33px!important;height:33px!important}
 }
