@@ -2751,3 +2751,118 @@ nav.lobby-tabs>.lobby-tab:first-child{
 .settings-profile-fields .setting-select{width:100%;min-width:0}
 .settings-profile-fields button{grid-column:1/-1;justify-self:start}
 @media(max-width:560px){.settings-profile-fields{grid-template-columns:1fr}.settings-profile-fields>div,.settings-profile-fields button{grid-column:1}}
+
+
+/* Mobile header: separate utility controls and account actions into clean rows. */
+@media (max-width: 760px) {
+ body.game-page .game-header {
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:0!important;
+  padding:7px 9px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  flex-wrap:nowrap!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  overflow:visible!important;
+ }
+ body.game-page .game-header .header-tools {
+  order:1!important;
+  display:flex!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:34px!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+ }
+ body.game-page .game-header .header-tools .notification-anchor {
+  flex:0 0 34px!important;
+  width:34px!important;
+  min-width:34px!important;
+ }
+ body.game-page .game-header .header-tools .header-action {
+  box-sizing:border-box!important;
+  display:flex!important;
+  flex:0 0 34px!important;
+  width:34px!important;
+  min-width:34px!important;
+  height:34px!important;
+  min-height:34px!important;
+  padding:0!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:0!important;
+ }
+ body.game-page .game-header .header-tools .header-action small {
+  display:none!important;
+ }
+ body.game-page .game-header .header-tools .user-online-count {
+  flex:0 0 auto!important;
+  min-width:42px!important;
+  margin:0 0 0 auto!important;
+  justify-content:center!important;
+ }
+ body.game-page .game-header .header-user {
+  order:2!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:36px!important;
+  margin:0!important;
+  padding:0!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:6px!important;
+ }
+ body.game-page .game-header .user-avatar {
+  order:0!important;
+  flex:0 0 32px!important;
+  width:32px!important;
+  height:32px!important;
+  margin-right:auto!important;
+ }
+ body.game-page .game-header .user-meta {display:none!important}
+ body.game-page .game-header .game-auth-actions {
+  order:1!important;
+  display:flex!important;
+  flex:0 0 auto!important;
+  min-width:0!important;
+  flex-wrap:nowrap!important;
+  gap:5px!important;
+ }
+ body.game-page .game-header .game-auth-actions .icon-button,
+ body.game-page .game-header #gameLogoutButton {
+  box-sizing:border-box!important;
+  display:inline-flex!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:54px!important;
+  height:32px!important;
+  min-height:32px!important;
+  padding:0 9px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  white-space:nowrap!important;
+  font-size:10px!important;
+ }
+ body.game-page .game-header [hidden] {display:none!important}
+}
+@media (max-width: 380px) {
+ body.game-page .game-header {padding-right:7px!important;padding-left:7px!important}
+ body.game-page .game-header .header-tools {gap:5px!important}
+ body.game-page .game-header .header-tools .header-action,
+ body.game-page .game-header .header-tools .notification-anchor {flex-basis:32px!important;width:32px!important;min-width:32px!important;height:32px!important;min-height:32px!important}
+ body.game-page .game-header .header-user {gap:4px!important}
+ body.game-page .game-header .game-auth-actions {gap:4px!important}
+ body.game-page .game-header .game-auth-actions .icon-button,
+ body.game-page .game-header #gameLogoutButton {min-width:49px!important;padding:0 7px!important}
+}
