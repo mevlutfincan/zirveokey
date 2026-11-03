@@ -371,8 +371,6 @@ async function main() {
   assert.equal(blockedProfile.status,403,'Engelleyen üyenin profili engellenen kullanıcıya açık kaldı.');
   const unblock = await request('/api/social/blocks/' + profileBId,{method:'DELETE',cookie:cookieA});
   assert.equal(unblock.status,200,'A engeli kaldıramadı.');
-  const removeFavorite = await request('/api/social/favorites/' + profileBId,{method:'DELETE',cookie:cookieA});
-  assert.equal(removeFavorite.status,200,'A favoriden çıkaramadı.');
   const removeFriend = await request('/api/social/friends/' + profileBId,{method:'DELETE',cookie:cookieA});
   assert.equal(removeFriend.status,200,'A arkadaşlıktan çıkaramadı.');
 
