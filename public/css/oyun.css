@@ -2945,3 +2945,201 @@ nav.lobby-tabs>.lobby-tab:first-child{
  body.game-page .game-header .user-avatar{flex-basis:31px!important;width:31px!important;height:31px!important}
  body.game-page .game-header .mobile-header-toggle{flex-basis:33px!important;width:33px!important;height:33px!important}
 }
+
+
+/* Mobile responsive refresh: full-width content, readable roster and usable chat. */
+@media (max-width: 760px) {
+ html, body.game-page {
+  width:100%!important; min-width:0!important; max-width:100%!important;
+  overflow-x:hidden!important;
+ }
+ body.game-page .game-layout {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:auto auto auto!important;
+  gap:10px!important;
+  width:100%!important; min-width:0!important;
+  height:auto!important; min-height:0!important;
+  padding:10px!important; margin:0!important;
+  overflow:visible!important; align-items:stretch!important;
+ }
+ body.game-page .main-column,
+ body.game-page .right-column {
+  display:contents!important;
+ }
+ body.game-page .lobby-view,
+ body.game-page .table-view,
+ body.game-page .online-panel,
+ body.game-page .chat-panel {
+  grid-column:1!important; width:100%!important; min-width:0!important;
+  max-width:100%!important; margin:0!important; justify-self:stretch!important;
+ }
+ body.game-page .lobby-view,
+ body.game-page .table-view {grid-row:1!important}
+ body.game-page .online-panel {grid-row:2!important; order:2!important}
+ body.game-page .chat-panel {grid-row:3!important; order:3!important}
+ body.game-page .lobby-empty {
+  box-sizing:border-box!important; width:100%!important; height:auto!important;
+  min-height:clamp(260px,42svh,410px)!important; max-height:410px!important;
+  padding:clamp(18px,5vw,30px)!important;
+  display:flex!important; flex-direction:column!important;
+  justify-content:center!important; align-items:center!important;
+  text-align:center!important; gap:10px!important; overflow:hidden!important;
+ }
+ body.game-page .lobby-empty h2 {
+  max-width:100%!important; font-size:clamp(20px,5.4vw,27px)!important;
+  line-height:1.2!important; overflow-wrap:anywhere!important
+ }
+ body.game-page .lobby-empty p {
+  max-width:34ch!important; margin:0 auto!important;
+  font-size:clamp(13px,3.6vw,16px)!important; line-height:1.55!important
+ }
+ body.game-page .empty-emblem {
+  width:76px!important; height:76px!important; min-width:76px!important;
+  display:grid!important; place-items:center!important; margin:0 auto 5px!important;
+  border-radius:22px!important; font-size:38px!important
+ }
+ body.game-page .lobby-table-grid {
+  grid-template-columns:minmax(0,1fr)!important; gap:9px!important;
+  width:100%!important; min-width:0!important; margin:8px 0 0!important
+ }
+ body.game-page .lobby-table-card {
+  box-sizing:border-box!important; width:100%!important; min-width:0!important;
+  height:auto!important; min-height:104px!important; padding:12px!important
+ }
+ body.game-page .online-panel {
+  box-sizing:border-box!important; display:flex!important; flex-direction:column!important;
+  height:auto!important; min-height:0!important; max-height:340px!important;
+  border-radius:14px!important; overflow:hidden!important
+ }
+ body.game-page .online-panel .side-heading {
+  box-sizing:border-box!important; display:flex!important; flex-direction:row!important;
+  align-items:center!important; justify-content:space-between!important;
+  flex-wrap:wrap!important; gap:8px!important; width:100%!important;
+  padding:12px!important
+ }
+ body.game-page .online-panel .side-heading h2 {
+  font-size:14px!important; line-height:1.25!important; overflow-wrap:anywhere!important
+ }
+ body.game-page .online-panel-actions {
+  display:flex!important; flex-wrap:wrap!important; align-items:center!important;
+  gap:6px!important; max-width:100%!important
+ }
+ body.game-page .online-panel-actions button {
+  min-height:34px!important; padding:6px 10px!important; font-size:12px!important
+ }
+ body.game-page .online-panel .online-list {
+  box-sizing:border-box!important; display:flex!important; flex-direction:column!important;
+  width:100%!important; height:auto!important; min-height:0!important;
+  max-height:230px!important; overflow-x:hidden!important; overflow-y:auto!important;
+  overscroll-behavior:contain!important
+ }
+ body.game-page .online-member {
+  box-sizing:border-box!important; display:flex!important; flex:0 0 auto!important;
+  align-items:center!important; gap:9px!important; width:100%!important;
+  min-width:0!important; min-height:58px!important; height:auto!important;
+  padding:8px 12px!important; overflow:visible!important
+ }
+ body.game-page .online-member b {
+  min-width:0!important; max-width:none!important; flex:1 1 auto!important;
+  overflow-wrap:anywhere!important; white-space:normal!important;
+  font-size:13px!important; line-height:1.25!important
+ }
+ body.game-page .online-member .online-member-name,
+ body.game-page .online-member .online-member-meta {
+  min-width:0!important; overflow-wrap:anywhere!important
+ }
+ body.game-page .online-list .side-empty {
+  box-sizing:border-box!important; min-height:100px!important;
+  padding:16px!important; text-align:center!important
+ }
+ body.game-page .chat-panel {
+  box-sizing:border-box!important; display:flex!important; flex-direction:column!important;
+  width:100%!important; height:clamp(340px,52svh,520px)!important;
+  min-height:340px!important; max-height:520px!important;
+  border-radius:14px!important; overflow:hidden!important
+ }
+ body.game-page .chat-panel .side-heading {
+  box-sizing:border-box!important; display:flex!important; flex-wrap:wrap!important;
+  align-items:center!important; justify-content:space-between!important;
+  gap:8px!important; width:100%!important; padding:10px!important
+ }
+ body.game-page .chat-heading-brand {
+  display:flex!important; align-items:center!important; flex-wrap:wrap!important;
+  gap:8px!important; min-width:0!important
+ }
+ body.game-page .chat-heading-brand h2 {font-size:14px!important}
+ body.game-page .chat-view-tools {
+  display:flex!important; flex-wrap:wrap!important; align-items:center!important;
+  justify-content:flex-end!important; gap:5px!important; max-width:100%!important
+ }
+ body.game-page .chat-view-tools .chat-control {
+  min-width:34px!important; min-height:34px!important; padding:5px 8px!important
+ }
+ body.game-page .chat-messages {
+  box-sizing:border-box!important; flex:1 1 auto!important; min-height:0!important;
+  height:auto!important; max-height:none!important; overflow-x:hidden!important;
+  overflow-y:auto!important; overscroll-behavior:contain!important;
+  padding:10px!important; gap:7px!important
+ }
+ body.game-page .chat-message {
+  max-width:100%!important; overflow-wrap:anywhere!important;
+  font-size:13px!important; line-height:1.4!important
+ }
+ body.game-page .chat-form {
+  box-sizing:border-box!important; display:flex!important; flex:0 0 auto!important;
+  width:100%!important; min-width:0!important; min-height:52px!important;
+  height:auto!important; gap:7px!important; padding:8px!important;
+  align-items:center!important
+ }
+ body.game-page .chat-form input {
+  box-sizing:border-box!important; flex:1 1 0!important; width:1%!important;
+  min-width:0!important; height:38px!important; padding:0 11px!important;
+  font-size:16px!important
+ }
+ body.game-page .chat-form button[type="submit"],
+ body.game-page .chat-smile-button {
+  box-sizing:border-box!important; flex:0 0 38px!important;
+  width:38px!important; min-width:38px!important; height:38px!important;
+  min-height:38px!important; padding:0!important
+ }
+ body.game-page .lobby-tabs {
+  box-sizing:border-box!important; display:flex!important; width:100%!important;
+  min-width:0!important; max-width:100%!important; overflow-x:auto!important;
+  overflow-y:hidden!important; white-space:nowrap!important;
+  -webkit-overflow-scrolling:touch!important; scrollbar-width:none!important;
+  gap:6px!important; padding:5px 9px!important
+ }
+ body.game-page .lobby-tabs::-webkit-scrollbar {display:none!important}
+ body.game-page .open-table-tabs {
+  display:flex!important; flex:1 1 auto!important; min-width:0!important;
+  overflow-x:auto!important; overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch!important
+ }
+ body.game-page .lobby-tab,
+ body.game-page .tab-add,
+ body.game-page .open-table-tab {
+  flex:0 0 auto!important; min-height:38px!important; white-space:nowrap!important
+ }
+ body.game-page .tab-add {padding:0 10px!important}
+ body.game-page .table-topline,
+ body.game-page .rack-toolbar,
+ body.game-page .table-bottom-actions {
+  display:flex!important; flex-wrap:wrap!important; gap:8px!important;
+  align-items:center!important; min-width:0!important
+ }
+ body.game-page .felt-stage,
+ body.game-page .felt-table,
+ body.game-page .rack-row {box-sizing:border-box!important; max-width:100%!important; min-width:0!important}
+ body.game-page .rack-row {overflow-x:auto!important; -webkit-overflow-scrolling:touch!important}
+ body.game-page .tile-rack {min-width:max-content!important}
+ body.game-page button,
+ body.game-page input,
+ body.game-page select {touch-action:manipulation}
+}
+@media (max-width:390px) {
+ body.game-page .game-layout {padding:7px!important;gap:8px!important}
+ body.game-page .chat-panel {height:clamp(320px,50svh,470px)!important;min-height:320px!important}
+ body.game-page .online-panel .side-heading {padding:9px!important}
+ body.game-page .chat-view-tools .chat-control span:not(.chat-control-icon) {display:none!important}
+}
