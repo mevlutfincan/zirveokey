@@ -22,6 +22,13 @@
    paintAvatar(avatar,username);
   }catch(error){console.warn('Üst menü hesap bilgisi yenilenemedi:',error);}
  }
+ const mobileMenuToggle=byId('mobileHeaderToggle'),mobileTools=byId('mobileHeaderTools');
+ mobileMenuToggle?.addEventListener('click',()=>{
+  const opening=mobileMenuToggle.getAttribute('aria-expanded')!=='true';
+  mobileMenuToggle.setAttribute('aria-expanded',String(opening));
+  mobileMenuToggle.setAttribute('aria-label',opening?'Menüyü kapat':'Menüyü aç');
+  document.querySelector('.game-header')?.classList.toggle('mobile-tools-open',opening);
+ });
  const notificationsButton=byId('notificationsButton'),popover=byId('notificationsPopover');
  notificationsButton?.addEventListener('click',()=>{
   if(!popover)return;const opening=popover.hidden;popover.hidden=!opening;notificationsButton.setAttribute('aria-expanded',String(opening));
