@@ -4,14 +4,14 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08130d"><meta name="description" content="ZirveOkey oyun masası arayüzü.">
 <title>Oyun | ZirveOkey</title>
-<link rel="stylesheet" href="/css/oyun.css?v=online-member-name-emphasis-20261102">
-<script defer src="/js/game-header.js?v=header-controls-avatar-20261102"></script>
+<link rel="stylesheet" href="/css/oyun.css?v=mobile-collapsible-header-20261103">
+<script defer src="/js/game-header.js?v=mobile-collapsible-header-20261103"></script>
 <script defer src="/js/oyun.js?v=online-member-name-emphasis-20261102"></script>
 </head>
 <body class="game-page">
 <header class="game-header">
  <div class="game-brand"><span class="brand-crown">♛</span><span><b>Zirve</b>Okey</span></div>
- <div class="header-tools" aria-label="Oyun menüleri">
+ <div class="header-tools" id="mobileHeaderTools" aria-label="Oyun menüleri">
   <div class="notification-anchor">  <button class="icon-button header-action" id="notificationsButton" type="button" aria-label="Bildirimler" aria-expanded="false" title="Bildirimler"><span aria-hidden="true">♧</span><small>Bildirimler</small></button><section class="notification-panel" id="notificationsPopover" aria-label="Bildirim merkezi" hidden>
  <header class="notification-head"><div><strong>Bildirimler</strong><small id="notificationUnreadLabel">Bildirimlerin</small></div><button type="button" id="notificationReadAll" class="notification-text-action">Tümünü okundu yap</button></header>
  <div class="notification-preferences"><span><b>Bildirimleri al</b><small id="notificationPreferenceHint">Bildirimleri istediğin zaman kapatabilirsin.</small></span><button type="button" id="notificationPreferenceToggle" class="notification-switch" role="switch" aria-checked="true"><span></span><b>Açık</b></button></div>
@@ -23,6 +23,7 @@
   <button class="icon-button header-action" id="fullscreenButton" type="button" aria-label="Tam ekran" title="Tam ekran"><span aria-hidden="true">⛶</span><small>Tam ekran</small></button>
   <span class="user-online-count" aria-live="polite" title="Çevrimiçi oyuncular"><i></i><b id="headerOnlineCount">0</b><small>Çevrimiçi</small></span>
    </div>
+ <button type="button" class="mobile-header-toggle" id="mobileHeaderToggle" aria-label="Menüyü aç" aria-expanded="false" aria-controls="mobileHeaderTools"><span></span><span></span><span></span></button>
  <div class="header-user">
   <span class="user-avatar" id="gameUserAvatar">M</span><span class="user-meta"><b id="gameUsername">Misafir Oyuncu</b><small id="gameAccountState">Giriş yapılmadı</small></span>
   <div class="game-auth-actions" id="gameAuthActions"><button class="icon-button" id="gameLoginButton" type="button">Giriş</button><button class="icon-button" id="gameRegisterButton" type="button">Üye Ol</button></div>
