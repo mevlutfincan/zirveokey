@@ -2741,3 +2741,13 @@ nav.lobby-tabs>.lobby-tab:first-child{
 @media(max-width:420px){
  #memberProfileDialog.member-social-dialog{padding:20px 15px}
 }
+
+#memberProfileDialog .member-profile-identity[hidden]{display:none!important}
+.settings-profile-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 18px;padding:14px;border:1px solid #3a7547;border-radius:12px;background:#132d1b}
+.settings-profile-fields>div{grid-column:1/-1;display:grid;gap:4px}
+.settings-profile-fields>div b{color:#effff0;font-size:13px}
+.settings-profile-fields>div small{color:#b8d7bd;font-size:11px}
+.settings-profile-fields label{display:grid;gap:6px;color:#dff5e2;font-size:12px}
+.settings-profile-fields .setting-select{width:100%;min-width:0}
+.settings-profile-fields button{grid-column:1/-1;justify-self:start}
+@media(max-width:560px){.settings-profile-fields{grid-template-columns:1fr}.settings-profile-fields>div,.settings-profile-fields button{grid-column:1}}

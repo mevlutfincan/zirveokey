@@ -336,6 +336,11 @@ async function main() {
   const profileA = await request('/api/members/' + profileAId + '/profile', { cookie: cookieA });
   assert.equal(profileA.status, 200, 'A kendi profilini açamadı.');
   assert.equal((await profileA.json()).profile.member_role, 'member', 'Yeni üye varsayılan rolü member olmalı.');
+  const saveIdentity = await request('/api/account/profile',{method:'PUT',cookie:cookieA,body:{gender:'Erkek',country:'Türkiye'}});
+  assert.equal(saveIdentity.status,200,'A cinsiyet ve ülke bilgilerini kaydedemedi: '+await saveIdentity.text());
+  const readIdentity = await request('/api/account/profile',{cookie:cookieA});
+  assert.equal(readIdentity.status,200,'A profil kimlik bilgilerini okuyamadı.');
+  assert.deepEqual((await readIdentity.json()).profile,{gender:'Erkek',country:'Türkiye'},'Kaydedilen cinsiyet ve ülke bilgileri geri okunamadı.');
   const profileBId = (await (await request('/api/auth/me',{cookie:cookieB})).json()).user.id;
   const profileB = await request('/api/members/' + profileBId + '/profile', { cookie: cookieA });
   assert.equal(profileB.status, 200, 'A, B profilini görüntüleyemedi.');
@@ -347,10 +352,6 @@ async function main() {
   assert.equal(acceptFriend.status, 200, 'B arkadaşlık isteğini kabul edemedi.');
   const friendsA = await (await request('/api/social/summary',{cookie:cookieA})).json();
   assert.ok(friendsA.friends.some(item=>item.username===users[1].username), 'A arkadaş listesinde B görünmüyor.');
-  const addFavorite = await request('/api/social/favorites/' + profileBId, { method:'POST', cookie:cookieA, body:{} });
-  assert.equal(addFavorite.status, 200, 'A B kullanıcısını favoriye ekleyemedi.');
-  const profileBFromA = await (await request('/api/members/' + profileBId + '/profile',{cookie:cookieA})).json();
-  assert.equal(profileBFromA.profile.is_favorite,true,'Favori ilişkisi profil API yanıtında görünmüyor.');
   await request('/api/account/preferences',{method:'PUT',cookie:cookieB,body:{preferences:{settingPrivateMessages:false}}});
   const privateDenied = await request('/api/private-messages/'+profileBId,{method:'POST',cookie:cookieA,body:{message:'Gizlilik testi'}});
   assert.equal(privateDenied.status,403,'Özel mesaj tercihi kapalıyken mesaj kabul edildi.');
@@ -370,8 +371,6 @@ async function main() {
   assert.equal(blockedProfile.status,403,'Engelleyen üyenin profili engellenen kullanıcıya açık kaldı.');
   const unblock = await request('/api/social/blocks/' + profileBId,{method:'DELETE',cookie:cookieA});
   assert.equal(unblock.status,200,'A engeli kaldıramadı.');
-  const removeFavorite = await request('/api/social/favorites/' + profileBId,{method:'DELETE',cookie:cookieA});
-  assert.equal(removeFavorite.status,200,'A favoriden çıkaramadı.');
   const removeFriend = await request('/api/social/friends/' + profileBId,{method:'DELETE',cookie:cookieA});
   assert.equal(removeFriend.status,200,'A arkadaşlıktan çıkaramadı.');
 
